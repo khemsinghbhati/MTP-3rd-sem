@@ -52,7 +52,7 @@ Graph input format: first line contains the number of vertices and edges (`V E`)
 | --- | --- |
 | MCS and deterministic PEO verification | **$O(n+m)$; implemented and tested** |
 | Maximal clique enumeration | **$O(n+m)$; implemented and tested** |
-| Direct initial clique-tree construction | **$O(n+m)$; implemented and tested** |
+| Direct initial clique-tree construction | **$O(n+m)$; implemented/tested, reference-mapping audit pending** |
 | Explicit weighted clique graph + Kruskal | **Reference baseline only** (not production) |
 | Disconnected graphs and dummy clique-tree edges | **Implemented and tested** |
 | Section 3: Delete-Query / Insert-Query | Pending |
@@ -63,6 +63,46 @@ Graph input format: first line contains the number of vertices and edges (`V E`)
 ## Verification
 
 The direct clique-tree constructor passed **19,048 exhaustive chordal graphs** with 1–6 vertices, **800 seeded randomized chordal graphs** with 7–13 vertices, and larger sparse-star and dense-clique cases. Tests independently compare maximal cliques, tree weights, maximum spanning-tree weights, and the induced subtree property. Existing baseline tests remain. The full input parser still uses hashing for duplicate-edge validation; the $O(n+m)$ algorithmic bound assumes an already represented graph.
+
+## Research provenance rule (mandatory)
+
+**No original algorithm design is permitted in this implementation project.**
+Every algorithm, decision criterion, data-structure optimization, and
+asymptotic complexity claim must be traceable to:
+
+1. An explicitly identified section, theorem, algorithm, or pseudocode
+   in **Ibarra (2008)**; or
+2. A **verified, published research reference** that states the required
+   method and justifies its correctness and complexity.
+
+Each implemented module must document its exact reference, page/section,
+algorithm-to-code mapping, assumptions, complexity, and verification tests.
+Passing tests and matching a complexity bound are **not** enough to establish
+source fidelity. If a method lacks a verified reference, it is a
+**provisional research prototype**, not an accepted paper-faithful solution.
+An uncited implementation must not silently be rebranded as published work.
+Keep academic references in the report bibliography; do not recreate a
+separate reference/archive folder.
+
+**Candidate verified sources for linear-time clique-tree preprocessing:**
+
+- Blair and Peyton, *An Introduction to Chordal Graphs and Clique Trees*,
+  Springer (1993), Section 4.2 and **Figure 4.2**: expanded MCS obtains
+  maximal cliques and clique-tree edges.
+  [Primary report](https://people.math.binghamton.edu/zaslav/Oldcourses/580.S13/blair-peyton.chordal-graphs-clique-trees.ornl1992.pdf).
+- Habib, McConnell, Paul, and Viennot, *Lex-BFS and Partition Refinement*,
+  **Theoretical Computer Science** 234 (2000), Section 3.1,
+  **Algorithm 4**: elimination-order/parent-based clique-tree construction,
+  with an explicit O(n+m) bound.
+  [Published article](https://doi.org/10.1016/S0304-3975(97)00241-7).
+
+**Audit required:** The existing direct clique-tree constructor in
+src/clique_tree_linear.cpp uses an elimination-forest contraction.
+Its output and O(n+m) running time have been tested/analyzed, but an exact
+correspondence between its contraction rule and a published algorithm
+has **not yet been established**. Until mapped line by line or replaced
+with a verified published algorithm, this component must be described as
+**provisional**, not as a fully source-approved method.
 
 ## Mathematical notation and report policy
 
