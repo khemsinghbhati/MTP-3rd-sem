@@ -131,13 +131,13 @@ $$
 \alpha=(v_0,v_1,\ldots,v_{n-1}),
 $$
 
-where $\operatorname{pos}(v)$ is the index of vertex $v$ in the ordering.
+where $\mathrm{pos}(v)$ is the index of vertex $v$ in the ordering.
 The **later neighbors** of a vertex $u$ are
 
 $$
 N^+(u)=
 \left\{v\in N(u)\ \middle|\ 
-\operatorname{pos}(v)>\operatorname{pos}(u)\right\}.
+\mathrm{pos}(v)>\mathrm{pos}(u)\right\}.
 $$
 
 An ordering is a **perfect elimination ordering** when *every* later-neighbor
@@ -246,7 +246,7 @@ MCS(G):
 $$
 \boxed{
 G\text{ is chordal}\implies
-\alpha=\operatorname{MCS}(G)\text{ is a PEO}.
+\alpha=\mathrm{MCS}(G)\text{ is a PEO}.
 }
 $$
 
@@ -260,9 +260,9 @@ proceeds as follows:
    label the endpoints such that
 
    $$
-   \operatorname{pos}(v_0)>
-   \operatorname{pos}(v_k)>
-   \operatorname{pos}(v_1).
+   \mathrm{pos}(v_0)>
+   \mathrm{pos}(v_k)>
+   \mathrm{pos}(v_1).
    $$
 
 3. When MCS selected $v_k$, it had weight at least that of $v_1$.
@@ -311,8 +311,8 @@ position:
 
 $$
 p(u)=
-\underset{v\in N^+(u)}{\operatorname{arg\,min}}
-\ \operatorname{pos}(v).
+\underset{v\in N^+(u)}{\mathrm{arg\,min}}
+\ \mathrm{pos}(v).
 $$
 
 For every other later neighbor $v$, the verifier requires an edge from
@@ -355,13 +355,13 @@ $O(n+m)$ runtime.
 Let $\alpha$ be a PEO and use the notation
 
 $$
-\operatorname{Madj}(u)=N^+(u).
+\mathrm{Madj}(u)=N^+(u).
 $$
 
 The **candidate clique** of vertex $u$ is
 
 $$
-\boxed{C_u=\{u\}\cup\operatorname{Madj}(u).}
+\boxed{C_u=\{u\}\cup\mathrm{Madj}(u).}
 $$
 
 The later-neighbor set is a clique under a PEO, and $u$ is adjacent to
@@ -374,7 +374,7 @@ earliest vertex of $K$ in the PEO. Every other vertex of $K$ is later
 than $u$ and adjacent to it. Thus
 
 $$
-K\setminus\{u\}\subseteq\operatorname{Madj}(u)
+K\setminus\{u\}\subseteq\mathrm{Madj}(u)
 \quad\Longrightarrow\quad
 K\subseteq C_u.
 $$
@@ -388,26 +388,26 @@ $$
 
 ### 5.2 Parent vertex and the key inclusion
 
-When $\operatorname{Madj}(u)\ne\varnothing$, define the **parent**
+When $\mathrm{Madj}(u)\ne\varnothing$, define the **parent**
 $p(u)$ as the *earliest* later neighbor of $u$:
 
 $$
-p(u)=\underset{v\in\operatorname{Madj}(u)}
-{\operatorname{arg\,min}}\ \operatorname{pos}(v).
+p(u)=\underset{v\in\mathrm{Madj}(u)}
+{\mathrm{arg\,min}}\ \mathrm{pos}(v).
 $$
 
 When the later-neighbor set is empty, the code uses **-1 as a sentinel**
 rather than a vertex ID.
 
 Fix a vertex $u$ with parent $p=p(u)$. Because
-$\operatorname{Madj}(u)$ is a clique, all other later neighbors of $u$
+$\mathrm{Madj}(u)$ is a clique, all other later neighbors of $u$
 are adjacent to $p$. As $p$ is the earliest among them, the remaining
 vertices also occur later than $p$. This proves the important inclusion:
 
 $$
 \boxed{
-\operatorname{Madj}(u)\setminus\{p\}
-\subseteq\operatorname{Madj}(p).
+\mathrm{Madj}(u)\setminus\{p\}
+\subseteq\mathrm{Madj}(p).
 }
 \tag{1}
 $$
@@ -418,8 +418,8 @@ The implemented maximality check compares the sizes of the two sets:
 
 $$
 \boxed{
-|\operatorname{Madj}(u)|-1=
-|\operatorname{Madj}(p)|.
+|\mathrm{Madj}(u)|-1=
+|\mathrm{Madj}(p)|.
 }
 \tag{2}
 $$
@@ -430,8 +430,8 @@ From equation (1), the left-hand set is *already contained* in the
 right-hand set. When their sizes are equal, the two sets are identical:
 
 $$
-\operatorname{Madj}(u)\setminus\{p\}
-=\operatorname{Madj}(p).
+\mathrm{Madj}(u)\setminus\{p\}
+=\mathrm{Madj}(p).
 $$
 
 Consequently,
@@ -439,9 +439,9 @@ Consequently,
 $$
 \begin{aligned}
 C_p
-&=\{p\}\cup\operatorname{Madj}(p)\\
-&=\operatorname{Madj}(u)\\
-&\subsetneq\{u\}\cup\operatorname{Madj}(u)\\
+&=\{p\}\cup\mathrm{Madj}(p)\\
+&=\mathrm{Madj}(u)\\
+&\subsetneq\{u\}\cup\mathrm{Madj}(u)\\
 &=C_u.
 \end{aligned}
 \tag{3}
@@ -460,7 +460,7 @@ $$
 \boxed{
 C_p\subsetneq C_u
 \iff
-|\operatorname{Madj}(u)|-1=|\operatorname{Madj}(p)|.
+|\mathrm{Madj}(u)|-1=|\mathrm{Madj}(p)|.
 }
 $$
 
