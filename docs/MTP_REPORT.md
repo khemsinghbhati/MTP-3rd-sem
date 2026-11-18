@@ -722,7 +722,7 @@ Let the family of maximal cliques of the chordal graph be
 
 ```math
 \mathcal{K}_G=\{K_0,K_1,\ldots,K_{k-1}\}.
-```math
+```
 
 The weighted clique intersection graph **W_G** has one node per maximal
 clique. Two *different* clique nodes are connected **if and only if**
@@ -730,13 +730,13 @@ their underlying cliques intersect:
 
 ```math
 \{i,j\}\in E(W_G)\iff K_i\cap K_j\ne\varnothing.
-```math
+```
 
 Every such edge has an integer weight equal to the intersection size:
 
 ```math
 w(i,j)=|K_i\cap K_j|.
-```math
+```
 
 **Do not confuse** the original vertices of G with the nodes of W_G.
 Nodes K0, K1, and K2 in the CLI refer to maximal cliques, not graph vertices.
@@ -762,8 +762,8 @@ occurrences and let k be the number of maximal cliques. Sorting requires
 a total of at most O(S log n) time. All pairwise intersections take
 
 ```math
-O(k-1)S
-```math
+O((k-1)S)
+```
 
 time in total, because each clique appears in exactly k-1 pairs.
 The algorithm also examines O(k²) candidate pairs. Therefore an
