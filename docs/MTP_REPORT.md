@@ -352,71 +352,140 @@ $O(n+m)$ runtime.
 
 ### 5.1 Candidate cliques
 
-For a PEO `alpha`, define the later-neighbor set
+Let $\alpha$ be a PEO and use the notation
 
-```
-Madj(u) = N_plus(u)
-C_u = {u} union Madj(u).
-```
+$$
+\operatorname{Madj}(u)=N^+(u).
+$$
 
-Since `Madj(u)` is a clique under a PEO, every candidate `C_u` is a clique.
-Every **maximal** clique appears as one of these candidates:
+The **candidate clique** of vertex $u$ is
 
-Take any maximal clique `K`, and let `u` be its earliest vertex in the PEO.
-All other vertices of `K` are later neighbors of `u`, so `K` is contained in
-`C_u`. But `C_u` is a clique and `K` is maximal; therefore `K = C_u`. This establishes the maximal-clique candidate lemma.
+$$
+\boxed{C_u=\{u\}\cup\operatorname{Madj}(u).}
+$$
 
-### 5.2 Parent vertex
+The later-neighbor set is a clique under a PEO, and $u$ is adjacent to
+every vertex in that set. Hence every $C_u$ is a clique.
 
-For `Madj(u) != empty`, let `p(u)` be the vertex of `Madj(u)` appearing
-**earliest** in the PEO. Otherwise set `p(u) = -1`.
+**Lemma: Every maximal clique occurs among the candidate cliques.**
 
-Because `Madj(u)` is a clique and `p(u)` is its earliest vertex,
+**Proof:** Take an arbitrary maximal clique $K$. Let $u$ be the
+earliest vertex of $K$ in the PEO. Every other vertex of $K$ is later
+than $u$ and adjacent to it. Thus
 
-```
-Madj(u) \ {p(u)} subseteq Madj(p(u)).
-```
+$$
+K\setminus\{u\}\subseteq\operatorname{Madj}(u)
+\quad\Longrightarrow\quad
+K\subseteq C_u.
+$$
 
-### 5.3 The parent-subsumption condition
+Since $C_u$ is a clique and $K$ is maximal, this inclusion cannot be
+strict. Therefore
 
-The implementation uses the following parent-subsumption rule:
+$$
+\boxed{K=C_u.}
+$$
 
-```
-if |Madj(u)| - 1 == |Madj(p(u))|:
-    mark candidate C_(p(u)) as not maximal
-```
+### 5.2 Parent vertex and the key inclusion
 
-For a particular `u` and its parent `p`, the relationship can be derived from
-the inclusion in Section 5.2. If the sizes are equal, the sets are equal:
+When $\operatorname{Madj}(u)\ne\varnothing$, define the **parent**
+$p(u)$ as the *earliest* later neighbor of $u$:
 
-```
-Madj(u) \ {p} = Madj(p)
-C_p = Madj(u) proper_subset C_u.
-```
+$$
+p(u)=\underset{v\in\operatorname{Madj}(u)}
+{\operatorname{arg\,min}}\ \operatorname{pos}(v).
+$$
 
-Thus `C_p` is non-maximal. Conversely, if `C_p` is contained in `C_u` for
-this parent-child relationship, the same set identity and size condition
-follow. This establishes the **pairwise parent-subsumption equivalence**.
+When the later-neighbor set is empty, the code uses **-1 as a sentinel**
+rather than a vertex ID.
 
-The report does not yet present a full proof that *every* non-maximal
-candidate has such a witness among the tested parent-child relationships. That global-completeness argument should be included or
-cited rigorously in the final thesis. The exhaustive oracle tests described
-below are valuable evidence but do not substitute for the missing formal
-argument.
+Fix a vertex $u$ with parent $p=p(u)$. Because
+$\operatorname{Madj}(u)$ is a clique, all other later neighbors of $u$
+are adjacent to $p$. As $p$ is the earliest among them, the remaining
+vertices also occur later than $p$. This proves the important inclusion:
+
+$$
+\boxed{
+\operatorname{Madj}(u)\setminus\{p\}
+\subseteq\operatorname{Madj}(p).
+}
+\tag{1}
+$$
+
+### 5.3 Parent–child subsumption condition
+
+The implemented maximality check compares the sizes of the two sets:
+
+$$
+\boxed{
+|\operatorname{Madj}(u)|-1=
+|\operatorname{Madj}(p)|.
+}
+\tag{2}
+$$
+
+**Why does this test work for the given parent–child pair?**
+
+From equation (1), the left-hand set is *already contained* in the
+right-hand set. When their sizes are equal, the two sets are identical:
+
+$$
+\operatorname{Madj}(u)\setminus\{p\}
+=\operatorname{Madj}(p).
+$$
+
+Consequently,
+
+$$
+\begin{aligned}
+C_p
+&=\{p\}\cup\operatorname{Madj}(p)\\
+&=\operatorname{Madj}(u)\\
+&\subsetneq\{u\}\cup\operatorname{Madj}(u)\\
+&=C_u.
+\end{aligned}
+\tag{3}
+$$
+
+Thus $C_p$ is **not maximal** when the size equality holds for some
+child $u$.
+
+Conversely, if $C_p\subsetneq C_u$ for this same parent–child pair,
+the set containment forces the corresponding later-neighbor sets to
+be equal, which gives the size equality again.
+
+**Pairwise equivalence (for $p=p(u)$):**
+
+$$
+\boxed{
+C_p\subsetneq C_u
+\iff
+|\operatorname{Madj}(u)|-1=|\operatorname{Madj}(p)|.
+}
+$$
+
+> **Open proof obligation:** This parent–child *pairwise* equivalence does
+> not on its own establish that *every* non-maximal candidate is detected
+> by some tested parent–child relationship. A rigorous global-completeness
+> argument is still needed. Exhaustive oracle tests provide evidence but
+> do not replace a proof.
 
 ### 5.4 Extraction algorithm
 
-```
+Algorithmic pseudocode uses a code block; the mathematical inclusion
+and cardinality relations above are written in typeset LaTeX.
+
+~~~text
 EXTRACT_MAXIMAL_CLIQUES(G, peo):
     verify peo is valid for G
     position = inverse permutation of peo
 
     for each vertex u:
         Madj(u) = neighbors appearing later than u
-        parent[u] = earliest vertex in Madj(u), or -1
-        later_degree[u] = |Madj(u)|
+        parent[u] = earliest vertex of Madj(u), or -1
+        later_degree[u] = size of Madj(u)
 
-    maximal[u] = true for every u
+    maximal[u] = true for every vertex
     for each vertex u:
         p = parent[u]
         if p != -1 and later_degree[u] - 1 == later_degree[p]:
@@ -427,62 +496,82 @@ EXTRACT_MAXIMAL_CLIQUES(G, peo):
         if maximal[u]:
             result.append({u} union Madj(u))
     return result
-```
+~~~
 
-### 5.5 Complexity
+### 5.5 Complexity and output size
 
-Computing `position`, `Madj`, `parent`, and sizes visits each vertex or edge
-a constant number of times: `O(n+m)`. All parent-subsumption decisions take
-`O(n)`. Materializing the output takes `O(S)`, where
+Positions, later-neighbor lists, parents, and sizes are computed with
+$O(n+m)$ work. The parent-subsumption checks take $O(n)$.
 
-```
-S = sum over reported maximal cliques K of |K|.
-```
+Let $\mathcal{K}_{\max}$ be the set of reported maximal cliques.
+The number of **vertex occurrences** in the materialized output is
 
-Overall the implementation is `O(n + m + S)` **expected**, including its
-hash-based PEO validation, and `O(n+m+S)` space including graph storage and
-materialized output. For chordal graphs the total candidate later-neighbor
-storage itself is bounded by `O(n+m)`.
+$$
+\boxed{S=\sum_{K\in\mathcal{K}_{\max}}|K|.}
+$$
 
-The extraction algorithm is designed for linear work in the graph size;
-writing an explicit `S` term in this report makes output construction cost clear.
+Constructing the output requires $O(S)$ time. Including hash-based
+PEO verification, the implementation's expected total time is
 
-## 6. Original seven-vertex example and dry run
+$$
+\boxed{
+T_{\mathrm{extract}}(n,m,S)=O(n+m+S)
+\quad\text{(expected)}.
+}
+$$
 
-The original graph (preserved in `data/example_7_vertices.txt`) has seven
-vertices and ten undirected edges:
+Space including graph and materialized output is $O(n+m+S)$.
+The later-neighbor lists themselves occupy $O(n+m)$ space.
 
-```
-V = {0,1,2,3,4,5,6}
-E = {(0,1),(1,3),(0,2),(2,3),(2,4),
-     (2,5),(4,5),(3,6),(0,3),(1,2)}.
-```
+Explicitly including $S$ clarifies the cost of output construction.
 
-For the seven-vertex example, MCS follows this selection order (with the
-specified bucket tie-breaking):
+## 6. Seven-vertex example and dry run
 
-```
-6 -> 3 -> 0 -> 2 -> 1 -> 5 -> 4
-```
+The graph in the sample data file contains seven vertices and ten edges.
 
-Because MCS numbers vertices backward, the resulting PEO is:
+$$
+V=\{0,1,2,3,4,5,6\}
+$$
 
-```
-[4, 5, 1, 2, 0, 3, 6]
-```
+$$
+\begin{aligned}
+E=\bigl\{&
+\{0,1\},\{1,3\},\{0,2\},\{2,3\},\{2,4\},\\
+&\{2,5\},\{4,5\},\{3,6\},\{0,3\},\{1,2\}
+\bigr\}.
+\end{aligned}
+$$
 
-The refactored CLI prints the same ordering. Maximal cliques, expressed as
-**sets** (vertex output order is not semantically important), are:
+MCS selects vertices in this order with the chosen bucket tie-breaking:
 
-```
-K1 = {0, 1, 2, 3}
-K2 = {2, 4, 5}
-K3 = {3, 6}
-```
+$$
+6\ \longrightarrow\ 3\ \longrightarrow\ 0\ \longrightarrow\
+2\ \longrightarrow\ 1\ \longrightarrow\ 5\ \longrightarrow\ 4.
+$$
 
-Interpretation: The four vertices of `K1` are pairwise connected; likewise
-those of `K2` and `K3`. No listed clique is a strict subset of another; the
-test oracle verifies that no other maximal clique exists in this instance.
+Because MCS fills the ordering from **right to left**, the resulting
+perfect elimination ordering is the **reverse** of the selection sequence:
+
+$$
+\boxed{\alpha=(4,5,1,2,0,3,6).}
+$$
+
+The extracted maximal cliques are
+
+$$
+\boxed{
+\begin{aligned}
+K_1&=\{0,1,2,3\},\\
+K_2&=\{2,4,5\},\\
+K_3&=\{3,6\}.
+\end{aligned}
+}
+$$
+
+Each is a clique, none is a proper subset of another, and the
+independent oracle confirms that there are no further maximal cliques
+in this example. Vertex order within a clique has no mathematical
+significance.
 
 ## 7. Software implementation and code organization
 
