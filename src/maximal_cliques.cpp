@@ -37,7 +37,7 @@ std::vector<std::vector<int>> extract_maximal_cliques(
             static_cast<int>(later_neighbors[static_cast<std::size_t>(u)].size());
     }
 
-    // Equivalent to the parent-subsumption test in the midsem code.
+    // Parent-subsumption test for filtering non-maximal candidates.
     std::vector<bool> maximal(static_cast<std::size_t>(n), true);
     for (int u = 0; u < n; ++u) {
         const int p = parent[static_cast<std::size_t>(u)];
