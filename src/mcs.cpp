@@ -56,32 +56,37 @@ bool is_perfect_elimination_ordering(const Graph& graph,
     const int n = graph.vertex_count();
     if (ordering.size() != static_cast<std::size_t>(n)) return false;
 
-    std::vector<int> position(static_cast<std::size_t>(n), -1);
+    std::vector<int> position(n, -1), parent(n, -1);
     for (int i = 0; i < n; ++i) {
-        const int v = ordering[static_cast<std::size_t>(i)];
-        if (v < 0 || v >= n || position[static_cast<std::size_t>(v)] != -1) {
-            return false;
-        }
-        position[static_cast<std::size_t>(v)] = i;
+        const int u = ordering[i];
+        if (u < 0 || u >= n || position[u] != -1) return false;
+        position[u] = i;
     }
 
-    // A complete PEO verification: for each u, all later neighbors other
-    // than the earliest later neighbor p must also be adjacent to p.
+    // Find the earliest later neighbor p(u).
+    std::vector<std::vector<int>> children(n);
     for (int u = 0; u < n; ++u) {
-        int parent = -1;
-        for (const int v : graph.neighbors(u)) {
-            if (position[static_cast<std::size_t>(v)] > position[static_cast<std::size_t>(u)] &&
-                (parent == -1 || position[static_cast<std::size_t>(v)] <
-                                     position[static_cast<std::size_t>(parent)])) {
-                parent = v;
+        for (int v : graph.neighbors(u)) {
+            if (position[v] > position[u] &&
+                (parent[u] == -1 || position[v] < position[parent[u]])) {
+                parent[u] = v;
             }
         }
-        if (parent == -1) continue;
-        for (const int v : graph.neighbors(u)) {
-            if (v != parent &&
-                position[static_cast<std::size_t>(v)] > position[static_cast<std::size_t>(u)] &&
-                !graph.has_edge(parent, v)) {
-                return false;
+        if (parent[u] != -1) children[parent[u]].push_back(u);
+    }
+
+    // Group vertices by their earliest later neighbor p. Mark N(p) once,
+    // then check every other later neighbor for all children of p.
+    // Each adjacency list is scanned O(1) times => deterministic O(n+m).
+    std::vector<int> marked(n, -1);
+    for (int p = 0; p < n; ++p) {
+        if (children[p].empty()) continue;
+        for (int v : graph.neighbors(p)) marked[v] = p;
+        for (int u : children[p]) {
+            for (int v : graph.neighbors(u)) {
+                if (v != p && position[v] > position[u] && marked[v] != p) {
+                    return false;
+                }
             }
         }
     }
