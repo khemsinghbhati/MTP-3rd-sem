@@ -1,4 +1,6 @@
 #include "mtp/graph.hpp"
+#include "mtp/clique_graph.hpp"
+#include "mtp/clique_tree.hpp"
 #include "mtp/maximal_cliques.hpp"
 #include "mtp/mcs.hpp"
 
@@ -57,6 +59,24 @@ int main(int argc, char* argv[]) {
             std::cout << "{ ";
             for (int v : clique) std::cout << v << ' ';
             std::cout << "}\n";
+        }
+
+        const auto weighted_graph = mtp::build_weighted_clique_graph(cliques);
+        const auto clique_tree = mtp::build_clique_tree(weighted_graph);
+        if (!mtp::verify_clique_tree(weighted_graph, clique_tree)) {
+            throw std::runtime_error("clique tree failed invariant verification");
+        }
+        std::cout << "Clique graph W_G edges (clique indices are 0-based):\n";
+        for (const auto& edge : weighted_graph.edges) {
+            std::cout << "K" << edge.first << " -- K" << edge.second
+                      << " [weight=" << edge.weight << "]\n";
+        }
+        std::cout << "Clique tree T edges:\n";
+        for (const auto& edge : clique_tree.edges) {
+            std::cout << "K" << edge.first << " -- K" << edge.second
+                      << " [weight=" << edge.weight;
+            if (edge.dummy) std::cout << ", dummy";
+            std::cout << "]\n";
         }
     } catch (const std::exception& error) {
         std::cerr << "Error: " << error.what() << '\n';
