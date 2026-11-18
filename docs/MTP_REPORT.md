@@ -1,4 +1,4 @@
-# M.Tech Thesis Project - Detailed Working Report
+# M.Tech Thesis Project — End-Semester Technical Report
 
 **Project:** Chordal Graphs: Foundations, Maximal Cliques, Clique Trees, and Dynamic Algorithms  
 **Student:** Khem Singh  
