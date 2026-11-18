@@ -2,12 +2,12 @@
 
 **M.Tech CSE | IIT Bhubaneswar | End-semester presentation: November 30, 2026**
 
-Private working repository based on Louis Ibarra (2008), *Fully Dynamic Algorithms for Chordal Graphs and Split Graphs* (DOI 10.1145/1383369.1383371). The current implementation is a **static clique-tree foundation** for the fully dynamic work.
+Private working repository implementing Louis Ibarra's *Fully Dynamic Algorithms for Chordal Graphs and Split Graphs* (2008, DOI 10.1145/1383369.1383371). **The paper's methods and asymptotic bounds are requirements.** Static preprocessing is implemented; the four dynamic operations are not yet implemented.
 
 ## Project structure
 
-- `include/mtp/` — reusable C++ interfaces for graph storage, MCS/PEO, maximal cliques, weighted clique graph, and clique tree.
-- `src/` — implementations and command-line program.
+- `include/mtp/` — modular interfaces for MCS/PEO, maximal cliques, and the direct clique-tree constructor.
+- `src/` — paper-aligned production algorithms and the CLI. The quadratic clique-graph/Kruskal implementations are compiled only into the **test baseline** library.
 - `tests/` — exhaustive, randomized, and independent small-graph verification.
 - `data/` — example input graphs.
 - `docs/MTP_REPORT.md` — **one evolving detailed technical report**.
@@ -39,12 +39,9 @@ Maximal cliques (3):
 { 4 2 5 }
 { 1 0 3 2 }
 { 3 6 }
-Clique graph W_G edges (clique indices are 0-based):
-K0 -- K1 [weight=1]
-K1 -- K2 [weight=1]
 Clique tree T edges:
-K0 -- K1 [weight=1]
 K1 -- K2 [weight=1]
+K0 -- K1 [weight=1]
 ~~~
 
 Graph input format: first line contains the number of vertices and edges (`V E`), followed by `E` undirected pairs (`u v`) using zero-based vertex IDs. Invalid input is rejected. The graph must be chordal for maximal-clique and clique-tree extraction.
@@ -53,17 +50,19 @@ Graph input format: first line contains the number of vertices and edges (`V E`)
 
 | Component | Status |
 | --- | --- |
-| Graph representation, MCS, and PEO verification | Implemented and tested |
-| Maximal clique enumeration | Implemented and tested |
-| Weighted clique intersection graph W_G | **Implemented and tested** |
-| Static clique tree T | **Implemented and tested** |
+| MCS and deterministic PEO verification | **$O(n+m)$; implemented and tested** |
+| Maximal clique enumeration | **$O(n+m)$; implemented and tested** |
+| Direct initial clique-tree construction | **$O(n+m)$; implemented and tested** |
+| Explicit weighted clique graph + Kruskal | **Reference baseline only** (not production) |
 | Disconnected graphs and dummy clique-tree edges | **Implemented and tested** |
-| Chordality-preserving edge insertion/deletion queries | Pending |
-| Incremental clique-tree updates | Pending |
+| Section 3: Delete-Query / Insert-Query | Pending |
+| Section 3: Delete / Insert (incremental updates) | Pending |
+| Section 4: $O(n)$ per dynamic operation | Pending |
+| Sections 5–6: optimized data structures and bounds | Pending |
 
 ## Verification
 
-The clique graph and clique tree were tested on **19,048 chordal graphs with 1–6 vertices**, and **600 seeded random chordal graphs with 7–12 vertices**. An independent Prüfer-sequence oracle checks the maximum spanning-tree weight for every tested chordal graph with up to 5 vertices. The tests also check the induced subtree property, edge weights, dummy edges, and malformed clique input.
+The direct clique-tree constructor passed **19,048 exhaustive chordal graphs** with 1–6 vertices, **800 seeded randomized chordal graphs** with 7–13 vertices, and larger sparse-star and dense-clique cases. Tests independently compare maximal cliques, tree weights, maximum spanning-tree weights, and the induced subtree property. Existing baseline tests remain. The full input parser still uses hashing for duplicate-edge validation; the $O(n+m)$ algorithmic bound assumes an already represented graph.
 
 ## Mathematical notation and report policy
 
@@ -75,4 +74,4 @@ w(i,j)=|K_i\cap K_j|
 
 All developments must update the single file `docs/MTP_REPORT.md` with: source section, definition, algorithm, correctness argument, complexity, worked example, tests, and limitations.
 
-**Scope limitation:** Static construction of a clique tree is not yet Ibarra's fully dynamic edge-update algorithm.
+**Scope limitation:** The current $O(n+m)$ clique-tree construction is a direct elimination-forest contraction procedure. Ibarra cites linear-time initial construction algorithms in Section 2, but does not spell out that specific procedure. We therefore claim alignment of the **preprocessing bound and clique-tree invariants**, not verbatim pseudocode from the paper. Implementing and validating the paper's actual Section 3 update rules and Sections 4–6 data structures is the next priority.
