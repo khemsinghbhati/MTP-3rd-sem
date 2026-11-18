@@ -135,9 +135,8 @@ where $\mathrm{pos}(v)$ is the index of vertex $v$ in the ordering.
 The **later neighbors** of a vertex $u$ are
 
 $$
-N^+(u)=
-\left\{v\in N(u)\ \middle|\ 
-\mathrm{pos}(v)>\mathrm{pos}(u)\right\}.
+N^+(u)=\{v\in N(u)\mid
+\mathrm{pos}(v)>\mathrm{pos}(u)\}.
 $$
 
 An ordering is a **perfect elimination ordering** when *every* later-neighbor
@@ -175,7 +174,7 @@ For every unnumbered vertex $v$, Maximum Cardinality Search maintains
 its **weight**: the number of neighbors already numbered by the algorithm.
 
 $$
-w(v)=\left|\{u\in N(v):u\text{ is already numbered}\}\right|.
+w(v)=|\{u\in N(v):u\text{ is already numbered}\}|.
 $$
 
 Initially, $w(v)=0$ for all vertices. MCS builds the ordering **from right
@@ -402,31 +401,31 @@ rather than a vertex ID.
 Fix a vertex $u$ with parent $p=p(u)$. Because
 $\mathrm{Madj}(u)$ is a clique, all other later neighbors of $u$
 are adjacent to $p$. As $p$ is the earliest among them, the remaining
-vertices also occur later than $p$. This proves the important inclusion:
+vertices also occur later than $p$. This proves the important inclusion (1):
 
 $$
 \boxed{
 \mathrm{Madj}(u)\setminus\{p\}
 \subseteq\mathrm{Madj}(p).
 }
-\tag{1}
+
 $$
 
 ### 5.3 Parent–child subsumption condition
 
-The implemented maximality check compares the sizes of the two sets:
+The implemented maximality check compares the sizes of the two sets (2):
 
 $$
 \boxed{
 |\mathrm{Madj}(u)|-1=
 |\mathrm{Madj}(p)|.
 }
-\tag{2}
+
 $$
 
 **Why does this test work for the given parent–child pair?**
 
-From equation (1), the left-hand set is *already contained* in the
+From inclusion (1), the left-hand set is *already contained* in the
 right-hand set. When their sizes are equal, the two sets are identical:
 
 $$
@@ -434,7 +433,7 @@ $$
 =\mathrm{Madj}(p).
 $$
 
-Consequently,
+Consequently, we obtain the strict candidate containment in (3):
 
 $$
 \begin{aligned}
@@ -444,7 +443,7 @@ C_p
 &\subsetneq\{u\}\cup\mathrm{Madj}(u)\\
 &=C_u.
 \end{aligned}
-\tag{3}
+
 $$
 
 Thus $C_p$ is **not maximal** when the size equality holds for some
@@ -535,10 +534,10 @@ $$
 
 $$
 \begin{aligned}
-E=\bigl\{&
+E=\{&
 \{0,1\},\{1,3\},\{0,2\},\{2,3\},\{2,4\},\\
 &\{2,5\},\{4,5\},\{3,6\},\{0,3\},\{1,2\}
-\bigr\}.
+\}.
 \end{aligned}
 $$
 
