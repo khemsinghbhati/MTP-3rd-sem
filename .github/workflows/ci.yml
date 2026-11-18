@@ -9,15 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Guard GitHub math compatibility
-        shell: bash
-        run: |
-          for forbidden in '\operatorname' '\bigl' '\bigr' '\middle' '\left\{' '\right\}' '\left|' '\right|'; do
-            if grep -R -n -F "$forbidden" docs/ README.md; then
-              echo "Unsupported or fragile GitHub math notation detected: $forbidden"
-              exit 1
-            fi
-          done
+      - name: Verify GitHub Markdown math syntax
+        run: python3 scripts/check_markdown_math.py
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
       - name: Build
