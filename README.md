@@ -1,36 +1,37 @@
 # MTP End-Semester — Chordal Graphs and Dynamic Clique Trees
 
-**M.Tech Thesis Project | IIT Bhubaneswar | End-semester presentation: November 30, 2026**
+**M.Tech CSE | IIT Bhubaneswar | End-semester presentation: November 30, 2026**
 
-Private working repository for the chordal-graph thesis based on Louis Ibarra's paper *Fully Dynamic Algorithms for Chordal Graphs and Split Graphs* (2008).
+Private working repository based on Louis Ibarra (2008), *Fully Dynamic Algorithms for Chordal Graphs and Split Graphs* (DOI 10.1145/1383369.1383371). The current implementation is a **static clique-tree foundation** for the fully dynamic work.
 
-## Repository layout
+## Project structure
 
-- `include/mtp/`: public interfaces for the modular C++ algorithms.
-- `src/`: graph representation, MCS and PEO verification, maximal-clique extraction, CLI.
-- `tests/`: exhaustive and randomized correctness tests.
-- `data/`: seven-vertex example and non-chordal test.
-- `docs/MTP_REPORT.md`: **one authoritative evolving detailed report**.
-- `.github/workflows/`: GitHub Actions build and tests.
+- `include/mtp/` — reusable C++ interfaces for graph storage, MCS/PEO, maximal cliques, weighted clique graph, and clique tree.
+- `src/` — implementations and command-line program.
+- `tests/` — exhaustive, randomized, and independent small-graph verification.
+- `data/` — example input graphs.
+- `docs/MTP_REPORT.md` — **one evolving detailed technical report**.
+- `scripts/check_markdown_math.py` — structural check for GitHub's math rendering conventions.
+- `.github/workflows/ci.yml` — automated build and test workflow.
 
 ## Build and run (Ubuntu)
 
-C++17 and CMake 3.16 or newer are required:
+Requires C++17 and CMake 3.16+.
 
 ~~~bash
-sudo apt update
-sudo apt install -y git g++ cmake
+sudo apt update && sudo apt install -y git g++ cmake
 git clone https://github.com/khemsinghbhati/MTP-3rd-sem.git
 cd MTP-3rd-sem
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j
-./build/mtp_cli data/example_7_vertices.txt
 ctest --test-dir build --output-on-failure
+./build/mtp_cli data/example_7_vertices.txt
+python3 scripts/check_markdown_math.py
 ~~~
 
-Private repository access requires GitHub authentication.
+Private repository cloning requires GitHub authentication.
 
-Expected program output:
+**Expected example output:**
 
 ~~~text
 MCS-derived ordering: 4 5 1 2 0 3 6
@@ -38,116 +39,40 @@ Maximal cliques (3):
 { 4 2 5 }
 { 1 0 3 2 }
 { 3 6 }
+Clique graph W_G edges (clique indices are 0-based):
+K0 -- K1 [weight=1]
+K1 -- K2 [weight=1]
+Clique tree T edges:
+K0 -- K1 [weight=1]
+K1 -- K2 [weight=1]
 ~~~
 
-Graph input format: the first line is `V E`, followed by `E` undirected edges `u v`, using vertex IDs from 0 to $V-1$. The CLI rejects duplicate edges, invalid vertex IDs, self-loops, and malformed files. Disconnected graphs are supported; non-chordal graphs are rejected before clique extraction.
+Graph input format: first line contains the number of vertices and edges (`V E`), followed by `E` undirected pairs (`u v`) using zero-based vertex IDs. Invalid input is rejected. The graph must be chordal for maximal-clique and clique-tree extraction.
 
-## Current progress
+## Current implementation status
 
 | Component | Status |
 | --- | --- |
-| Graph representation | Implemented |
-| Maximum Cardinality Search (MCS) | Implemented and tested |
-| Perfect Elimination Ordering (PEO) verification | Implemented and tested |
-| Maximal clique extraction | Implemented and tested |
-| Clique graph | Not yet implemented |
-| Clique tree | Not yet implemented |
-| Edge insertion/deletion queries | Not yet implemented |
-| Dynamic clique tree maintenance | Not yet implemented |
+| Graph representation, MCS, and PEO verification | Implemented and tested |
+| Maximal clique enumeration | Implemented and tested |
+| Weighted clique intersection graph W_G | **Implemented and tested** |
+| Static clique tree T | **Implemented and tested** |
+| Disconnected graphs and dummy clique-tree edges | **Implemented and tested** |
+| Chordality-preserving edge insertion/deletion queries | Pending |
+| Incremental clique-tree updates | Pending |
 
-The test suite covers **all simple graphs on $1\le n\le6$ vertices**, plus **600 deterministic random chordal graphs with $7\le n\le12$ vertices**, using independent small-graph oracles.
+## Verification
 
-## Mathematical notation
+The clique graph and clique tree were tested on **19,048 chordal graphs with 1–6 vertices**, and **600 seeded random chordal graphs with 7–12 vertices**. An independent Prüfer-sequence oracle checks the maximum spanning-tree weight for every tested chordal graph with up to 5 vertices. The tests also check the induced subtree property, edge weights, dummy edges, and malformed clique input.
 
-The technical report uses GitHub's built-in LaTeX mathematics renderer.
-Definitions, theorems, and derivations use centered display equations,
-while shorter mathematical symbols appear inline. For example,
+## Mathematical notation and report policy
 
-```math
-G=(V,E),\qquad T_{\mathrm{MCS}}(n,m)=O(n+m).
-```
-
-When extending the report, use inline `$...# MTP End-Semester — Chordal Graphs and Dynamic Clique Trees
-
-**M.Tech Thesis Project | IIT Bhubaneswar | End-semester presentation: November 30, 2026**
-
-Private working repository for the chordal-graph thesis based on Louis Ibarra's paper *Fully Dynamic Algorithms for Chordal Graphs and Split Graphs* (2008).
-
-## Repository layout
-
-- `include/mtp/`: public interfaces for the modular C++ algorithms.
-- `src/`: graph representation, MCS and PEO verification, maximal-clique extraction, CLI.
-- `tests/`: exhaustive and randomized correctness tests.
-- `data/`: seven-vertex example and non-chordal test.
-- `docs/MTP_REPORT.md`: **one authoritative evolving detailed report**.
-- `.github/workflows/`: GitHub Actions build and tests.
-
-## Build and run (Ubuntu)
-
-C++17 and CMake 3.16 or newer are required:
-
-~~~bash
-sudo apt update
-sudo apt install -y git g++ cmake
-git clone https://github.com/khemsinghbhati/MTP-3rd-sem.git
-cd MTP-3rd-sem
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build -j
-./build/mtp_cli data/example_7_vertices.txt
-ctest --test-dir build --output-on-failure
-~~~
-
-Private repository access requires GitHub authentication.
-
-Expected program output:
-
-~~~text
-MCS-derived ordering: 4 5 1 2 0 3 6
-Maximal cliques (3):
-{ 4 2 5 }
-{ 1 0 3 2 }
-{ 3 6 }
-~~~
-
-Graph input format: the first line is `V E`, followed by `E` undirected edges `u v`, using vertex IDs from 0 to $V-1$. The CLI rejects duplicate edges, invalid vertex IDs, self-loops, and malformed files. Disconnected graphs are supported; non-chordal graphs are rejected before clique extraction.
-
-## Current progress
-
-| Component | Status |
-| --- | --- |
-| Graph representation | Implemented |
-| Maximum Cardinality Search (MCS) | Implemented and tested |
-| Perfect Elimination Ordering (PEO) verification | Implemented and tested |
-| Maximal clique extraction | Implemented and tested |
-| Clique graph | Not yet implemented |
-| Clique tree | Not yet implemented |
-| Edge insertion/deletion queries | Not yet implemented |
-| Dynamic clique tree maintenance | Not yet implemented |
-
-The test suite covers **all simple graphs on $1\le n\le6$ vertices**, plus **600 deterministic random chordal graphs with $7\le n\le12$ vertices**, using independent small-graph oracles.
-
-## Mathematical notation
-
-The technical report uses GitHub's built-in LaTeX mathematics renderer.
-Definitions, theorems, and derivations use centered display equations,
-while shorter mathematical symbols appear inline. For example,
+The GitHub report uses inline `$...$` for short symbols and **fenced `math` blocks** for displayed equations. Avoid bare `$$` blocks, which previously rendered as literal source. Example:
 
 ```math
-G=(V,E),\qquad T_{\mathrm{MCS}}(n,m)=O(n+m).
+w(i,j)=|K_i\cap K_j|
 ```
 
- only for short expressions,
-and a fenced `math` block (as above) for **every display equation**.
-Do not use bare single-dollar lines or `$` blocks in this repository:
-those previously appeared as literal source on GitHub, particularly inside
-numbered lists. Keep C++ names and pseudocode in code formatting. Use
-`\mathrm{pos}` and `\mathrm{Madj}` for variable-like names within mathematics.
-Run `python3 scripts/check_markdown_math.py` before committing documentation.
+All developments must update the single file `docs/MTP_REPORT.md` with: source section, definition, algorithm, correctness argument, complexity, worked example, tests, and limitations.
 
-## Report policy
-
-`docs/MTP_REPORT.md` is the single evolving end-semester thesis report. For each new module, update the relevant sections with theory, proof or rationale, time complexity, tests, results, and limitations. Keep the report aligned with the tested implementation.
-
-**This repository does not yet implement the dynamic algorithms of the target paper.**
-
-Reference: Louis Ibarra (2008), DOI: 10.1145/1383369.1383371.
+**Scope limitation:** Static construction of a clique tree is not yet Ibarra's fully dynamic edge-update algorithm.
