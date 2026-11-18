@@ -1,0 +1,16 @@
+/build/
+/cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+Testing/
+*.o
+*.a
+*.so
+*.out
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+/tmp/
+*.log
