@@ -11,8 +11,8 @@
 > end-semester thesis presentation. It documents completed theory, implemented
 > algorithms, formal arguments, testing, open proof obligations, and planned
 > dynamic-graph modules. The project does **not** yet implement the complete
-> dynamic algorithm. Complexity targets attributed to the research literature
-> must be independently verified against the primary publications.
+> dynamic algorithm. The supplied Ibarra (2008) paper now serves as the
+> primary source for the clique graph, clique tree, and planned update rules.
 
 ---
 
@@ -30,8 +30,9 @@ maximal cliques of chordal graphs using later neighbors and a parent-based
 subsumption rule. The refactored implementation has been checked against
 independent brute-force oracles on all simple graphs with one through six
 vertices and 600 additional random chordal instances with seven through twelve
-vertices. Clique-graph construction, clique-tree construction, and dynamic edge
-updates remain future implementation stages.
+vertices. The weighted clique intersection graph and a maximum-weight
+spanning-tree-based clique tree are now implemented and tested, including
+disconnected graphs. **Fully dynamic edge updates remain unfinished.**
 
 **Keywords:** chordal graph; perfect elimination ordering; maximum cardinality
 search; maximal clique; clique tree; dynamic graph algorithm.
@@ -47,10 +48,11 @@ ordering, which makes maximal cliques amenable to efficient computation.
 The research objective is a fully dynamic approach that maintains a
 clique-tree representation while answering queries about whether individual
 edge insertions or deletions preserve chordality. The following bounds are
-provisional literature-level targets that require verification against the
-original paper; they are **not** results achieved in this project:
+literature-level bounds stated in Ibarra (2008), Section 1.3 (paper page
+40:3). They are **claims of the paper**, not performance results achieved
+by our implementation:
 
-| Literature-level operation / implementation | Provisional complexity target |
+| Literature-level operation / implementation | Complexity in paper |
 | --- | --- |
 | First implementation: each operation | $O(n)$ |
 | Second: insertion query | $O(\log^2 n)$ |
@@ -60,9 +62,10 @@ original paper; they are **not** results achieved in this project:
 | Specialized deletion query | $O(\sqrt m)$ |
 | Specialized data structure update | $O(m)$ |
 
-Here $n=|V|$ is the number of vertices and $m=|E|$ is the number of edges. The above are
-provisional until the exact preconditions and data structures have been
-checked against the original paper before reproduction or comparison.
+Here $n=|V|$ is the number of vertices and $m=|E|$ the number of edges.
+The article describes these bounds as worst-case unless specified otherwise.
+The code in this repository currently builds a **static** clique tree and
+does not claim any of these dynamic bounds.
 
 ### 1.1 Current implementation baseline
 
@@ -71,16 +74,21 @@ The currently implemented foundation comprises:
 1. Graph-theoretic preliminaries, including chordal graphs and PEOs.
 2. Linear-time Maximum Cardinality Search (MCS) and its correctness argument.
 3. Computing maximal cliques from a PEO and reasoning about subsumption.
+4. Building the weighted clique intersection graph with exactly the
+   positive-weight clique-intersection edges specified by Ibarra.
+5. Constructing and verifying a clique tree using maximum-weight Kruskal,
+   with zero-weight dummy edges for disconnected graphs.
 
-Clique-graph construction, clique-tree construction, and fully dynamic edge
-operations are tracked as remaining work, not completed results.
+**Remaining work:** chordality-preserving edge queries, dynamic updates,
+and performance experiments.
 
 ### 1.2 Project boundaries at this snapshot
 
 - **Implemented:** simple undirected graph API; MCS; PEO verification;
-  maximal-clique extraction; CLI; automated tests.
-- **Not yet implemented:** clique graph $W_G$, clique tree $T$, insertion/deletion
-  queries, structural updates, running-time experiments for dynamic operations.
+  maximal-clique extraction; weighted clique graph; static clique tree;
+  CLI; automated tests.
+- **Not yet implemented:** insertion/deletion queries, incremental
+  clique-tree updates, and running-time experiments for dynamic operations.
 - **No unsupported claim:** the code is a reorganized and validated baseline,
   not an original new dynamic graph algorithm.
 
@@ -697,41 +705,176 @@ The implementation roadmap is:
 [Maximal cliques] -------------------- COMPLETE
         |
         v
-[Clique graph W_G] ------------------- NOT IMPLEMENTED
+[Clique graph W_G] ------------------- COMPLETE
         |
         v
-[Clique tree T] ---------------------- NOT IMPLEMENTED
+[Clique tree T] ---------------------- COMPLETE
         |
         v
 [Dynamic edge queries and updates] -- NOT IMPLEMENTED
 ```
 
-### 9.1 Next: clique graph $W_G$
+### 9.1 Implemented: weighted clique intersection graph
 
-The planned clique graph $W_G$ has vertices representing maximal cliques of
-$G$. The **exact definition of its edges** and
-any weights, labels, or supporting metadata for the intended algorithm must
-be established from the target source before implementation. This report
-does **not** invent that definition.
+**Primary source:** Ibarra (2008), Section 2, paper page **40:4**.
 
-**Proposed new module:** `include/mtp/clique_graph.hpp`,
-`src/clique_graph.cpp`, and corresponding tests.
+Let the family of maximal cliques of the chordal graph be
 
-Acceptance requirements: formal definition, construction algorithm,
-correctness/complexity rationale, worked example, and test cases documented
-here before marking complete.
+```math
+\mathcal{K}_G=\{K_0,K_1,\ldots,K_{k-1}\}.
+```math
 
-### 9.2 Then: clique tree $T$
+The weighted clique intersection graph **W_G** has one node per maximal
+clique. Two *different* clique nodes are connected **if and only if**
+their underlying cliques intersect:
 
-Investigate a clique-tree representation consistent with the target paper.
-The standard clique-tree/running-intersection property is a useful
-background criterion, but the specific representation, construction method,
-and update rules to be implemented must be checked against the target
-literature. Do not treat a generic clique-tree constructor as proof of
-implementing Ibarra's dynamic data structure.
+```math
+\{i,j\}\in E(W_G)\iff K_i\cap K_j\ne\varnothing.
+```math
 
-**Proposed new module:** `include/mtp/clique_tree.hpp`,
-`src/clique_tree.cpp`, and corresponding tests.
+Every such edge has an integer weight equal to the intersection size:
+
+```math
+w(i,j)=|K_i\cap K_j|.
+```math
+
+**Do not confuse** the original vertices of G with the nodes of W_G.
+Nodes K0, K1, and K2 in the CLI refer to maximal cliques, not graph vertices.
+
+**Algorithm and module:** The function
+<code>build_weighted_clique_graph(...)</code> in
+<code>src/clique_graph.cpp</code> receives the maximal cliques from the
+previous extraction stage, sorts each clique's vertex list, and examines
+every pair. For each pair it computes intersection size using a
+two-pointer scan through the sorted lists. It creates an edge only when
+the intersection size is positive. It also rejects empty cliques,
+negative vertex IDs, and duplicate vertex IDs within a clique.
+
+**Correctness argument:** On a given pair of sorted clique member
+lists, a two-pointer intersection scan counts each common vertex once
+and does not count vertices absent from either list. Consequently, for
+each pair (i,j) it returns exactly the size of the set intersection.
+The algorithm retains precisely the pairs with positive size, matching
+the edge definition above. It introduces no extra positive-weight edges.
+
+**Time complexity:** Let S be the total number of clique-member
+occurrences and let k be the number of maximal cliques. Sorting requires
+a total of at most O(S log n) time. All pairwise intersections take
+
+```math
+O(k-1)S
+```math
+
+time in total, because each clique appears in exactly k-1 pairs.
+The algorithm also examines O(k²) candidate pairs. Therefore an
+appropriate upper bound is **O(S log n + kS + k²)**, not the paper's
+more efficient preprocessing bound. The worst-case clique graph can
+have O(k²) edges.
+
+### 9.2 Implemented: a clique tree
+
+**Primary source:** Ibarra (2008), Section 2, paper pages **40:4–40:6**.
+
+For a connected chordal graph, a clique tree T is a tree whose nodes
+are exactly the maximal cliques and which satisfies the **induced
+subtree property**:
+
+> For every vertex v of G, the clique nodes containing v must induce
+> a connected subtree of T.
+
+An equivalent form, called the **clique intersection property**, says
+that for any maximal cliques Ki and Kj, every clique on their unique
+path in the tree contains the intersection of Ki and Kj.
+
+The paper states a key characterization for **connected** graphs:
+
+> A spanning tree of the weighted clique intersection graph is a
+> clique tree if and only if it has maximum total edge weight.
+
+**Construction:** Implemented in <code>src/clique_tree.cpp</code>.
+
+1. Sort the positive-weight edges of W_G by descending weight.
+2. Run Kruskal with disjoint-set union, adding edges that join two
+   different sets. This constructs a **maximum-weight spanning forest**.
+3. If G was disconnected, join the remaining clique-tree components
+   by arbitrary **dummy edges of weight zero**, as described by Ibarra,
+   Section 2, paper page 40:6.
+
+The dummy edges are not positive-weight edges of the original W_G.
+They are added **only** to connect strict clique trees from different
+connected components of the underlying graph. The resulting T is
+a single tree (for a nonempty graph), with zero-weight dummy edges
+where necessary.
+
+**Why construction is correct:** Kruskal's maximum-spanning-tree
+greedy rule produces a maximum-weight spanning tree in each connected
+component of W_G. The characterization in Section 2 then guarantees
+the induced subtree property for the corresponding chordal component.
+Dummy links between disconnected components do not create extra
+cliques containing any vertex; therefore the induced subtree
+condition remains valid for the whole graph.
+
+**Verification function:** <code>verify_clique_tree(...)</code> checks
+all of the following independently of the Kruskal selection sequence:
+
+1. There are exactly k-1 edges when k>0; there are no cycles and
+   all k clique nodes are connected.
+2. Each weight equals the actual number of common clique vertices.
+3. Every dummy edge has weight zero and links different components
+   of the original positive-weight W_G.
+4. For each original vertex v, a BFS restricted to clique nodes
+   containing v reaches **all** clique nodes containing v.
+
+**Time complexity:** Let q be the number of positive-weight edges of W_G.
+Sorting edges costs O(q log q), and disjoint-set operations cost
+O((q+k) alpha(k)). The algorithm copies the clique member lists,
+adding O(S) time and space. Since q is at most O(k²), this is a simple
+static construction rather than an implementation of the paper's
+fully dynamic data structures.
+
+### 9.2.1 Worked example
+
+For the 7-vertex input in Section 6, the maximal cliques (the CLI
+numbers them in extraction order) are:
+
+- **K0** = {2,4,5}
+- **K1** = {0,1,2,3}
+- **K2** = {3,6}
+
+The nonempty intersections are:
+
+- K0 intersect K1 = {2}, so weight = 1.
+- K1 intersect K2 = {3}, so weight = 1.
+- K0 intersect K2 is empty, so **no edge** is created in W_G.
+
+Thus W_G contains two weighted edges, K0--K1 and K1--K2, both
+having weight 1. The graph itself is already a tree, so the
+maximum-weight spanning tree is the same two-edge structure.
+
+**Disconnected example:** If the input has the two components
+{0,1} and {2,3}, then its two maximal cliques have intersection
+size zero. The original W_G has **no edges**; the extended clique
+tree has one **dummy edge** of weight zero connecting these cliques.
+
+### 9.2.2 Testing and scope
+
+The new source <code>tests/test_clique_tree.cpp</code> verifies:
+
+- The example clique graph has exactly 2 intersection edges of
+  weight 1, and the resulting tree satisfies its invariants.
+- Disconnected cases require the expected zero-weight dummy links.
+- Exhaustive chordal graphs for n=1..6: all **19,048** cases satisfy
+  the clique-tree invariants and the expected clique intersection
+  graph properties.
+- For all chordal inputs with n<=5, independently enumerating
+  labeled spanning trees by Prüfer sequences confirms that the
+  constructed tree has **maximum total intersection weight**.
+- 600 additional seeded chordal graphs on n=7..12 pass.
+- Invalid clique data and deliberately incorrect dummy flags are
+  rejected in targeted tests.
+
+These tests do **not** prove performance for large input sizes,
+and do **not** exercise incremental dynamic edge operations.
 
 ### 9.3 Then: dynamic queries and updates
 
@@ -757,10 +900,10 @@ separate from the report.
 
 | Item | Why it matters | Status |
 | --- | --- | --- |
-| Confirm Ibarra's exact clique-graph edge definition | Necessary before implementing $W_G$ | OPEN |
-| Confirm required clique-tree representation | Determines data structure and invariants | OPEN |
+| Confirm Ibarra's exact clique-graph edge definition | Verified against Ibarra Section 2 | COMPLETE |
+| Confirm required clique-tree representation | Verified static clique-tree properties in Section 2 | COMPLETE |
 | Supply/identify a full proof of global parent-rule filtering | Makes extraction's completeness argument rigorous | OPEN |
-| Validate paper's stated complexity bounds from primary text | Avoids unverified runtime assumptions | OPEN |
+| Validate paper's stated complexity bounds from primary text | Section 1.3 checked; dynamic implementations remain pending | PARTIAL |
 | Implement dynamic insert/delete queries | Central thesis target | OPEN |
 | Implement incremental updates and compare against rebuilding | Central thesis target | OPEN |
 | Benchmark runtime/scaling once dynamics are implemented | Experimental evaluation | OPEN |
@@ -772,7 +915,9 @@ separate from the report.
 | 2026-11-18 | Refactored code into separate C++17 graph, MCS, and clique modules | `src/`, `include/` |
 | 2026-11-18 | Added PEO verification, CLI input handling, tests, CMake, CI configuration | Source and test files |
 | 2026-11-18 | Exhaustive verification for $n\le6$ and 600 random chordal cases | `tests/test_algorithms.cpp` |
-| Pending | Clique graph, clique tree, dynamic algorithm | Not claimed as completed |
+| 2026-11-18 | Added weighted clique graph and static clique tree | `src/clique_graph.cpp`, `src/clique_tree.cpp` |
+| 2026-11-18 | Verified 19,048 chordal cases, brute-force maximum tree checks, and 600 random cases | `tests/test_clique_tree.cpp` |
+| Pending | Dynamic queries and incremental updates | Not claimed as completed |
 
 **Reporting rule:** Keep milestone dates and achievements accurate. Clearly
 separate implemented results, test evidence, open obligations, and proposed
@@ -805,8 +950,10 @@ they are presented as independently verified results:
 
 ### Implementation evidence
 
-- **Modular C++ implementation:** `include/mtp/` and `src/`.
-- **Correctness and regression tests:** `tests/test_algorithms.cpp`.
+- **Modular C++ implementation:** `include/mtp/` and `src/`, including
+  static clique graph and clique-tree modules.
+- **Correctness and regression tests:** `tests/test_algorithms.cpp` and
+  `tests/test_clique_tree.cpp`.
 - **Reproducible build and CI:** `CMakeLists.txt` and
   `.github/workflows/ci.yml`.
 
