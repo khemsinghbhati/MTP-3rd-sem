@@ -88,97 +88,138 @@ operations are tracked as remaining work, not completed results.
 
 ### 2.1 Graph and chordal graph
 
-Let `G = (V, E)` be a finite undirected, simple graph, with `n = |V|` and
-`m = |E|`. A **chord** of a cycle is an edge joining two vertices that are
-nonconsecutive on the cycle. The graph is **chordal** if every cycle of length
-at least four possesses a chord; equivalently it contains no chordless cycle
-of length at least four.
+Let the input be a simple, undirected graph:
 
-Example: a four-cycle with no diagonal is non-chordal. Adding one diagonal
-makes the graph chordal. This is why `data/nonchordal_cycle4.txt` is an
-intentional negative test.
+$$
+G=(V,E), \qquad n=|V|, \qquad m=|E|.
+$$
 
-### 2.2 Clique and maximal clique
+Here, $V$ is the set of vertices, $E$ is the edge set, $n$ is the number
+of vertices, and $m$ is the number of edges.
 
-A **clique** is a vertex subset whose vertices are pairwise adjacent. It is
-**maximal** if no strictly larger clique contains it. This is different from a
-**maximum clique**, which has largest cardinality among all cliques.
+A **chord** is an edge joining two nonconsecutive vertices of a cycle.
+The graph is **chordal** if every cycle of length at least $4$ has a chord.
+Equivalently, there is **no induced chordless cycle of length $4$ or more**.
 
-In chordal graphs, a PEO makes it possible to construct a candidate clique
-associated with each vertex and filter non-maximal candidates efficiently.
+**Example:** The four-cycle $0\!-\!1\!-\!2\!-\!3\!-\!0$ has no chord and is
+non-chordal. Adding $\{0,2\}$ makes that graph chordal. The negative input
+file in the data folder exercises this distinction.
+
+### 2.2 Clique, maximal clique, and maximum clique
+
+A subset $K\subseteq V$ is a **clique** when its distinct vertices are
+pairwise adjacent:
+
+$$
+\forall\,x,y\in K,\quad x\ne y \implies \{x,y\}\in E.
+$$
+
+A **maximal clique** cannot be extended to a strictly larger clique:
+
+$$
+\nexists\,K' \text{ that is a clique and satisfies } K\subsetneq K'.
+$$
+
+A **maximum clique** is a clique with the largest cardinality among all
+cliques in the graph. Being *maximal* does not necessarily mean being *maximum*.
 
 ### 2.3 Perfect elimination ordering (PEO)
 
-An ordering `alpha = (v_0, v_1, ..., v_{n-1})` is a **PEO** if for every vertex
-`u`, the neighbors appearing *later* than `u` in `alpha` induce a clique. Write
+Let a vertex ordering be
 
-```
-N_plus(u) = { v in N(u) : position(v) > position(u) }.
-```
+$$
+\alpha=(v_0,v_1,\ldots,v_{n-1}),
+$$
 
-Then the PEO condition is: `N_plus(u)` is a clique for all `u`.
+where $\operatorname{pos}(v)$ is the index of vertex $v$ in the ordering.
+The **later neighbors** of a vertex $u$ are
 
-**Foundational theorem:** An undirected graph is chordal
-if and only if it has a perfect elimination ordering.
+$$
+N^+(u)=
+\left\{v\in N(u)\ \middle|\ 
+\operatorname{pos}(v)>\operatorname{pos}(u)\right\}.
+$$
+
+An ordering is a **perfect elimination ordering** when *every* later-neighbor
+set is a clique:
+
+$$
+\boxed{\forall\,u\in V,\qquad N^+(u)\text{ is a clique}.}
+$$
+
+**Foundational theorem:**
+
+$$
+\boxed{G\text{ is chordal}\iff G\text{ has a PEO}.}
+$$
 
 ### 2.4 Why a PEO is useful
 
-Because the later-neighbor set of any vertex forms a clique, the set
+For every vertex $u$, form a **candidate clique**
 
-```
-C_u = {u} union N_plus(u)
-```
+$$
+\boxed{C_u=\{u\}\cup N^+(u).}
+$$
 
-is also a clique. Therefore every vertex generates a candidate clique, from
-which the maximal ones can be selected. This is the central bridge between
-MCS/PEO and maximal-clique extraction.
+The PEO ensures that all vertices in $N^+(u)$ are pairwise adjacent;
+by definition, each is also adjacent to $u$. Therefore $C_u$ is a clique.
+
+**Core connection:** A PEO lets us construct candidate cliques
+and then eliminate those that are contained in larger candidates.
 
 ## 3. Maximum Cardinality Search (MCS)
 
 ### 3.1 Algorithmic idea
 
-MCS chooses an unnumbered
-vertex with the greatest number of already-numbered neighbors. It writes
-vertices into the PEO array **from right to left**.
+For every unnumbered vertex $v$, Maximum Cardinality Search maintains
+its **weight**: the number of neighbors already numbered by the algorithm.
 
-Maintain `weight[v]`, the count of previously selected/numbered neighbors of
-an unnumbered vertex `v`. Initially all weights are zero. At each stage:
+$$
+w(v)=\left|\{u\in N(v):u\text{ is already numbered}\}\right|.
+$$
 
-1. Choose an unnumbered vertex with maximum weight.
-2. Store it in the next free position working backward from `n-1` to `0`.
-3. Mark it numbered.
-4. Increment the weight of each still-unnumbered neighbor.
+Initially, $w(v)=0$ for all vertices. MCS builds the ordering **from right
+to left**:
 
-MCS is well defined for general undirected graphs, but the resulting ordering
-is guaranteed to be a PEO only when the graph is chordal.
+1. Select an unnumbered vertex having the largest current weight.
+2. Put it in the next free position, starting at $n-1$ and moving to $0$.
+3. Mark it as numbered.
+4. For each unnumbered neighbor $u$ of that vertex, update
+
+   $$
+   \boxed{w(u)\leftarrow w(u)+1.}
+   $$
+
+MCS is defined for any undirected graph; however, its output is guaranteed
+to be a PEO **only when the input graph is chordal**.
 
 ### 3.2 Bucket-based implementation
 
-The implementation uses the following structures:
-
-| Structure | Role |
+| C++ structure | Mathematical meaning / role |
 | --- | --- |
-| `weight[v]` | Count of already-numbered neighbors |
-| `numbered[v]` | Whether vertex `v` is already selected |
-| `buckets[w]` | Doubly linked list of unnumbered vertices of weight `w` |
-| `locations[v]` | Iterator to the current bucket entry for vertex `v` |
-| `max_weight` | Highest weight bucket currently considered |
-| `ordering[i]` | Selected vertex placed from right to left |
+| weight[v] | The weight $w(v)$ |
+| numbered[v] | Whether vertex $v$ has already been selected |
+| buckets[w] | Linked list of unnumbered vertices with weight $w$ |
+| locations[v] | Iterator to $v$ inside its current bucket |
+| max_weight | Maximum bucket weight currently considered |
+| ordering[i] | Vertex placed at index $i$ of the output PEO |
 
-The iterator array enables O(1) removal from a bucket; each weight increment
-then becomes a constant-time removal/reinsertion. `std::list` is used because
-it provides stable iterators for unaffected entries. The `push_front` behavior
-in the baseline code has been preserved so the sample ordering is reproducible.
+The iterator array permits $O(1)$ removal and reinsertion when a vertex
+weight increases. Stable iterators from C++ linked lists and deterministic
+front insertions preserve the sample ordering.
 
 ### 3.3 Pseudocode
 
-```
+Pseudocode remains plain text because these are program operations,
+**not** equations:
+
+~~~text
 MCS(G):
     for v in V:
         weight[v] = 0
         numbered[v] = false
         push v into buckets[0]
-        remember iterator locations[v]
+        remember locations[v]
     max_weight = 0
 
     for position = n-1 down to 0:
@@ -196,68 +237,116 @@ MCS(G):
                 update locations[u] and max_weight
 
     return ordering
-```
+~~~
 
 ### 3.4 Correctness statement and proof overview
 
-**Theorem:** If `G` is chordal, the ordering produced by MCS is a PEO.
+**Theorem:** For a chordal graph $G$, MCS produces a PEO $\alpha$.
 
-A proof overview, attributed to Vandenberghe and Andersen, has the following
-structure:
+$$
+\boxed{
+G\text{ is chordal}\implies
+\alpha=\operatorname{MCS}(G)\text{ is a PEO}.
+}
+$$
 
-1. Assume the ordering is not a PEO. One can then find a chordless path whose
-   endpoints occur later in the ordering than its internal vertices.
-2. Choose such a path maximizing the earlier endpoint position.
-3. At the selection of the lower-positioned endpoint, compare its MCS weight
-   with the weight of the first internal vertex. One endpoint is already
-   numbered and contributes to the internal vertex's weight, forcing an
-   additional already-numbered neighbor at the other endpoint.
-4. This extra neighbor either closes a forbidden chordless cycle or produces
-   a forbidden path with a strictly better endpoint-position value.
-5. Both alternatives contradict the assumptions. Therefore the MCS ordering
-   has the PEO property.
+A contradiction-proof overview, attributed to Vandenberghe and Andersen,
+proceeds as follows:
 
-This is a **high-level proof sketch**, not an independently verified full
-formal derivation. For the thesis submission, the exact quantifiers, ordering
-conventions, and edge cases must be checked against the cited proof.
+1. Assume the produced ordering is not a PEO. Consider a chordless path
+   $P=(v_0,v_1,\ldots,v_k)$, $k\ge 2$, such that its interior vertices
+   appear earlier in the ordering than its endpoints.
+2. Choose such a path to maximize the smaller endpoint position, and
+   label the endpoints such that
+
+   $$
+   \operatorname{pos}(v_0)>
+   \operatorname{pos}(v_k)>
+   \operatorname{pos}(v_1).
+   $$
+
+3. When MCS selected $v_k$, it had weight at least that of $v_1$.
+   But the already-numbered $v_0$ contributed to the weight of $v_1$
+   and not to the weight of $v_k$. Hence $v_k$ must have an additional
+   already-numbered neighbor $z$ not adjacent to $v_1$.
+4. That extra neighbor can either close a forbidden chordless cycle
+   (contradicting chordality), or yield a forbidden path with a strictly
+   better endpoint position (contradicting the maximization choice).
+5. Both alternatives are impossible; the MCS ordering must be a PEO.
+
+> **Proof status:** This is a readable outline, not an independently checked
+> full derivation. The final thesis proof still requires verification of
+> the exact quantifiers, ordering convention, and edge cases.
 
 ### 3.5 Complexity analysis
 
-- Initialize weights, flags, and buckets: `O(n)`.
-- Extract every vertex once: `O(n)`.
-- Scan undirected adjacency entries over the whole execution: `2m` entries,
-  hence `O(m)`.
-- Each neighbor weight change costs O(1) with a saved list iterator.
-- The `max_weight` variable may decrease across empty buckets, but every
-  decrement is amortized against a preceding increase caused by an edge scan;
-  total work for empty-bucket traversal is `O(m)`.
+Let $n=|V|$ and $m=|E|$.
 
-Thus the MCS ordering procedure is **O(n + m)**, using **O(n + m)** storage
-including the graph. This claim refers to the ordering computation once the
-graph has been constructed.
+| Step | Total time |
+| --- | --- |
+| Initialize vertices and buckets | $O(n)$ |
+| Extract each vertex once | $O(n)$ |
+| Scan undirected adjacency entries | $2m=O(m)$ |
+| Move one vertex between buckets | $O(1)$ per weight update |
+| Scan empty buckets | $O(m)$ total (amortized) |
+
+Every increase of the max-weight tracker is caused by an edge scan,
+and total decreases cannot exceed accumulated increases. Thus the
+overall runtime of the MCS ordering computation is
+
+$$
+\boxed{T_{\mathrm{MCS}}(n,m)=O(n+m).}
+$$
+
+Space, including the stored graph, is $O(n+m)$.
 
 ## 4. Verifying a perfect elimination ordering
 
-The modular implementation includes an explicit PEO check before
-maximal-clique extraction. This prevents non-chordal inputs from silently
-producing invalid candidate cliques.
+The modular implementation verifies the PEO condition before any
+maximal-clique extraction.
 
-Given an ordering, compute each vertex's position. For each `u`, identify the
-earliest later neighbor `p` (if any). Check that each other later neighbor of
-`u` is adjacent to `p`. Performing this check for every vertex is sufficient
-for the PEO property (using induction on the ordering's later vertices).
+For a vertex $u$ with nonempty $N^+(u)$, let $p(u)$ be its
+**earliest later neighbor**, meaning the vertex with smallest later
+position:
 
-The graph implementation maintains `unordered_set` membership indices, so
-checking adjacency is **O(1) expected time**. Consequently PEO verification
-is **O(n + m) expected time** and **O(n)** additional position-array space,
-with the hash adjacency index residing in `Graph`.
+$$
+p(u)=
+\underset{v\in N^+(u)}{\operatorname{arg\,min}}
+\ \operatorname{pos}(v).
+$$
 
-Incorrect-length or repeated-vertex orderings are rejected. On failure, the
-CLI reports that the graph is not chordal and exits with status `2`.
+For every other later neighbor $v$, the verifier requires an edge from
+$p(u)$ to $v$:
 
-**Engineering note:** As is standard for hash tables, the O(1) membership
-cost is an average/expected guarantee, not a strict adversarial worst-case
-bound. MCS itself retains the original deterministic O(n+m) bound.
+$$
+\boxed{
+\forall\,u\in V,\quad
+\forall\,v\in N^+(u)\setminus\{p(u)\},
+\qquad \{p(u),v\}\in E.
+}
+$$
+
+When $N^+(u)=\varnothing$, the condition is vacuous. Testing it for all
+vertices is sufficient for the PEO property (by induction on the ordering).
+
+The graph uses hash-indexed adjacency membership, with
+**$O(1)$ expected time per membership query**. This gives
+
+$$
+\boxed{T_{\mathrm{PEO\ verification}}(n,m)=O(n+m)
+\quad\text{(expected)}.}
+$$
+
+Additional position-array space is $O(n)$; the graph's adjacency index
+is already stored in the graph representation.
+
+Invalid-length orderings, repeated vertices, and orderings that fail the
+PEO condition are rejected. If the MCS-generated ordering fails, the
+CLI reports a non-chordal input and exits with status 2.
+
+**Complexity note:** The hash-based $O(1)$ membership cost is expected,
+not a strict adversarial worst-case bound. MCS itself has deterministic
+$O(n+m)$ runtime.
 
 ## 5. Maximal clique extraction
 
