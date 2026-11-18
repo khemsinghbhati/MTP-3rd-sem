@@ -3,18 +3,16 @@
 **Project:** Chordal Graphs: Foundations, Maximal Cliques, Clique Trees, and Dynamic Algorithms  
 **Student:** Khem Singh  
 **Program:** M.Tech, Computer Science and Engineering, IIT Bhubaneswar  
-**Midsemester presentation:** September 18, 2026  
-**Working report snapshot:** November 18, 2026  
-**Next scheduled presentation:** November 30, 2026  
+**Report updated:** November 18, 2026  
+**End-semester presentation:** November 30, 2026  
 **Primary target literature:** Louis Ibarra (2008), *Fully Dynamic Algorithms for Chordal Graphs and Split Graphs*, ACM Transactions on Algorithms, 4(4), 40:1–40:20, DOI 10.1145/1383369.1383371.
 
-> **Document status:** This is a living project report, not a claim that the
-> whole thesis has been completed. Sections 1–8 document the material already
-> studied/presented at midsem and its tested, reorganized implementation.
-> Sections 9–12 track planned work and open verification obligations. Content
-> attributed to the target paper is based on the **midsemester presentation's
-> summary**, unless explicitly stated otherwise; the full paper has not been
-> supplied in this repository.
+> **Document status:** This is the single evolving technical report for the
+> end-semester thesis presentation. It documents completed theory, implemented
+> algorithms, formal arguments, testing, open proof obligations, and planned
+> dynamic-graph modules. The project does **not** yet implement the complete
+> dynamic algorithm. Complexity targets attributed to the research literature
+> must be independently verified against the primary publications.
 
 ---
 
@@ -22,8 +20,7 @@
 
 This thesis project investigates chordal graphs, perfect elimination orderings,
 maximal clique structures, and their use in supporting edge updates while
-preserving chordality. The target work, identified in the midsemester slides as
-Ibarra (2008), studies maintenance of a clique-tree representation of a chordal
+preserving chordality. The target work of Ibarra (2008) studies maintenance of a clique-tree representation of a chordal
 graph and queries for whether inserting or deleting an arbitrary edge keeps the
 graph chordal. The **completed baseline** consists of: (i) a C++17 graph
 representation, (ii) Maximum Cardinality Search (MCS) using weight-indexed
@@ -47,14 +44,13 @@ it has no induced cycle on four or more vertices. Chordal graphs admit strong
 structural characterizations, including the existence of a perfect elimination
 ordering, which makes maximal cliques amenable to efficient computation.
 
-The **target objective described in slide 3** is the development of a fully
-dynamic approach that maintains a clique-tree representation while answering
-queries about whether individual edge insertions or deletions preserve
-chordality. The midsem slides attribute the following performance bounds to
-implementations in the target literature (these are literature goals, not
-results achieved in this project):
+The research objective is a fully dynamic approach that maintains a
+clique-tree representation while answering queries about whether individual
+edge insertions or deletions preserve chordality. The following bounds are
+provisional literature-level targets that require verification against the
+original paper; they are **not** results achieved in this project:
 
-| Literature-level operation / implementation | Complexity stated in midsem slides |
+| Literature-level operation / implementation | Provisional complexity target |
 | --- | --- |
 | First implementation: each operation | O(n) |
 | Second: insertion query | O(log^2 n) |
@@ -65,21 +61,19 @@ results achieved in this project):
 | Specialized data structure update | O(m) |
 
 Here `n` is the number of vertices and `m` the number of edges. The above are
-recorded exactly as the midsem presentation characterizes them; the specific
-preconditions and data structures must be cross-checked against the original
-paper before reproduction or experimental comparison.
+provisional until the exact preconditions and data structures have been
+checked against the original paper before reproduction or comparison.
 
-### 1.1 Work completed at the midsemester checkpoint
+### 1.1 Current implementation baseline
 
-As represented on **midsem slide 20**, the workflow had progressed through:
+The currently implemented foundation comprises:
 
-1. Graph-theoretic foundations, including chordal graphs and PEOs.
+1. Graph-theoretic preliminaries, including chordal graphs and PEOs.
 2. Linear-time Maximum Cardinality Search (MCS) and its correctness argument.
 3. Computing maximal cliques from a PEO and reasoning about subsumption.
 
-The original presentation did **not** claim that clique graphs, clique trees,
-or fully dynamic insertions and deletions were implemented. The repository
-preserves this distinction.
+Clique-graph construction, clique-tree construction, and fully dynamic edge
+operations are tracked as remaining work, not completed results.
 
 ### 1.2 Project boundaries at this snapshot
 
@@ -124,7 +118,7 @@ N_plus(u) = { v in N(u) : position(v) > position(u) }.
 
 Then the PEO condition is: `N_plus(u)` is a clique for all `u`.
 
-**Foundational theorem (midsem slide 4):** An undirected graph is chordal
+**Foundational theorem:** An undirected graph is chordal
 if and only if it has a perfect elimination ordering.
 
 ### 2.4 Why a PEO is useful
@@ -143,7 +137,7 @@ MCS/PEO and maximal-clique extraction.
 
 ### 3.1 Algorithmic idea
 
-As described on **midsem slides 5, 9 and 10**, MCS chooses an unnumbered
+MCS chooses an unnumbered
 vertex with the greatest number of already-numbered neighbors. It writes
 vertices into the PEO array **from right to left**.
 
@@ -208,8 +202,8 @@ MCS(G):
 
 **Theorem:** If `G` is chordal, the ordering produced by MCS is a PEO.
 
-The midsem presentation gives a contradiction proof (slides 6–8), attributed
-there to Vandenberghe and Andersen. Its essential structure is:
+A proof overview, attributed to Vandenberghe and Andersen, has the following
+structure:
 
 1. Assume the ordering is not a PEO. One can then find a chordless path whose
    endpoints occur later in the ordering than its internal vertices.
@@ -223,9 +217,9 @@ there to Vandenberghe and Andersen. Its essential structure is:
 5. Both alternatives contradict the assumptions. Therefore the MCS ordering
    has the PEO property.
 
-This is a **high-level restatement of the midsem proof**, not an additional
-independently checked formal derivation. For a final thesis submission, keep
-all quantifier details and edge cases from the original cited proof.
+This is a **high-level proof sketch**, not an independently verified full
+formal derivation. For the thesis submission, the exact quantifiers, ordering
+conventions, and edge cases must be checked against the cited proof.
 
 ### 3.5 Complexity analysis
 
@@ -244,9 +238,9 @@ graph has been constructed.
 
 ## 4. Verifying a perfect elimination ordering
 
-The **new modularized code** includes an explicit PEO check that the original
-midsem code did not perform before maximal-clique extraction. This prevents
-non-chordal inputs from silently producing invalid "cliques".
+The modular implementation includes an explicit PEO check before
+maximal-clique extraction. This prevents non-chordal inputs from silently
+producing invalid candidate cliques.
 
 Given an ordering, compute each vertex's position. For each `u`, identify the
 earliest later neighbor `p` (if any). Check that each other later neighbor of
@@ -281,8 +275,7 @@ Every **maximal** clique appears as one of these candidates:
 
 Take any maximal clique `K`, and let `u` be its earliest vertex in the PEO.
 All other vertices of `K` are later neighbors of `u`, so `K` is contained in
-`C_u`. But `C_u` is a clique and `K` is maximal; therefore `K = C_u`. This is
-**Lemma 1 on midsem slide 16**.
+`C_u`. But `C_u` is a clique and `K` is maximal; therefore `K = C_u`. This establishes the maximal-clique candidate lemma.
 
 ### 5.2 Parent vertex
 
@@ -297,7 +290,7 @@ Madj(u) \ {p(u)} subseteq Madj(p(u)).
 
 ### 5.3 The parent-subsumption condition
 
-The midsem implementation uses the rule
+The implementation uses the following parent-subsumption rule:
 
 ```
 if |Madj(u)| - 1 == |Madj(p(u))|:
@@ -314,12 +307,10 @@ C_p = Madj(u) proper_subset C_u.
 
 Thus `C_p` is non-maximal. Conversely, if `C_p` is contained in `C_u` for
 this parent-child relationship, the same set identity and size condition
-follow. The **pairwise equivalence** is the result presented on **midsem
-slides 15, 17 and 18**.
+follow. This establishes the **pairwise parent-subsumption equivalence**.
 
-The slides do not separately present a full proof that *every* non-maximal
-candidate will have at least one such witness among the tested parent-child
-relationships. That global-completeness argument should be included or
+The report does not yet present a full proof that *every* non-maximal
+candidate has such a witness among the tested parent-child relationships. That global-completeness argument should be included or
 cited rigorously in the final thesis. The exhaustive oracle tests described
 below are valuable evidence but do not substitute for the missing formal
 argument.
@@ -364,8 +355,8 @@ hash-based PEO validation, and `O(n+m+S)` space including graph storage and
 materialized output. For chordal graphs the total candidate later-neighbor
 storage itself is bounded by `O(n+m)`.
 
-The midsem slides describe the extraction phase as linear `O(n+m)`; writing
-an explicit `S` term in this report keeps the output-construction cost clear.
+The extraction algorithm is designed for linear work in the graph size;
+writing an explicit `S` term in this report makes output construction cost clear.
 
 ## 6. Original seven-vertex example and dry run
 
@@ -378,8 +369,8 @@ E = {(0,1),(1,3),(0,2),(2,3),(2,4),
      (2,5),(4,5),(3,6),(0,3),(1,2)}.
 ```
 
-As recorded on midsem slides 12–13, MCS follows this selection order (with
-its particular bucket ties):
+For the seven-vertex example, MCS follows this selection order (with the
+specified bucket tie-breaking):
 
 ```
 6 -> 3 -> 0 -> 2 -> 1 -> 5 -> 4
@@ -406,16 +397,12 @@ test oracle verifies that no other maximal clique exists in this instance.
 
 ## 7. Software implementation and code organization
 
-### 7.1 Baseline source and preservation
+### 7.1 Modular implementation baseline
 
-`archive/original_midsem_code.cpp` is a byte-for-byte copy of the original
-uploaded `code.txt`. It contains class `ChordalGraph` with the graph storage,
-MCS, maximal-clique extraction, and sample `main` in one source file.
-
-It is included only as a **historical reference** and is not compiled in the
-new build. The modular version retains the same MCS bucket strategy,
-later-neighbor definition, parent condition, and sample output, while adding
-robust input checks and tests.
+The implementation separates graph representation, MCS/PEO, maximal-clique
+extraction, and command-line input into dedicated components. It uses the
+MCS bucket strategy, later-neighbor definition, and parent-subsumption
+condition described earlier, with input validation and automated tests.
 
 ### 7.2 Module responsibilities
 
@@ -480,7 +467,7 @@ November 18, 2026. All checks below passed:
 
 | Test | Scope | Observed result |
 | --- | --- | --- |
-| Midsem regression | 7 vertices, original 10 edges | Same PEO and three maximal cliques |
+| Example graph regression | 7 vertices, 10 edges | Expected PEO and three maximal cliques |
 | Exhaustive graph coverage | Every simple graph with `n = 1..6` | PASS |
 | Chordal instances within exhaustive coverage | 19,048 chordal graphs | PASS |
 | Remaining non-chordal instances | Compared to chordality oracle | Correctly rejected |
@@ -512,13 +499,12 @@ Maximal cliques (3):
 { 3 6 }
 ```
 
-The original C++ source prints the same clique sets; the modularized CLI
-additionally prints the PEO and the clique count. The order of vertices in
-an individual printed clique does not change the mathematical result.
+The CLI prints the PEO and the maximal-clique count. Vertex output order
+within a clique does not change the mathematical result.
 
 ## 9. Thesis roadmap and future modules
 
-The current roadmap follows **midsem slide 20**:
+The implementation roadmap is:
 
 ```text
 [Chordal foundations]
@@ -541,8 +527,8 @@ The current roadmap follows **midsem slide 20**:
 
 ### 9.1 Next: clique graph `W_G`
 
-The midsem slide introduces the clique graph as a graph whose vertices
-represent maximal cliques of `G`. The **exact definition of its edges** and
+The planned clique graph has vertices representing maximal cliques of
+`G`. The **exact definition of its edges** and
 any weights, labels, or supporting metadata for the intended algorithm must
 be established from the target source before implementation. This report
 does **not** invent that definition.
@@ -593,7 +579,7 @@ separate from the report.
 | Confirm Ibarra's exact clique-graph edge definition | Necessary before implementing `W_G` | OPEN |
 | Confirm required clique-tree representation | Determines data structure and invariants | OPEN |
 | Supply/identify a full proof of global parent-rule filtering | Makes extraction's completeness argument rigorous | OPEN |
-| Validate paper's stated complexity bounds from primary text | Avoids repeating slide-summary claims without checking assumptions | OPEN |
+| Validate paper's stated complexity bounds from primary text | Avoids unverified runtime assumptions | OPEN |
 | Implement dynamic insert/delete queries | Central thesis target | OPEN |
 | Implement incremental updates and compare against rebuilding | Central thesis target | OPEN |
 | Benchmark runtime/scaling once dynamics are implemented | Experimental evaluation | OPEN |
@@ -602,22 +588,20 @@ separate from the report.
 
 | Date | Milestone | Evidence |
 | --- | --- | --- |
-| 2026-09-18 | Midsemester: theory, MCS, maximal clique extraction presented | `references/Midsem_Presentation_2026-09-18.pdf` |
-| Midsemester baseline | Initial integrated C++ implementation | `archive/original_midsem_code.cpp` |
 | 2026-11-18 | Refactored code into separate C++17 graph, MCS, and clique modules | `src/`, `include/` |
 | 2026-11-18 | Added PEO verification, CLI input handling, tests, CMake, CI configuration | Source and test files |
 | 2026-11-18 | Exhaustive verification for n ≤ 6 and 600 random chordal cases | `tests/test_algorithms.cpp` |
 | Pending | Clique graph, clique tree, dynamic algorithm | Not claimed as completed |
 
-**Reporting rule:** Do not retroactively describe work added after the
-midsemester presentation as something already done by September 18. Keep
-milestone dates and achievements accurate.
+**Reporting rule:** Keep milestone dates and achievements accurate. Clearly
+separate implemented results, test evidence, open obligations, and proposed
+algorithms for the end-semester evaluation.
 
-## 12. References and source provenance
+## 12. Selected bibliography
 
-The following bibliography reflects **references listed on the supplied
-midsemester slides (slide 21)**; this report does not claim independent
-consultation of the full texts:
+These works inform the project's research direction; individual theoretical
+or complexity claims must be checked against the relevant primary text before
+they are presented as independently verified results:
 
 1. Ibarra, L. (2008). *Fully Dynamic Algorithms for Chordal Graphs and Split
    Graphs*. ACM Transactions on Algorithms, 4(4), 40:1–40:20.
@@ -638,17 +622,12 @@ consultation of the full texts:
    graphs and clique trees*. In *Graph Theory and Sparse Matrix
    Computation*, pp. 1–29. Springer.
 
-### Primary evidence preserved in this repository
+### Implementation evidence
 
-- **Midsem slide deck:** `references/Midsem_Presentation_2026-09-18.pdf`
-  (21 slides; target-paper objectives on slide 3, mathematical preliminaries
-  on slides 4–8, code/complexity on slides 9–13, maximal-clique work on
-  slides 14–19, roadmap on slide 20, bibliography on slide 21).
-- **Original code:** `archive/original_midsem_code.cpp` (unaltered copy of
-  supplied `code.txt`; original implementation does not independently reject
-  non-chordal input).
-- **Current implementation:** `include/mtp/`, `src/`, and
-  `tests/test_algorithms.cpp`.
+- **Modular C++ implementation:** `include/mtp/` and `src/`.
+- **Correctness and regression tests:** `tests/test_algorithms.cpp`.
+- **Reproducible build and CI:** `CMakeLists.txt` and
+  `.github/workflows/ci.yml`.
 
 ---
 
