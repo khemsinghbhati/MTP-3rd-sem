@@ -90,9 +90,9 @@ operations are tracked as remaining work, not completed results.
 
 Let the input be a simple, undirected graph:
 
-$$
+```math
 G=(V,E), \qquad n=|V|, \qquad m=|E|.
-$$
+```
 
 Here, $V$ is the set of vertices, $E$ is the edge set, $n$ is the number
 of vertices, and $m$ is the number of edges.
@@ -110,15 +110,15 @@ file in the data folder exercises this distinction.
 A subset $K\subseteq V$ is a **clique** when its distinct vertices are
 pairwise adjacent:
 
-$$
+```math
 \forall\,x,y\in K,\quad x\ne y \implies \{x,y\}\in E.
-$$
+```
 
 A **maximal clique** cannot be extended to a strictly larger clique:
 
-$$
+```math
 \nexists\,K' \text{ that is a clique and satisfies } K\subsetneq K'.
-$$
+```
 
 A **maximum clique** is a clique with the largest cardinality among all
 cliques in the graph. Being *maximal* does not necessarily mean being *maximum*.
@@ -127,38 +127,38 @@ cliques in the graph. Being *maximal* does not necessarily mean being *maximum*.
 
 Let a vertex ordering be
 
-$$
+```math
 \alpha=(v_0,v_1,\ldots,v_{n-1}),
-$$
+```
 
 where $\mathrm{pos}(v)$ is the index of vertex $v$ in the ordering.
 The **later neighbors** of a vertex $u$ are
 
-$$
+```math
 N^+(u)=\{v\in N(u)\mid
 \mathrm{pos}(v)>\mathrm{pos}(u)\}.
-$$
+```
 
 An ordering is a **perfect elimination ordering** when *every* later-neighbor
 set is a clique:
 
-$$
+```math
 \boxed{\forall\,u\in V,\qquad N^+(u)\text{ is a clique}.}
-$$
+```
 
 **Foundational theorem:**
 
-$$
-\boxed{G\text{ is chordal}\iff G\text{ has a PEO}.}
-$$
+```math
+G\text{ chordal}\iff G\text{ has a PEO}
+```
 
 ### 2.4 Why a PEO is useful
 
 For every vertex $u$, form a **candidate clique**
 
-$$
+```math
 \boxed{C_u=\{u\}\cup N^+(u).}
-$$
+```
 
 The PEO ensures that all vertices in $N^+(u)$ are pairwise adjacent;
 by definition, each is also adjacent to $u$. Therefore $C_u$ is a clique.
@@ -173,9 +173,9 @@ and then eliminate those that are contained in larger candidates.
 For every unnumbered vertex $v$, Maximum Cardinality Search maintains
 its **weight**: the number of neighbors already numbered by the algorithm.
 
-$$
+```math
 w(v)=|\{u\in N(v):u\text{ is already numbered}\}|.
-$$
+```
 
 Initially, $w(v)=0$ for all vertices. MCS builds the ordering **from right
 to left**:
@@ -183,11 +183,13 @@ to left**:
 1. Select an unnumbered vertex having the largest current weight.
 2. Put it in the next free position, starting at $n-1$ and moving to $0$.
 3. Mark it as numbered.
-4. For each unnumbered neighbor $u$ of that vertex, update
+4. For each unnumbered neighbor $u$ of that vertex, increase its weight by one.
 
-   $$
-   \boxed{w(u)\leftarrow w(u)+1.}
-   $$
+The weight update is:
+
+```math
+w(u)\gets w(u)+1
+```
 
 MCS is defined for any undirected graph; however, its output is guaranteed
 to be a PEO **only when the input graph is chordal**.
@@ -242,12 +244,9 @@ MCS(G):
 
 **Theorem:** For a chordal graph $G$, MCS produces a PEO $\alpha$.
 
-$$
-\boxed{
-G\text{ is chordal}\implies
-\alpha=\mathrm{MCS}(G)\text{ is a PEO}.
-}
-$$
+```math
+G\text{ chordal}\ \Longrightarrow\ \mathrm{MCS}(G)\text{ produces a PEO}
+```
 
 A contradiction-proof overview, attributed to Vandenberghe and Andersen,
 proceeds as follows:
@@ -255,14 +254,9 @@ proceeds as follows:
 1. Assume the produced ordering is not a PEO. Consider a chordless path
    $P=(v_0,v_1,\ldots,v_k)$, $k\ge 2$, such that its interior vertices
    appear earlier in the ordering than its endpoints.
-2. Choose such a path to maximize the smaller endpoint position, and
-   label the endpoints such that
-
-   $$
-   \mathrm{pos}(v_0)>
-   \mathrm{pos}(v_k)>
-   \mathrm{pos}(v_1).
-   $$
+2. Choose such a path to maximize the smaller endpoint position.
+   Label the endpoints so that
+   $\mathrm{pos}(v_0)>\mathrm{pos}(v_k)>\mathrm{pos}(v_1)$.
 
 3. When MCS selected $v_k$, it had weight at least that of $v_1$.
    But the already-numbered $v_0$ contributed to the weight of $v_1$
@@ -293,9 +287,9 @@ Every increase of the max-weight tracker is caused by an edge scan,
 and total decreases cannot exceed accumulated increases. Thus the
 overall runtime of the MCS ordering computation is
 
-$$
+```math
 \boxed{T_{\mathrm{MCS}}(n,m)=O(n+m).}
-$$
+```
 
 Space, including the stored graph, is $O(n+m)$.
 
@@ -308,22 +302,22 @@ For a vertex $u$ with nonempty $N^+(u)$, let $p(u)$ be its
 **earliest later neighbor**, meaning the vertex with smallest later
 position:
 
-$$
+```math
 p(u)=
 \underset{v\in N^+(u)}{\mathrm{arg\,min}}
 \ \mathrm{pos}(v).
-$$
+```
 
 For every other later neighbor $v$, the verifier requires an edge from
 $p(u)$ to $v$:
 
-$$
+```math
 \boxed{
 \forall\,u\in V,\quad
 \forall\,v\in N^+(u)\setminus\{p(u)\},
 \qquad \{p(u),v\}\in E.
 }
-$$
+```
 
 When $N^+(u)=\varnothing$, the condition is vacuous. Testing it for all
 vertices is sufficient for the PEO property (by induction on the ordering).
@@ -331,10 +325,10 @@ vertices is sufficient for the PEO property (by induction on the ordering).
 The graph uses hash-indexed adjacency membership, with
 **$O(1)$ expected time per membership query**. This gives
 
-$$
+```math
 \boxed{T_{\mathrm{PEO\ verification}}(n,m)=O(n+m)
 \quad\text{(expected)}.}
-$$
+```
 
 Additional position-array space is $O(n)$; the graph's adjacency index
 is already stored in the graph representation.
@@ -353,15 +347,15 @@ $O(n+m)$ runtime.
 
 Let $\alpha$ be a PEO and use the notation
 
-$$
+```math
 \mathrm{Madj}(u)=N^+(u).
-$$
+```
 
 The **candidate clique** of vertex $u$ is
 
-$$
+```math
 \boxed{C_u=\{u\}\cup\mathrm{Madj}(u).}
-$$
+```
 
 The later-neighbor set is a clique under a PEO, and $u$ is adjacent to
 every vertex in that set. Hence every $C_u$ is a clique.
@@ -372,28 +366,28 @@ every vertex in that set. Hence every $C_u$ is a clique.
 earliest vertex of $K$ in the PEO. Every other vertex of $K$ is later
 than $u$ and adjacent to it. Thus
 
-$$
+```math
 K\setminus\{u\}\subseteq\mathrm{Madj}(u)
 \quad\Longrightarrow\quad
 K\subseteq C_u.
-$$
+```
 
 Since $C_u$ is a clique and $K$ is maximal, this inclusion cannot be
 strict. Therefore
 
-$$
+```math
 \boxed{K=C_u.}
-$$
+```
 
 ### 5.2 Parent vertex and the key inclusion
 
 When $\mathrm{Madj}(u)\ne\varnothing$, define the **parent**
 $p(u)$ as the *earliest* later neighbor of $u$:
 
-$$
+```math
 p(u)=\underset{v\in\mathrm{Madj}(u)}
 {\mathrm{arg\,min}}\ \mathrm{pos}(v).
-$$
+```
 
 When the later-neighbor set is empty, the code uses **-1 as a sentinel**
 rather than a vertex ID.
@@ -403,48 +397,47 @@ $\mathrm{Madj}(u)$ is a clique, all other later neighbors of $u$
 are adjacent to $p$. As $p$ is the earliest among them, the remaining
 vertices also occur later than $p$. This proves the important inclusion (1):
 
-$$
+```math
 \boxed{
 \mathrm{Madj}(u)\setminus\{p\}
 \subseteq\mathrm{Madj}(p).
 }
-
-$$
+```
 
 ### 5.3 Parent–child subsumption condition
 
 The implemented maximality check compares the sizes of the two sets (2):
 
-$$
+```math
 \boxed{
 |\mathrm{Madj}(u)|-1=
 |\mathrm{Madj}(p)|.
 }
-
-$$
+```
 
 **Why does this test work for the given parent–child pair?**
 
 From inclusion (1), the left-hand set is *already contained* in the
 right-hand set. When their sizes are equal, the two sets are identical:
 
-$$
+```math
 \mathrm{Madj}(u)\setminus\{p\}
 =\mathrm{Madj}(p).
-$$
+```
 
 Consequently, we obtain the strict candidate containment in (3):
 
-$$
-\begin{aligned}
-C_p
-&=\{p\}\cup\mathrm{Madj}(p)\\
-&=\mathrm{Madj}(u)\\
-&\subsetneq\{u\}\cup\mathrm{Madj}(u)\\
-&=C_u.
-\end{aligned}
+The candidate for $p$ equals the later-neighbor set of $u$:
 
-$$
+```math
+C_p=\{p\}\cup\mathrm{Madj}(p)=\mathrm{Madj}(u)
+```
+
+Adding $u$ produces a strictly larger clique:
+
+```math
+C_p\subsetneq \{u\}\cup\mathrm{Madj}(u)=C_u
+```
 
 Thus $C_p$ is **not maximal** when the size equality holds for some
 child $u$.
@@ -455,13 +448,13 @@ be equal, which gives the size equality again.
 
 **Pairwise equivalence (for $p=p(u)$):**
 
-$$
+```math
 \boxed{
 C_p\subsetneq C_u
 \iff
 |\mathrm{Madj}(u)|-1=|\mathrm{Madj}(p)|.
 }
-$$
+```
 
 > **Open proof obligation:** This parent–child *pairwise* equivalence does
 > not on its own establish that *every* non-maximal candidate is detected
@@ -505,19 +498,19 @@ $O(n+m)$ work. The parent-subsumption checks take $O(n)$.
 Let $\mathcal{K}_{\max}$ be the set of reported maximal cliques.
 The number of **vertex occurrences** in the materialized output is
 
-$$
+```math
 \boxed{S=\sum_{K\in\mathcal{K}_{\max}}|K|.}
-$$
+```
 
 Constructing the output requires $O(S)$ time. Including hash-based
 PEO verification, the implementation's expected total time is
 
-$$
+```math
 \boxed{
 T_{\mathrm{extract}}(n,m,S)=O(n+m+S)
 \quad\text{(expected)}.
 }
-$$
+```
 
 Space including graph and materialized output is $O(n+m+S)$.
 The later-neighbor lists themselves occupy $O(n+m)$ space.
@@ -528,44 +521,36 @@ Explicitly including $S$ clarifies the cost of output construction.
 
 The graph in the sample data file contains seven vertices and ten edges.
 
-$$
+```math
 V=\{0,1,2,3,4,5,6\}
-$$
+```
 
-$$
-\begin{aligned}
-E=\{&
-\{0,1\},\{1,3\},\{0,2\},\{2,3\},\{2,4\},\\
-&\{2,5\},\{4,5\},\{3,6\},\{0,3\},\{1,2\}
-\}.
-\end{aligned}
-$$
+The **10 undirected edges** (written as endpoint pairs) are:
+
+- $(0,1)$, $(1,3)$, $(0,2)$, $(2,3)$, $(2,4)$
+- $(2,5)$, $(4,5)$, $(3,6)$, $(0,3)$, $(1,2)$
+
+The complete input is also available in `data/example_7_vertices.txt`.
 
 MCS selects vertices in this order with the chosen bucket tie-breaking:
 
-$$
+```math
 6\ \longrightarrow\ 3\ \longrightarrow\ 0\ \longrightarrow\
 2\ \longrightarrow\ 1\ \longrightarrow\ 5\ \longrightarrow\ 4.
-$$
+```
 
 Because MCS fills the ordering from **right to left**, the resulting
 perfect elimination ordering is the **reverse** of the selection sequence:
 
-$$
+```math
 \boxed{\alpha=(4,5,1,2,0,3,6).}
-$$
+```
 
 The extracted maximal cliques are
 
-$$
-\boxed{
-\begin{aligned}
-K_1&=\{0,1,2,3\},\\
-K_2&=\{2,4,5\},\\
-K_3&=\{3,6\}.
-\end{aligned}
-}
-$$
+- **Clique 1:** $K_1=\{0,1,2,3\}$
+- **Clique 2:** $K_2=\{2,4,5\}$
+- **Clique 3:** $K_3=\{3,6\}$
 
 Each is a clique, none is a proper subset of another, and the
 independent oracle confirms that there are no further maximal cliques
@@ -655,20 +640,24 @@ For a simple undirected graph on $n$ labeled vertices, each of the
 $\binom{n}{2}$ possible edges can be present or absent. Hence, there
 are
 
-$
+```math
 2^{\binom{n}{2}}
-$
+```
 
 such graphs. Exhaustively testing all graph sizes $n=1,2,\ldots,6$
 therefore requires
 
-$
-\begin{aligned}
+```math
 \sum_{n=1}^{6}2^{\binom{n}{2}}
-&=2^0+2^1+2^3+2^6+2^{10}+2^{15}\\
-&=\boxed{33{,}867}
-\end{aligned}
-$
+```
+
+Evaluating this expression gives:
+
+```math
+2^0+2^1+2^3+2^6+2^{10}+2^{15}
+```
+
+Hence, the total number of graph inputs is **33,867**.
 
 graph inputs.
 
