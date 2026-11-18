@@ -124,10 +124,10 @@ void sample_tests() {
     }
     const auto order = mtp::maximum_cardinality_search(graph);
     const std::vector<int> expected_order{4, 5, 1, 2, 0, 3, 6};
-    if (order != expected_order) throw std::runtime_error("midsem PEO changed");
+    if (order != expected_order) throw std::runtime_error("sample PEO regression failed");
     const Cliques expected{{0, 1, 2, 3}, {2, 4, 5}, {3, 6}};
     if (canonical(mtp::extract_maximal_cliques(graph, order)) != canonical(expected)) {
-        throw std::runtime_error("midsem sample cliques changed");
+        throw std::runtime_error("sample maximal-clique regression failed");
     }
 
     graph.add_edge(0, 1);  // duplicate ignored
