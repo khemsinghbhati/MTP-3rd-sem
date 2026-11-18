@@ -12,10 +12,12 @@ jobs:
       - name: Guard GitHub math compatibility
         shell: bash
         run: |
-          if grep -R -n -F '\operatorname' docs/ README.md; then
-            echo 'Unsupported GitHub math macro detected. Prefer \\mathrm for named functions.'
-            exit 1
-          fi
+          for forbidden in '\operatorname' '\bigl' '\bigr' '\middle' '\left\{' '\right\}' '\left|' '\right|'; do
+            if grep -R -n -F "$forbidden" docs/ README.md; then
+              echo "Unsupported or fragile GitHub math notation detected: $forbidden"
+              exit 1
+            fi
+          done
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
       - name: Build
