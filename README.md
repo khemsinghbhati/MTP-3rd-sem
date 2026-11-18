@@ -1,6 +1,6 @@
-# MTP — Chordal Graphs and Dynamic Clique Trees
+# MTP End-Semester — Chordal Graphs and Dynamic Clique Trees
 
-**M.Tech Thesis Project | IIT Bhubaneswar | November 2026**
+**M.Tech Thesis Project | IIT Bhubaneswar | End-semester presentation: November 30, 2026**
 
 Private working repository for the chordal-graph thesis based on Louis Ibarra's paper *Fully Dynamic Algorithms for Chordal Graphs and Split Graphs* (2008).
 
@@ -9,10 +9,8 @@ Private working repository for the chordal-graph thesis based on Louis Ibarra's 
 - `include/mtp/`: public interfaces for the modular C++ algorithms.
 - `src/`: graph representation, MCS and PEO verification, maximal-clique extraction, CLI.
 - `tests/`: exhaustive and randomized correctness tests.
-- `data/`: original seven-vertex example and non-chordal test.
+- `data/`: seven-vertex example and non-chordal test.
 - `docs/MTP_REPORT.md`: **one authoritative evolving detailed report**.
-- `archive/`: original midsem C++ code preserved separately.
-- `references/`: reference notes and original slide archive details.
 - `.github/workflows/`: GitHub Actions build and tests.
 
 ## Build and run (Ubuntu)
@@ -61,7 +59,7 @@ The test suite covers **all simple graphs on 1–6 vertices**, plus **600 determ
 
 ## Report policy
 
-`docs/MTP_REPORT.md` is the single evolving MTP report. For each new module, update the relevant sections with theory, proof or rationale, time complexity, tests, results, and limitations. Keep the original midsem code intact under `archive/`.
+`docs/MTP_REPORT.md` is the single evolving end-semester thesis report. For each new module, update the relevant sections with theory, proof or rationale, time complexity, tests, results, and limitations. Keep the report aligned with the tested implementation.
 
 **This repository does not yet implement the dynamic algorithms of the target paper.**
 
