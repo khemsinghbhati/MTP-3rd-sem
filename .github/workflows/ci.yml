@@ -9,6 +9,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Guard GitHub math compatibility
+        shell: bash
+        run: |
+          if grep -R -n -F '\operatorname' docs/ README.md; then
+            echo 'Unsupported GitHub math macro detected. Prefer \\mathrm for named functions.'
+            exit 1
+          fi
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
       - name: Build
