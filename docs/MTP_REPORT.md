@@ -997,6 +997,74 @@ single report: *definition → theorem/argument → algorithm → implementation
 small worked example → tests → complexity → limitations*. Keep tests and code
 separate from the report.
 
+### 9.5 Mandatory source-to-code traceability policy
+
+**Project rule (2026-11-18): No original or invented algorithmic methods.**
+The objective is to implement Ibarra (2008) using the methods and
+asymptotic bounds actually supported by published research.
+
+An algorithm may be accepted only if each nontrivial technique is
+supported either by an exact location in Ibarra (2008) or by a
+**verified published primary reference**. A valid source must provide
+enough detail to audit the implementation (pseudocode/algorithm,
+lemma/proof, or an unambiguous stated method), together with its
+preconditions and complexity. Do not infer source fidelity solely from
+successful tests or matching a time bound. Mathematical explanations
+of published algorithms are welcome, but they must not be passed off
+as newly invented implementation methods.
+
+**Verified sources for initial clique-tree construction:**
+
+1. **Blair and Peyton (1993), Section 4.2, Figure 4.2**, in
+   *An Introduction to Chordal Graphs and Clique Trees*
+   (Springer chapter; also an accessible Oak Ridge report).
+   Their expanded **Maximum Cardinality Search** detects maximal cliques
+   and produces clique-tree edges as the ordering is constructed.
+   Section 4.2 proves its connection to Prim's maximum-weight spanning
+   tree algorithm. Original report:
+   https://people.math.binghamton.edu/zaslav/Oldcourses/580.S13/blair-peyton.chordal-graphs-clique-trees.ornl1992.pdf
+
+2. **Habib, McConnell, Paul and Viennot (2000), Section 3.1, Algorithm 4**,
+   *Lex-BFS and Partition Refinement, with Applications to Transitive
+   Orientation, Interval Graph Recognition and Consecutive Ones Testing*,
+   *Theoretical Computer Science* 234, 59–84.
+   A PEO/right-neighbor/parent-based clique-tree algorithm is explicitly
+   presented with an **O(n+m)** running-time analysis and induced-subtree
+   correctness proof. DOI: 10.1016/S0304-3975(97)00241-7.
+   Source: https://doi.org/10.1016/S0304-3975(97)00241-7
+
+3. **Independent confirmation:** Chandran, Ibarra, Ruskey and Sawada
+   (2003), *Generating and Characterizing the Perfect Elimination
+   Orderings of a Chordal Graph*, *Theoretical Computer Science* 307,
+   303–317, Section 4.1, specifically identifies Blair and Peyton's
+   **O(n+m)** clique-tree construction.
+   DOI: 10.1016/S0304-3975(03)00221-4.
+
+**Current method audit — not complete:** Our existing
+`build_clique_tree_linear()` constructs an elimination forest and
+contracts selected parent relationships. The implementation has been
+validated computationally, and its own operations have an
+O(n+m) analysis. However, its **exact contraction algorithm has not yet
+been matched step by step to the pseudocode of Blair–Peyton Figure 4.2
+or Habib et al. Algorithm 4**. It must therefore remain a **provisional
+research implementation**, not a source-approved reproduction.
+
+**Preferred correction:** Replace or formally map that implementation
+to Blair–Peyton's explicitly published expanded-MCS construction, given
+that our production graph ordering already uses MCS. Preserve existing
+tests as regression checks, not substitutes for algorithm provenance.
+Do not claim that merging the two papers' techniques constitutes a
+published algorithm unless a publication expressly supports that
+combination.
+
+**Acceptance record required for every module:**
+paper and bibliographic identity; exact section/algorithm/lemma;
+input assumptions (including connected vs. disconnected graphs);
+source pseudocode-to-function correspondence; proof obligations;
+worst-case time and space bounds; tests and benchmark results; and
+explicitly identified implementation departures. Unapproved modules
+cannot be marked paper-faithful.
+
 ## 10. Open questions and proof obligations
 
 | Item | Why it matters | Status |
@@ -1004,6 +1072,7 @@ separate from the report.
 | Confirm Ibarra's exact clique-graph edge definition | Verified against Ibarra Section 2 | COMPLETE |
 | Confirm required clique-tree representation | Verified static clique-tree properties in Section 2 | COMPLETE |
 | Validate complete parent-rule filtering proof | A proof sketch is included in Section 9.2.3; check against cited primary literature | IN REVIEW |
+| Map direct clique-tree constructor to published algorithm | Blair–Peyton Fig. 4.2 / Habib et al. Algorithm 4 | OPEN — REQUIRED |
 | Validate paper's stated complexity bounds from primary text | Section 1.3 checked; dynamic implementations remain pending | PARTIAL |
 | Implement dynamic insert/delete queries | Central thesis target | OPEN |
 | Implement incremental updates and compare against rebuilding | Central thesis target | OPEN |
@@ -1051,6 +1120,16 @@ they are presented as independently verified results:
 6. Blair, J. R. S., and Peyton, B. (1993). *An introduction to chordal
    graphs and clique trees*. In *Graph Theory and Sparse Matrix
    Computation*, pp. 1–29. Springer.
+
+7. Habib, M., McConnell, R. M., Paul, C., and Viennot, L. (2000).
+   *Lex-BFS and Partition Refinement, with Applications to Transitive
+   Orientation, Interval Graph Recognition and Consecutive Ones Testing*.
+   Theoretical Computer Science, 234(1–2), 59–84.
+   DOI: 10.1016/S0304-3975(97)00241-7.
+8. Chandran, L. S., Ibarra, L., Ruskey, F., and Sawada, J. (2003).
+   *Generating and Characterizing the Perfect Elimination Orderings of a
+   Chordal Graph*. Theoretical Computer Science, 307, 303–317.
+   DOI: 10.1016/S0304-3975(03)00221-4.
 
 ### Implementation evidence
 
