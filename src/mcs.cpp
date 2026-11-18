@@ -17,7 +17,7 @@ std::vector<int> maximum_cardinality_search(const Graph& graph) {
     std::vector<std::list<int>> buckets(static_cast<std::size_t>(n));
     std::vector<std::list<int>::iterator> locations(static_cast<std::size_t>(n));
 
-    // The original midsem implementation uses push_front, retaining its
+    // Use push_front to preserve deterministic bucket tie-breaking.
     // deterministic tie-breaking behavior for the supplied sample graph.
     for (int v = 0; v < n; ++v) {
         buckets[0].push_front(v);
