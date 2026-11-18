@@ -63,15 +63,15 @@ The technical report uses GitHub's built-in LaTeX mathematics renderer.
 Definitions, theorems, and derivations use centered display equations,
 while shorter mathematical symbols appear inline. For example,
 
-$
+```math
 G=(V,E),\qquad T_{\mathrm{MCS}}(n,m)=O(n+m).
-$
+```
 
 When extending the report, use inline dollar delimiters for brief
 mathematical expressions and a pair of double-dollar lines for displayed
 equations. Keep actual C++ variable names, commands, and pseudocode
 in code formatting rather than math notation. GitHub rejects some operator-name
-macros; use `\\mathrm{pos}` and `\\mathrm{Madj}` for names in equations.
+macros; use `\mathrm{pos}` and `\mathrm{Madj}` for names in equations.
 
 ## Report policy
 
