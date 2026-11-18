@@ -13,7 +13,7 @@ class Graph;
 
 // Checks whether 'ordering' is a PEO of the given simple graph.
 // Returns false for invalid orderings or a non-PEO.
-// Expected time: O(V+E), using average O(1) adjacency membership queries.
+// Worst-case O(V+E) time using grouped parent-neighbor marking.
 [[nodiscard]] bool is_perfect_elimination_ordering(
     const Graph& graph, const std::vector<int>& ordering);
 
