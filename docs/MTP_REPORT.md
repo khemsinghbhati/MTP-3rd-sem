@@ -30,9 +30,11 @@ maximal cliques of chordal graphs using later neighbors and a parent-based
 subsumption rule. The refactored implementation has been checked against
 independent brute-force oracles on all simple graphs with one through six
 vertices and 600 additional random chordal instances with seven through twelve
-vertices. The weighted clique intersection graph and a maximum-weight
-spanning-tree-based clique tree are now implemented and tested, including
-disconnected graphs. **Fully dynamic edge updates remain unfinished.**
+vertices. A **direct, deterministic linear-time clique-tree constructor**
+is now used by the production CLI. The explicit weighted clique intersection
+graph and maximum-spanning-tree construction remain as a separate correctness
+baseline, **not** as production preprocessing. Fully dynamic edge updates
+remain unfinished.
 
 **Keywords:** chordal graph; perfect elimination ordering; maximum cardinality
 search; maximal clique; clique tree; dynamic graph algorithm.
@@ -74,19 +76,20 @@ The currently implemented foundation comprises:
 1. Graph-theoretic preliminaries, including chordal graphs and PEOs.
 2. Linear-time Maximum Cardinality Search (MCS) and its correctness argument.
 3. Computing maximal cliques from a PEO and reasoning about subsumption.
-4. Building the weighted clique intersection graph with exactly the
-   positive-weight clique-intersection edges specified by Ibarra.
-5. Constructing and verifying a clique tree using maximum-weight Kruskal,
-   with zero-weight dummy edges for disconnected graphs.
+4. Constructing a clique tree directly from the PEO in worst-case
+   $O(n+m)$ time, without enumerating the weighted clique graph.
+5. Keeping an explicit clique graph and maximum-spanning-tree method
+   **only as a test baseline**, not as the production algorithm.
 
 **Remaining work:** chordality-preserving edge queries, dynamic updates,
 and performance experiments.
 
 ### 1.2 Project boundaries at this snapshot
 
-- **Implemented:** simple undirected graph API; MCS; PEO verification;
-  maximal-clique extraction; weighted clique graph; static clique tree;
-  CLI; automated tests.
+- **Implemented:** simple undirected graph API; MCS; deterministic
+  $O(n+m)$ PEO verification; maximal-clique extraction; direct
+  $O(n+m)$ static clique-tree construction; CLI; automated tests.
+  The explicit clique graph remains as a reference test implementation.
 - **Not yet implemented:** insertion/deletion queries, incremental
   clique-tree updates, and running-time experiments for dynamic operations.
 - **No unsupported claim:** the code is a reorganized and validated baseline,
@@ -330,24 +333,33 @@ $p(u)$ to $v$:
 When $N^+(u)=\varnothing$, the condition is vacuous. Testing it for all
 vertices is sufficient for the PEO property (by induction on the ordering).
 
-The graph uses hash-indexed adjacency membership, with
-**$O(1)$ expected time per membership query**. This gives
+The current implementation performs this verification **deterministically**:
+first compute the earliest later neighbor $p(u)$ for each vertex $u$.
+Group vertices by the value of $p(u)$. For each possible parent $p$,
+mark all neighbors of $p$ **once**, then scan the adjacency lists of
+every child $u$ assigned to $p$ and verify that every later neighbor of
+$u$ other than $p$ has been marked. The marker is the parent vertex ID,
+so there is no need to clear the entire marker array between groups.
+
+Each adjacency list is scanned only a constant number of times across
+all groups; no hash-table membership query is required. This gives:
 
 ```math
-\boxed{T_{\mathrm{PEO\ verification}}(n,m)=O(n+m)
-\quad\text{(expected)}.}
+T_{\mathrm{PEO\ verification}}(n,m)=O(n+m)
 ```
 
-Additional position-array space is $O(n)$; the graph's adjacency index
-is already stored in the graph representation.
+This is a **worst-case** bound for the PEO verification computation,
+and its additional memory is $O(n+m)$ for grouped child lists,
+positions, parents, and the marking array.
 
 Invalid-length orderings, repeated vertices, and orderings that fail the
 PEO condition are rejected. If the MCS-generated ordering fails, the
 CLI reports a non-chordal input and exits with status 2.
 
-**Complexity note:** The hash-based $O(1)$ membership cost is expected,
-not a strict adversarial worst-case bound. MCS itself has deterministic
-$O(n+m)$ runtime.
+**Complexity note:** PEO verification and MCS both now run in
+deterministic worst-case $O(n+m)$ time on an input graph already
+represented by adjacency lists. The input parser's duplicate-edge
+hash table is separate from this algorithmic bound.
 
 ## 5. Maximal clique extraction
 
@@ -510,13 +522,12 @@ The number of **vertex occurrences** in the materialized output is
 \boxed{S=\sum_{K\in\mathcal{K}_{\max}}|K|.}
 ```
 
-Constructing the output requires $O(S)$ time. Including hash-based
-PEO verification, the implementation's expected total time is
+Constructing the output requires $O(S)$ time. With the deterministic
+linear PEO check, the total running time of extraction is
 
 ```math
 \boxed{
-T_{\mathrm{extract}}(n,m,S)=O(n+m+S)
-\quad\text{(expected)}.
+T_{\mathrm{extract}}(n,m,S)=O(n+m+S).
 }
 ```
 
@@ -581,7 +592,8 @@ condition described earlier, with input validation and automated tests.
 | Graph | `include/mtp/graph.hpp` | `src/graph.cpp` | Undirected simple graph, validated edges and membership |
 | MCS / PEO | `include/mtp/mcs.hpp` | `src/mcs.cpp` | Order vertices using MCS; verify PEO |
 | Maximal cliques | `include/mtp/maximal_cliques.hpp` | `src/maximal_cliques.cpp` | Compute and filter candidates |
-| CLI | - | `src/main.cpp` | Read graph text files and present results |
+| Direct clique tree | `include/mtp/clique_tree_linear.hpp` | `src/clique_tree_linear.cpp` | $O(n+m)$ clique-tree preprocessing without full $W_G$ |
+| CLI | - | `src/main.cpp` | Read graph files and use the direct constructor |
 | Tests | - | `tests/test_algorithms.cpp` | Independent oracle checks |
 
 The public algorithm functions accept a read-only `Graph` reference. This
@@ -607,8 +619,7 @@ ctest --test-dir build --output-on-failure
 
 The project targets ISO C++17 and requires CMake 3.16 or later. Continuous
 integration configuration is in `.github/workflows/ci.yml` and runs on push
-and pull requests once published to GitHub. The workflow is not evidence of
-a hosted run before the first GitHub push.
+and pull requests once published to GitHub. Re-run CI after each change; the workflow runs unit tests and the Markdown math checker.
 
 ## 8. Verification and results
 
@@ -693,28 +704,35 @@ within a clique does not change the mathematical result.
 
 ## 9. Thesis roadmap and future modules
 
-The implementation roadmap is:
+The implementation roadmap follows the paper's **linear-time
+preprocessing** goal, and distinguishes production work from reference
+implementations:
 
 ```text
-[Chordal foundations]
-        |
-        v
-[MCS + PEO] --------------------------- COMPLETE
-        |
-        v
-[Maximal cliques] -------------------- COMPLETE
-        |
-        v
-[Clique graph W_G] ------------------- COMPLETE
-        |
-        v
-[Clique tree T] ---------------------- COMPLETE
-        |
-        v
-[Dynamic edge queries and updates] -- NOT IMPLEMENTED
+[Chordal foundations + MCS / PEO] ----- COMPLETE
+                 |
+                 v
+[Maximal cliques] --------------------- COMPLETE
+                 |
+                 v
+[Direct clique-tree construction] ----- COMPLETE: O(n+m)
+                 |
+                 v
+[Ibarra Section 3 edge queries] ------- PENDING
+                 |
+                 v
+[Ibarra Section 3 edge updates] ------- PENDING
+                 |
+                 v
+[Section 4 O(n) implementation] ------- PENDING
+                 |
+                 v
+[Sections 5-6 optimizations] ---------- PENDING
+
+Explicit W_G + Kruskal = test baseline ONLY.
 ```
 
-### 9.1 Implemented: weighted clique intersection graph
+### 9.1 Reference-only: explicit weighted clique intersection graph
 
 **Primary source:** Ibarra (2008), Section 2, paper page **40:4**.
 
@@ -741,7 +759,7 @@ w(i,j)=|K_i\cap K_j|.
 **Do not confuse** the original vertices of G with the nodes of W_G.
 Nodes K0, K1, and K2 in the CLI refer to maximal cliques, not graph vertices.
 
-**Algorithm and module:** The function
+**Non-production baseline:** The function
 <code>build_weighted_clique_graph(...)</code> in
 <code>src/clique_graph.cpp</code> receives the maximal cliques from the
 previous extraction stage, sorts each clique's vertex list, and examines
@@ -767,11 +785,13 @@ O((k-1)S)
 
 time in total, because each clique appears in exactly k-1 pairs.
 The algorithm also examines O(k²) candidate pairs. Therefore an
-appropriate upper bound is **O(S log n + kS + k²)**, not the paper's
-more efficient preprocessing bound. The worst-case clique graph can
-have O(k²) edges.
+appropriate upper bound is **O(S log n + kS + k²)**, so this module
+does **not** meet Ibarra's $O(n+m)$ preprocessing requirement. The
+full weighted clique graph can contain $O(k^2)$ edges. This module
+is excluded from the production CLI and isolated in a test-only
+CMake library.
 
-### 9.2 Implemented: a clique tree
+### 9.2 Reference-only: Kruskal-based clique tree
 
 **Primary source:** Ibarra (2008), Section 2, paper pages **40:4–40:6**.
 
@@ -791,7 +811,8 @@ The paper states a key characterization for **connected** graphs:
 > A spanning tree of the weighted clique intersection graph is a
 > clique tree if and only if it has maximum total edge weight.
 
-**Construction:** Implemented in <code>src/clique_tree.cpp</code>.
+**Reference construction:** Implemented in <code>src/clique_tree.cpp</code>.
+It is retained for independent testing and **is not used by the CLI**.
 
 1. Sort the positive-weight edges of W_G by descending weight.
 2. Run Kruskal with disjoint-set union, adding edges that join two
@@ -876,6 +897,86 @@ The new source <code>tests/test_clique_tree.cpp</code> verifies:
 These tests do **not** prove performance for large input sizes,
 and do **not** exercise incremental dynamic edge operations.
 
+### 9.2.3 Production: direct clique tree in worst-case linear time
+
+**Paper alignment.** Ibarra (2008), Section 2 (paper pp. 40:5–40:6)
+cites $O(n+m)$ algorithms for initial maximal-clique and clique-tree
+computation. Section 4 (p. 40:11) uses this preprocessing.
+The paper does *not* give the full preprocessing pseudocode: the
+elimination-forest contraction below is our independently implemented
+linear-time realization of that required output and asymptotic bound,
+not a verbatim extraction from Ibarra.
+
+**Implementation:** `include/mtp/clique_tree_linear.hpp` and
+`src/clique_tree_linear.cpp`. The CLI invokes this constructor
+directly and never constructs the full $W_G$.
+
+The **elimination forest** is built from a valid PEO by connecting
+each vertex $u$ to its earliest later neighbor $p(u)$, if any. Define
+candidate cliques $C_u$ as in Section 5. The code performs:
+
+1. Compute positions, parents, and later-neighbor counts by scanning
+   adjacency lists.
+2. For each child $u$ of $p=p(u)$, if the parent-subsumption cardinality
+   condition holds, record $u$ as one witness that $C_p$ is non-maximal.
+3. Contract exactly one witnessed edge for each non-maximal candidate.
+   The contraction edges form a subforest, so linear-time DFS assigns
+   every original candidate vertex to a unique remaining maximal clique.
+4. For each *uncontracted* elimination-forest edge from $u$ to $p(u)$,
+   connect the corresponding maximal-clique nodes. The separator weight
+   equals the number of later neighbors of $u$.
+5. For disconnected input graphs, link the component clique trees
+   with zero-weight dummy edges, as in the paper.
+
+**Why this works.** For each original vertex $v$, the candidate nodes
+containing $v$ form a connected subtree of the elimination forest:
+if $v$ is a later neighbor of $u$, then $v$ is also contained in the
+candidate of each vertex along the parent chain from $u$ to $v$.
+The contraction of an edge for which one candidate is contained in
+the other preserves this property.
+
+Every maximal clique is a candidate (Section 5.1). To see why the
+witness rule catches *every* non-maximal candidate $C_p$, take a
+maximal clique $C_w$ strictly containing $C_p$. Since $C_p$ already
+contains every later neighbor of $p$, the representative $w$ must
+occur earlier than $p$. The parent path from $w$ to $p$ consists of
+candidates containing every vertex of $C_p$. In particular, if $u$
+is the child of $p$ on this path, $C_p$ is a strict subset of $C_u$,
+which forces the cardinality witness condition. Thus contraction
+removes exactly the non-maximal candidate nodes.
+
+Before contraction, the intersection of candidates at a parent edge
+$(u,p(u))$ is exactly the set of later neighbors of $u$. Because the
+running-intersection property is preserved and each contracted
+component's representative contains its removed candidates,
+the intersection size across a surviving edge is unchanged. This
+gives the correct tree-edge weight without a clique-pair scan.
+
+All adjacency scans, candidate-member copies, witness checks,
+contraction edges, DFS steps, and emitted tree edges have total
+size $O(n+m)$. Hence, given an adjacency-list representation of
+the original chordal graph:
+
+```math
+T_{\mathrm{preprocess}}(n,m)=O(n+m)
+```
+
+The bound is **worst case** for the construction and PEO verification
+code. Building the in-memory graph from externally supplied text is
+a separate input-handling step.
+
+**Evidence:** `tests/test_linear_clique_tree.cpp` verifies the
+maximal-clique set, correct edge weights, tree connectivity,
+running-intersection property, and maximum total intersection weight
+against an independent pairwise Kruskal oracle. It checks all
+**19,048 chordal graphs on 1–6 vertices**, **800 seeded randomized**
+chordal graphs, and larger star and complete graphs. The full pairwise
+algorithm is never used inside the constructor.
+
+**Scope:** This fixes the *static preprocessing* deviation. It does
+not implement Ibarra's four dynamic operations, his characteristic
+vectors, dynamic trees, or the faster deletion-query structure.
+
 ### 9.3 Then: dynamic queries and updates
 
 Study edge insertion and deletion separately. For each operation:
@@ -902,7 +1003,7 @@ separate from the report.
 | --- | --- | --- |
 | Confirm Ibarra's exact clique-graph edge definition | Verified against Ibarra Section 2 | COMPLETE |
 | Confirm required clique-tree representation | Verified static clique-tree properties in Section 2 | COMPLETE |
-| Supply/identify a full proof of global parent-rule filtering | Makes extraction's completeness argument rigorous | OPEN |
+| Validate complete parent-rule filtering proof | A proof sketch is included in Section 9.2.3; check against cited primary literature | IN REVIEW |
 | Validate paper's stated complexity bounds from primary text | Section 1.3 checked; dynamic implementations remain pending | PARTIAL |
 | Implement dynamic insert/delete queries | Central thesis target | OPEN |
 | Implement incremental updates and compare against rebuilding | Central thesis target | OPEN |
@@ -917,6 +1018,9 @@ separate from the report.
 | 2026-11-18 | Exhaustive verification for $n\le6$ and 600 random chordal cases | `tests/test_algorithms.cpp` |
 | 2026-11-18 | Added weighted clique graph and static clique tree | `src/clique_graph.cpp`, `src/clique_tree.cpp` |
 | 2026-11-18 | Verified 19,048 chordal cases, brute-force maximum tree checks, and 600 random cases | `tests/test_clique_tree.cpp` |
+| 2026-11-18 | Replaced production clique-graph enumeration with direct linear clique-tree construction | `src/clique_tree_linear.cpp`, `src/main.cpp` |
+| 2026-11-18 | Replaced expected-time hash PEO validation with worst-case linear grouped marking | `src/mcs.cpp` |
+| 2026-11-18 | Added 19,048 exhaustive, 800 randomized, and large-graph tests of direct clique tree | `tests/test_linear_clique_tree.cpp` |
 | Pending | Dynamic queries and incremental updates | Not claimed as completed |
 
 **Reporting rule:** Keep milestone dates and achievements accurate. Clearly
