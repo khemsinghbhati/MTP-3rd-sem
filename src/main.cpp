@@ -1,6 +1,5 @@
 #include "mtp/graph.hpp"
-#include "mtp/clique_graph.hpp"
-#include "mtp/clique_tree.hpp"
+#include "mtp/clique_tree_linear.hpp"
 #include "mtp/maximal_cliques.hpp"
 #include "mtp/mcs.hpp"
 
@@ -53,7 +52,9 @@ int main(int argc, char* argv[]) {
             return 2;
         }
 
-        const auto cliques = mtp::extract_maximal_cliques(graph, peo);
+        // Paper-aligned O(n+m) preprocessing: do not enumerate W_G.
+        const auto clique_tree = mtp::build_clique_tree_linear(graph, peo);
+        const auto& cliques = clique_tree.cliques;
         std::cout << "Maximal cliques (" << cliques.size() << "):\n";
         for (const auto& clique : cliques) {
             std::cout << "{ ";
@@ -61,16 +62,6 @@ int main(int argc, char* argv[]) {
             std::cout << "}\n";
         }
 
-        const auto weighted_graph = mtp::build_weighted_clique_graph(cliques);
-        const auto clique_tree = mtp::build_clique_tree(weighted_graph);
-        if (!mtp::verify_clique_tree(weighted_graph, clique_tree)) {
-            throw std::runtime_error("clique tree failed invariant verification");
-        }
-        std::cout << "Clique graph W_G edges (clique indices are 0-based):\n";
-        for (const auto& edge : weighted_graph.edges) {
-            std::cout << "K" << edge.first << " -- K" << edge.second
-                      << " [weight=" << edge.weight << "]\n";
-        }
         std::cout << "Clique tree T edges:\n";
         for (const auto& edge : clique_tree.edges) {
             std::cout << "K" << edge.first << " -- K" << edge.second
