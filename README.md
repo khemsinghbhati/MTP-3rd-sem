@@ -40,7 +40,7 @@ Maximal cliques (3):
 { 3 6 }
 ~~~
 
-Graph input format: the first line is `V E`, followed by `E` undirected edges `u v`, using vertex IDs `0 ... V-1`. The CLI rejects duplicate edges, invalid vertex IDs, self-loops, and malformed files. Disconnected graphs are supported; non-chordal graphs are rejected before clique extraction.
+Graph input format: the first line is `V E`, followed by `E` undirected edges `u v`, using vertex IDs from 0 to $V-1$. The CLI rejects duplicate edges, invalid vertex IDs, self-loops, and malformed files. Disconnected graphs are supported; non-chordal graphs are rejected before clique extraction.
 
 ## Current progress
 
@@ -55,7 +55,22 @@ Graph input format: the first line is `V E`, followed by `E` undirected edges `u
 | Edge insertion/deletion queries | Not yet implemented |
 | Dynamic clique tree maintenance | Not yet implemented |
 
-The test suite covers **all simple graphs on 1–6 vertices**, plus **600 deterministic random chordal graphs with 7–12 vertices**, using independent small-graph oracles.
+The test suite covers **all simple graphs on $1\le n\le6$ vertices**, plus **600 deterministic random chordal graphs with $7\le n\le12$ vertices**, using independent small-graph oracles.
+
+## Mathematical notation
+
+The technical report uses GitHub's built-in LaTeX mathematics renderer.
+Definitions, theorems, and derivations use centered display equations,
+while shorter mathematical symbols appear inline. For example,
+
+$
+G=(V,E),\qquad T_{\mathrm{MCS}}(n,m)=O(n+m).
+$
+
+When extending the report, use inline dollar delimiters for brief
+mathematical expressions and a pair of double-dollar lines for displayed
+equations. Keep actual C++ variable names, commands, and pseudocode
+in code formatting rather than math notation.
 
 ## Report policy
 
