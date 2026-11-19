@@ -30,7 +30,8 @@ private:
     using BST=GloballyBiasedBinaryTree;
     using Node=BST::Node;
     BST paths_,sets_;
-    std::vector<Node*> vertex_,path_set_root_,path_entry_;
+    std::vector<Node*> vertex_,path_set_root_,path_entry_,path_root_;
+    // Path-root pointer indexed by its tail: ST1983 Section 5 maxwt O(1).
     std::vector<int> dashed_parent_,dashed_cost_,entry_owner_;
     [[nodiscard]] Node* path(int u) const;
     [[nodiscard]] static int first(Node* p);
@@ -39,6 +40,7 @@ private:
     void insert_path_set(Node* p,int v);
     void delete_path_set(Node* p,int v);
     [[nodiscard]] Node* max_path(int v) const;
+    [[nodiscard]] BST::Split split_vertex(int v);
     [[nodiscard]] Node* expose(int u);
     [[nodiscard]] Node* splice(Node* p);
     [[nodiscard]] Node* slice(Node* p);
