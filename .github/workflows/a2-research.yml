@@ -14,7 +14,7 @@ jobs:
       - name: Configure Release (full differential tests)
         run: cmake -S . -B build-a2 -DCMAKE_BUILD_TYPE=Release -DMTP_BUILD_BENCHMARKS=ON
       - name: Build ST and A2 tests
-        run: cmake --build build-a2 --target mtp_worst_case_forest_tests mtp_globally_biased_tests mtp_ibarra_a2_tests mtp_a2_cli mtp_a2_operation_audit -j 4
+        run: cmake --build build-a2 --target mtp_worst_case_forest_tests mtp_globally_biased_tests mtp_ibarra_a2_tests mtp_a2_cli mtp_a2_operation_audit mtp_a2_two_hub_stress -j 4
       - name: Validate original ST globally biased dynamic forest
         run: ctest --test-dir build-a2 --output-on-failure -R sleator_tarjan_1983_dynamic_forest
       - name: Validate Ibarra A2 against independent A1
@@ -23,3 +23,5 @@ jobs:
         run: ctest --test-dir build-a2 --output-on-failure -R 'ibarra_a2_sample_cli|ibarra_a2_fast_delete_sample_cli'
       - name: Audit worst-case Insert dynamic-tree operation counts
         run: ./build-a2/mtp_a2_operation_audit
+      - name: Audit two high-degree adjacent clique contractions
+        run: ./build-a2/mtp_a2_two_hub_stress
