@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <string>
+#include <sstream>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -262,6 +263,24 @@ int SleatorTarjanWorstCaseForest::path_length(int u,int v) {
     const int result=p->leaf_count;
     conceal(p);
     return result;
+}
+
+std::string SleatorTarjanWorstCaseForest::debug_state() const {
+    std::ostringstream out;
+    std::unordered_set<Node*> seen;
+    for(int v=0;v<static_cast<int>(vertex_.size());++v) {
+        Node* p=path(v);
+        if(seen.insert(p).second) {
+            out<<"solid path: ";
+            for(int id:paths_.sequence(p))out<<id<<",";
+            out<<" weight="<<p->sum_weight<<"\n";
+        }
+        out<<"v="<<v<<" wt="<<vertex_[v]->weight
+           <<" dashed_parent="<<dashed_parent_[v]
+           <<" dashed_cost="<<dashed_cost_[v]
+           <<" path_set_owner="<<entry_owner_[v]<<"\n";
+    }
+    return out.str();
 }
 
 void SleatorTarjanWorstCaseForest::check_invariants() {
