@@ -115,10 +115,17 @@ SleatorTarjanWorstCaseForest::max_path(int v) const {
     Node* cached=path_root_[t];
 #ifndef NDEBUG
     // Debug validation only: may traverse O(log n), not part of maxwt.
-    if(cached!=path(t) || !cached || !cached->last ||
+    Node* actual=path(t);
+    if(cached!=actual || !cached || !cached->last ||
        cached->last->item!=t || dashed_parent_[t]!=v)
         throw std::logic_error("ST maxwt cached path invalid: owner="+
-            std::to_string(v)+" tail="+std::to_string(t));
+            std::to_string(v)+" tail="+std::to_string(t)+
+            " sameRoot="+std::to_string(cached==actual)+
+            " cacheLive="+std::to_string(cached && cached->live)+
+            " cacheLast="+std::to_string(cached && cached->last?
+                                         cached->last->item:-1)+
+            " actualTail="+std::to_string(tail(actual))+
+            " dashedOwner="+std::to_string(dashed_parent_[t]));
 #endif
     return cached;
 }
