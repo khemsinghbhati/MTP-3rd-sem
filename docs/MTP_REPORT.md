@@ -1624,101 +1624,195 @@ components remain separate.
 | Ibarra Section 6 accelerated deletion | `enable_fast_delete_queries` | A2+ CLI smoke and differential checks pass; inherits the A2 blockers |
 | Ibarra Section 7 preprocessing | `data_(Graph(n))` and reverse-PEO insertions | Actual cost differs from the A2 table; see Section 14.5 |
 
-### 14.3 BLOCKER B1 — A2 insertion does not establish O(n)
+### 14.3 BLOCKER B1 — A2 insertion still lacks an O(n) proof after Section 4 optimization
 
-**Actual code path:** `SleatorTarjanChordalGraphA2::insert_edge`
-calls `DynamicChordalGraph::insert_edge`. That method contracts
-a discarded clique through `contract(keep,drop)`. For every
-edge incident to `drop`, `contract` performs `cut(id)`
-and usually `link(keep,other,weight)`. The research branch
-mirrors every cut/link into the published ST forest.
-There is no source-verified batched contraction operation.
+**Source:** Ibarra (2008), Section 3.4 describes inserting a
+temporary maximal-clique node `z` and contracting either/both of
+the old adjacent cliques when they cease to be maximal.
+**Section 4 explicitly permits a simpler equivalent**: directly
+enlarge the characteristic vector of a subsumed clique, rather
+than create a temporary node and subsequently contract it.
 
-If r edges are reattached, the current composition has a
-**worst-case upper bound O(n + r log n)**, given the published
-ST guarantee. Because r can be Theta(n) for one insertion,
-this analysis yields **O(n log n)**, rather than Ibarra
-Section 5 / Section 7's required O(n).
+**Source-faithful correction implemented:** On the A2 research
+path only, `src/dynamic_ibarra.cpp::insert_edge` now applies
+Ibarra Section 4's direct vector replacement. If exactly
+one clique is subsumed, it is updated in place; if both
+are subsumed, a surviving clique is selected and only
+the other clique is contracted. Selection of the
+higher-degree surviving clique avoids unnecessary tree
+operations; it is an implementation choice within the
+paper's permitted arbitrary contraction choice, **not**
+an unreferenced substitute dynamic tree.
 
-**Adversarial reproducible experiment:**
-For a star G with center vertex 0 and n-1 leaves, select the
-max-degree clique-tree node and insert an edge between its
-noncenter leaf and another leaf. The operation is permitted
-and forms one triangle. Instrumented counters record:
+**Measured improvement:** Earlier A2 code introduced a
+temporary node and contracted both sides. On star
+graphs, this required 2n-1 ST link/cut calls for one
+valid insertion (historical baseline recorded in
+`benchmarks/results/a2_st_insert_operation_counts_2026-11-19.csv`).
+Under the Section 4 implementation the same input
+requires only one cut, for every tested n=12 to 384.
 
-| n | Maximum clique-tree degree | ST link calls | ST cut calls | Total calls |
+**Residual adversarial obstruction:** On the chordal
+double-star tree, with central cliques `{r,u}` and
+`{r,v}`, each having many attached maximal cliques,
+inserting edge `{u,v}` forms a triangle and removes
+both central cliques. A valid clique tree has both
+central cliques of high degree. The code must move the
+neighbors of the removed clique.
+
+A seeded search over vertex relabelings found this
+**concrete, reproducible** configuration:
+
+| n | Degree of each subsumed clique | ST links | ST cuts | ST total |
 | ---: | ---: | ---: | ---: | ---: |
-| 12 | 10 | 11 | 12 | 23 |
-| 24 | 22 | 23 | 24 | 47 |
-| 48 | 46 | 47 | 48 | 95 |
-| 96 | 94 | 95 | 96 | 191 |
-| 192 | 190 | 191 | 192 | 383 |
-| 384 | 382 | 383 | 384 | 767 |
+| 27 | 13 | 12 | 13 | **25** |
+| 51 | 25 | 24 | 25 | **49** |
 
-**Observed: 2n-1 ST calls during a single Insert**, independently
-of time spent scanning/updating characteristic vectors.
-This demonstrates a Theta(n) dynamic-tree primitive count.
-It does **not** by itself prove an Omega(n log n) runtime
-lower bound; it does prove the existing code lacks
-a published justification for the stated O(n) worst-case
-insertion bound.
+This shows that even after the published Section 4
+simplification, the implementation can make
+**Theta(n) dynamic-tree primitive calls** in one
+permitted insertion. At n=99 the tested seed's
+best configuration had degrees 49 and 2, and only
+three ST calls; the examples do not prove that
+all clique trees force linear calls.
 
-Source: `benchmarks/a2_operation_audit.cpp`;
-recorded output:
-`benchmarks/results/a2_st_insert_operation_counts_2026-11-19.csv`.
-The Release workflow that printed the table passed:
-https://github.com/khemsinghbhati/MTP-3rd-sem/actions/runs/44567624297
+Each ST primitive has a published **worst-case
+O(log n) upper bound** under its invariants
+(Sleator–Tarjan 1983, Theorem 8). The current direct
+cost accounting is therefore **O(n+r log n)** for
+r reassigned edges, up to **O(n log n)** with r=Theta(n),
+and **does not establish** Ibarra Section 7's
+claimed O(n) worst-case insertion time.
 
-**Required source-faithful correction:** Audit the exact
-Ibarra Section 3.4 contraction and Section 5 claimed insertion
-accounting. Only accept a modified implementation if a primary
-publication supports every nontrivial improved update operation
-with a valid O(n) worst-case proof. Do not substitute a simpler
-dynamic tree or relabel O(n log n) as O(n).
+**Critical distinction:** Theta(n) calls times a
+worst-case O(log n) bound is an O(n log n)
+*upper-bound analysis*, NOT proof that the
+runtime is Omega(n log n). A sharper aggregate
+proof could conceivably give O(n), but neither
+Ibarra Sections 3–5 nor the inspected
+Sleator–Tarjan primitive bound supplies that
+aggregate contraction theorem. We must not
+invent one or mark the target met without a
+published or independently validated proof
+that preserves the specified source method.
 
-### 14.4 BLOCKER B2 — deterministic adjacency lookup
+Reproducible source:
+`benchmarks/a2_operation_audit.cpp`,
+`benchmarks/a2_two_hub_stress.cpp`.
+CSV results:
+`benchmarks/results/a2_section4_insert_st_calls_2026-11-19.csv`,
+`benchmarks/results/a2_two_hub_search_2026-11-19.csv`.
+Release workflow:
+https://github.com/khemsinghbhati/MTP-3rd-sem/actions/runs/44581193992.
 
-`Graph::has_edge` calls `std::unordered_set<int>::count`
-in `src/graph.cpp`. Standard-library unordered hash sets
-have expected/average constant-time lookup but **not a
-worst-case O(1) bound**. Thus the source code alone does
-not give a deterministic O(log² n) worst-case bound for
-`SleatorTarjanChordalGraphA2::insert_query`, which calls
-`graph_.has_edge(u,v)` before its binary searches.
+**Acceptance:** **BLOCKED** on the required worst-case
+O(n) insertion bound. No amortized splay, HLD, alternate
+top tree, or unreferenced batched contraction is used.
 
-This is a worst-case *data-structure* proof gap, independent
-of functional success. A remedy must preserve the published
-method and audit both lookup and preprocessing/update costs;
-changing the representation without analyzing costs is not
-an accepted fix.
+### 14.4 FIXED F1 — deterministic Insert-Query adjacency lookup
 
-### 14.5 BLOCKER B3 — preprocessing and memory accounting
+The research-branch graph representation uses
+`std::set<int>` for neighbor membership, rather than
+`std::unordered_set<int>`, in
+`include/mtp/graph.hpp`. C++ ordered sets are
+balanced search trees; `Graph::has_edge` is therefore
+**O(log n) worst-case**, as are set insertion/erasure
+(excluding the separately counted adjacency-vector
+erase work).
 
-Ibarra Section 4 says A1 initial preprocessing O(n+m);
-Section 7 lists A1 O(n+m), A2 O(m+n log n), and
-A2+ O(mn+n²). However, the concrete implementation
-allocates an n-entry `std::vector<unsigned char>`
-for every maximal clique; there can be Theta(n) such cliques.
-Therefore current A1-style materialization performs
-**Theta(nk)** work, up to **Theta(n²)** on sparse chordal graphs,
-and cannot currently be certified as O(n+m).
+A2's `Insert-Query` performs a constant number of
+such membership tests and O(log n) indexed
+path operations, each O(log n) worst-case if the
+published Sleator–Tarjan representation invariants
+hold. Thus the graph lookup no longer prevents the
+advertised O(log² n) worst-case *algorithmic*
+query bound. This does **not** substitute any
+different chordal-graph algorithm.
 
-The research A2 constructor starts with n singleton cliques,
-allocates a full n-by-n matrix `W_` (Omega(n²) memory and
-initialization), and inserts each original edge in reverse
-PEO order through the dynamic update method. The
-source-specified Section 5.1 method permits **O(mn)**
-incremental initialization; our concrete preparation costs
-at least **Omega(n²)** for the matrix, and its analyzed
-bound is O(n²+mn) subject to dynamic-tree update costs.
+The explicit `tests/test_deterministic_graph_lookup.cpp`
+compares updates and lookups against a dense
+independent adjacency matrix and verifies edge counts
+and neighbor lists. Full A1/A2 regression tests pass
+with the replacement in the Release workflow.
 
-There is also an explicit **primary-paper discrepancy**:
-Section 5.1 gives O(mn) for the incremental construction
-of W, while the Section 7 table lists O(m+n log n)
-preprocessing for A2. We cannot simultaneously certify
-both for this concrete code. Treat this as a
-reported source inconsistency, not an excuse to claim
-the stronger bound without a published argument.
+**Side effect:** inserting the input's m edges via
+the `Graph` container has an O(m log n) worst-case
+balanced-set component, rather than an average-case
+constant-time hashing component. This is separately
+accounted for in initialization; the MCS and
+Blair–Peyton algorithms still traverse the
+existing adjacency lists in O(n+m).
+
+### 14.5 VERIFIED SOURCE/REPRESENTATION DISCREPANCY — preprocessing
+
+**Input-independent lower-bound witness:** Take an
+empty graph on n vertices, so m=0 and k=n
+singleton maximal cliques. Our actual representation
+allocates n dense characteristic vectors of length n:
+**n² byte entries**, already Omega(n²) initialization
+and storage. A2 additionally allocates the matrix
+`W_` as **(n+2)² integers**, also Omega(n²)
+initialization and memory.
+
+The lower bound is structural and does **not**
+depend on benchmarking. It conflicts with the
+paper's Section 7 **A1 O(m+n)** and
+**A2 O(m+n log n)** preprocessing claims when
+m=0, if those bounds include instantiating
+the dense representations explicitly specified
+in Sections 4 and 5.1. Section 5.1 independently
+describes matrix initialization using reverse-PEO
+incremental insertion in O(mn) time, but the
+materialized W matrix by itself takes Omega(n²)
+time/memory; hence a safe accounting must
+include the additional n² term.
+
+**Our implementation:** Preprocessing performs
+Blair–Peyton initial clique-tree construction,
+dense characteristic-vector materialization,
+dynamic-forest construction, dense matrix W
+initialization, then inserts the initial m edges
+one by one in published reverse-PEO order.
+The conservative derived upper bound for the
+whole *research A2 constructor* is
+O(n² + mn log n) from the explicitly measured
+representations plus up to O(n log n)
+ST work per inserted edge. This is an
+upper bound, not an exact tight bound; input
+`Graph` construction costs and allocator effects
+are separate.
+
+**Measured Release experiment, m=0** (the matrix
+column includes the two reserved clique slots):
+
+| n | Characteristic entries | W entries | W bytes | Construct ms |
+| ---: | ---: | ---: | ---: | ---: |
+| 100 | 10,000 | 10,404 | 41,616 | 0.200 |
+| 200 | 40,000 | 40,804 | 163,216 | 0.428 |
+| 400 | 160,000 | 161,604 | 646,416 | 1.029 |
+| 800 | 640,000 | 643,204 | 2,572,816 | 3.182 |
+| 1600 | 2,560,000 | 2,566,404 | 10,265,616 | 10.286 |
+
+Timing is observed on a GitHub Actions runner; it
+is **not** a worst-case proof. The entry counts,
+however, are exact for this code.
+
+Source:
+`benchmarks/a2_preprocessing_audit.cpp`;
+recorded:
+`benchmarks/results/a2_empty_preprocessing_2026-11-19.csv`.
+Passing Release run:
+https://github.com/khemsinghbhati/MTP-3rd-sem/actions/runs/44581415789.
+
+**Audited disposition:** The discrepancy is
+**verified and documented**, not "fixed".
+Reconciling the paper's stronger preprocessing
+table would require a published representation
+with different initialization/storage accounting.
+The research policy disallows fabricating one.
+For any MTP presentation, quote the paper's
+claimed bound separately from this code's
+verified complexity; do not silently equate them.
 
 ### 14.6 Correctness and safety evidence, and its limits
 
