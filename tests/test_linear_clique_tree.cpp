@@ -1,4 +1,4 @@
-#include "mtp/clique_tree_linear.hpp"
+#include "mtp/clique_tree_blair_peyton.hpp"
 #include "mtp/graph.hpp"
 #include "mtp/maximal_cliques.hpp"
 #include "mtp/mcs.hpp"
@@ -31,7 +31,7 @@ int intersection(const std::vector<int>& a, const std::vector<int>& b) {
 void check(const Graph& graph, bool compare_mwst = true) {
     const auto peo = maximum_cardinality_search(graph);
     if (!is_perfect_elimination_ordering(graph, peo)) return;
-    const auto tree = build_clique_tree_linear(graph, peo);
+    const auto tree = build_clique_tree_blair_peyton(graph, peo);
     require(canonical(tree.cliques) ==
                 canonical(extract_maximal_cliques(graph, peo)),
             "direct construction does not enumerate the correct cliques");
@@ -121,7 +121,7 @@ void targeted() {
         {2,5}, {4,5}, {3,6}, {0,3}, {1,2}
     }) sample.add_edge(u,v);
     check(sample);
-    const auto tree = build_clique_tree_linear(
+    const auto tree = build_clique_tree_blair_peyton(
         sample, maximum_cardinality_search(sample));
     require(tree.cliques.size() == 3 && tree.edges.size() == 2,
             "sample did not yield a three-node clique tree");
