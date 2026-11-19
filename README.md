@@ -103,48 +103,52 @@ documented in the single report rather than silently resolved.
 
 The Blair–Peyton constructor passed **19,048 exhaustive nonempty chordal graphs** with 1–6 vertices, **800 seeded randomized chordal graphs** with 7–13 vertices, and larger sparse-star and dense-clique cases. Tests independently compare maximal cliques, tree weights, maximum spanning-tree weights, and the induced subtree property. The split-graph tests also independently check all four optimization numbers against brute-force subset enumeration on small graphs. Existing baseline tests remain. The full input parser still uses hashing for duplicate-edge validation; the $O(n+m)$ algorithmic bound assumes an already represented graph.
 
-## A2/A2+ source-fidelity audit (November 19, 2026)
+## A2/A2+ published-source insertion repair — November 20, 2026
 
-**Research status: NOT ACCEPTED as meeting every published
-worst-case bound.** The research branch implements the
-Sleator–Tarjan (1983) globally biased dynamic-tree method
-and Ibarra Sections 5–5.1. A2/A2+ Release differential
-tests, CLI integration, and high-degree insertion/deletion
-cycles pass; source-specific complexity obligations remain.
+**Worst-case A2 Insert: O(n) in the revised research
+implementation.** Source-based proof in
+[Section 15 of the technical report](
+docs/MTP_REPORT.md#15-published-source-on-a2-insertion-repair--november-20-2026).
 
-**Fixed:** The graph adjacency membership check now uses
-a deterministic balanced-tree `std::set`, giving
-O(log n) worst-case lookup within the O(log² n)
-Insert-Query operation.
+The corrected implementation uses **the same published
+Sleator–Tarjan (1983) worst-case globally biased
+dynamic forest**. When one inserted graph edge
+causes both neighboring maximal cliques to be
+subsumed, per-neighbor ST link/cut updates
+are replaced by a fresh construction of that
+**same ST forest**, using:
 
-**Ibarra Section 4 optimization:** The research A2 directly
-enlarges the vector of an absorbed clique, rather than
-constructing and contracting a temporary clique. This
-reduced one valid star insertion from 2n-1 dynamic-tree
-calls to **one cut**. However, two adjacent high-degree
-cliques can both be absorbed: a verified n=51 example
-still requires **49** ST calls on one permitted insertion.
-No source-verified argument establishes O(n) worst-case
-insertion for that actual code path.
+1. ST83 Sections 4–5: size-based partition and globally
+   biased binary trees for paths and dashed path sets.
+2. Bent–Sleator–Tarjan (1985), Section 4, Figure 15 and
+   Theorem 12: actual O(n) globally biased tree construction.
+3. Counting-sort dashed-path cardinalities in [1,n]
+   and O(1) machine-word leaf-rank computations.
 
-**Preprocessing discrepancy:** On n isolated vertices
-(m=0), our implementation allocates n² characteristic
-entries and (n+2)² matrix W entries. Consequently this
-literal representation has Omega(n²) initialization
-time/space; Ibarra Section 7 nevertheless lists
-O(n log n) preprocessing for A2 in that case.
+Across all paths and path sets, each vertex appears
+O(1) times, so the complete rebuilding costs
+O(n). This is a **source-supported maintenance-schedule
+refinement** that preserves Ibarra's clique-tree transformation
+and ST's exact data structure; it is not a splay/HLD/top-tree
+substitute. Ibarra does not literally specify this
+rebuilding schedule, and the report distinguishes
+the new composition from verbatim Ibarra pseudocode.
 
-**No substitutes. No research-branch merge.** The full
-implementation remains isolated until its exact
-published worst-case requirements are verified.
-Production `main` is unchanged.
+The graph membership lookup is deterministic
+O(log n) worst-case via std::set.
 
-Read **[the Section 14 code-and-paper audit](
-docs/MTP_REPORT.md#14-independent-audit-of-ibarra-a2a2--november-19-2026)**.
-Evidence:
-`benchmarks/results/a2_section4_insert_st_calls_2026-11-19.csv`,
-`benchmarks/results/a2_two_hub_search_2026-11-19.csv`,
-and `benchmarks/results/a2_empty_preprocessing_2026-11-19.csv`.
+**Separate unresolved source discrepancy:** Ibarra's
+Section 7 preprocessing summary cannot hold for our
+literal dense n-by-n W matrix and n-length
+characteristic-vector materialization on an empty graph.
+This limitation remains explicitly documented
+in Section 14.5 of the report; O(n) **insertion**
+does not magically imply linear **initialization**.
+
+Source-focused tests: tests/test_bst85_linear_builder.cpp,
+tests/test_linear_st_forest.cpp,
+tests/test_a2_linear_insertion.cpp, plus
+tests/test_ibarra_a2.cpp and sanitizer workflows.
 
 ## Research provenance rule (mandatory)
 
