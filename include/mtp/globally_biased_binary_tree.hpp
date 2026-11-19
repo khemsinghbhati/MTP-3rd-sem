@@ -52,6 +52,15 @@ public:
     void release_detached_leaf(Node* leaf);
     // Concatenation consumes roots (each must be detached).
     Node* global_join(Node* left, Node* right, int edge_cost=0);
+    // Bent–Sleator–Tarjan (1985), Section 4, Figure 15:
+    // bottom-up globally biased tree construction in O(k) WORST CASE
+    // over k input leaves (their preexisting order is preserved).
+    // boundary_cost[i] labels the edge between leaves i and i+1.
+    Node* build_linear(const std::vector<Node*>& leaves,
+                       const std::vector<int>& boundary_cost);
+    [[nodiscard]] long long linear_build_steps() const noexcept {
+        return linear_steps_;
+    }
     // Dynamic path operations (Sleator–Tarjan 1983, §§3–5).
     void reverse(Node* root);
     [[nodiscard]] Node* kth(Node* root, int position) const;
@@ -68,6 +77,7 @@ private:
     std::vector<std::unique_ptr<Node>> storage_;
     std::vector<Node*> pool_;
     std::vector<Node*> leaf_pool_;
+    long long linear_steps_=0;
     static int floor_log2(int weight);
     Node* internal(Node* left, Node* right, int rank, int edge_cost);
     void refresh(Node* x);
