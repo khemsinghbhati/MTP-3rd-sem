@@ -161,38 +161,47 @@ int IndexedDynamicChordalGraph::HeavyPathIndex::min_on_path(
 }
 
 IndexedDynamicChordalGraph::IndexedDynamicChordalGraph(Graph graph)
-    : data_(std::move(graph)) {
-    const int n=data_.graph_.vertex_count();
+    : data_(Graph(graph.vertex_count())) {
+    // Ibarra (2008), Section 5.1, explicitly describes an O(mn)
+    // preprocessing alternative for W: start with an empty chordal graph
+    // and insert edges incident to each vertex in reverse PEO order.
+    // Every intermediate subgraph retains the same PEO.
+    const auto peo=maximum_cardinality_search(graph);
+    if(!is_perfect_elimination_ordering(graph,peo))
+        throw std::invalid_argument("initial graph must be chordal");
+    const int n=graph.vertex_count();
     vertex_witness_.assign(n,-1);
     const int capacity=static_cast<int>(data_.nodes_.size());
-    // Every original vertex lies in at least one maximal clique.
     for(int c=0;c<capacity;++c)
         if(data_.nodes_[c].active)
             for(int v=0;v<n;++v)
                 if(data_.nodes_[c].contains[v])vertex_witness_[v]=c;
     for(int c:vertex_witness_)
-        if(c<0)throw std::logic_error("missing vertex clique witness");
+        if(c<0)throw std::logic_error("missing singleton clique witness");
     initialize_weights();
     refresh_paths();
+
+    std::vector<int> position(n,-1);
+    for(int i=0;i<n;++i)position[peo[i]]=i;
+    for(int i=n-1;i>=0;--i) {
+        const int u=peo[i];
+        for(int v:graph.neighbors(u)) {
+            if(position[v]<=i)continue;
+            if(!insert_edge(u,v))
+                throw std::logic_error("PEO-driven insertion rejected");
+        }
+    }
 }
 
 void IndexedDynamicChordalGraph::initialize_weights() {
-    // Ibarra (2008), Section 5.1 explicitly allows the initial
-    // O(n^3) characteristic-vector pairwise computation of W.
+    // The initial graph is empty: its n maximal cliques are singletons,
+    // so W is the identity matrix (Ibarra Section 5.1 initialization).
+    // Allocate its characteristic n-by-n matrix in O(n^2).
     const int cap=static_cast<int>(data_.nodes_.size());
     intersection_weight_.assign(cap,std::vector<int>(cap,0));
-    for(int i=0;i<cap;++i) {
-        if(!data_.nodes_[i].active)continue;
-        intersection_weight_[i][i]=data_.nodes_[i].size;
-        for(int j=i+1;j<cap;++j) {
-            if(!data_.nodes_[j].active)continue;
-            int total=0;
-            for(int v=0;v<data_.graph_.vertex_count();++v)
-                total+=data_.nodes_[i].contains[v] &&
-                       data_.nodes_[j].contains[v];
-            intersection_weight_[i][j]=intersection_weight_[j][i]=total;
-        }
-    }
+    for(int i=0;i<cap;++i)
+        if(data_.nodes_[i].active)
+            intersection_weight_[i][i]=1;
 }
 void IndexedDynamicChordalGraph::refresh_paths() { paths_.build(data_); }
 
