@@ -48,6 +48,28 @@ K0 -- K1 [weight=1]
 
 Graph input format: first line contains the number of vertices and edges (`V E`), followed by `E` undirected pairs (`u v`) using zero-based vertex IDs. Invalid input is rejected. The graph must be chordal for maximal-clique and clique-tree extraction.
 
+## Reproducible performance measurement
+
+To build the optional timing harness (separate from correctness tests):
+
+~~~bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DMTP_BUILD_BENCHMARKS=ON
+cmake --build build -j
+./build/mtp_benchmarks > results.csv
+~~~
+
+The benchmark measures initialization, query, insertion, and deletion
+timings on repeatable star graphs. One recorded measurement is in
+`benchmarks/results/a1_star_2026-11-19.csv`. Timings vary with hardware,
+cache, and scheduling; they are **empirical observations, not proofs** of
+worst-case time bounds. Benchmark results must be compared against the
+published bounds and the actual data structures used.
+
+**Research limitation:** Section 5's worst-case logarithmic dynamic tree
+remains absent. Source inspection also found potentially inconsistent
+A2 preprocessing accounting between Ibarra Sections 5.1 and 7,
+documented in the single report rather than silently resolved.
+
 ## Current implementation status
 
 | Component | Status |
