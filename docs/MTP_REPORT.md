@@ -1342,29 +1342,28 @@ standard implementation: exhaustive chordal initial graphs
 up to five vertices and longer randomized update sequences.
 The dynamic CLI supports `--fast-delete` for this mode.
 
-### 13.5 Outstanding required variants — not misrepresented as complete
+### 13.5 Required variants — November 19 research status
 
-| Version in Ibarra Section 7 | Current status | Published requirement |
+| Ibarra Section 7 version | Code status | Source-method acceptance |
 | --- | --- | --- |
-| A1: first chordal dynamic implementation | Implemented, update tests passing | O(n) for each of four operations |
-| A2: second chordal implementation | NOT IMPLEMENTED | O(log² n) insertion query; O(n log n) deletion; O(n) insertion |
-| A1+: modified-Yellin accelerated deletion query | Implemented and tested | O(sqrt(m)) query; O(m+n) updates |
-| A2+: both optimizations | NOT IMPLEMENTED (A1+ index available) | Both requirements above |
-| Section 8 split-graph degree sequence | Implemented, random tests passing | O(1) query and valid edge update |
+| A1 | Implemented and regressions passing | Accepted functionally; preprocessing-bound audit still open |
+| A1+ | Implemented and regressions passing | Accepted functionally; index complexity assumptions documented |
+| A2 | Sleator–Tarjan research implementation and integration, differential tests passing | **NOT ACCEPTED: Insert complexity and worst-case guarantees unproved** |
+| A2+ | A2 research branch with Section 6 index enabled; CLI tests passing | **NOT ACCEPTED: inherits A2 blockers** |
+| Section 8 split graphs | Implemented, regression tests passing | No A2 dependency |
 
-A2 requires the **worst-case logarithmic dynamic tree** from
-Sleator and Tarjan (1983), plus Ibarra's maintained intersection
-matrix `W` and vertex-to-clique pointers, all subject to
-Sections 5–5.1. A splay-only link-cut tree has **amortized**, not
-worst-case, bounds and must not be substituted silently.
-A1+/A2+ require the exact member/overflow/common-count structure and
-maintenance invariants in Ibarra Sections 6.2–6.3, including the
-`O(m)` update bound.
+The source-selected method for A2 is **Sleator–Tarjan (1983), Section 5**,
+using globally biased binary trees (Bent, Sleator and Tarjan, 1985).
+No splay or HLD substitute is used in the A2 research class.
+That class is isolated on the branch
+`research/sleator-tarjan-worst-case`; the former HLD indexed-query
+research experiment is **not A2**.
 
-**Acceptance condition:** Finish each optimized implementation, add
-independent update-sequence tests, prove the source-to-code mapping and
-its time bounds, and measure empirical scaling before marking it
-complete. Do not claim complete paper reproduction until then.
+**Acceptance:** Matching functional output is necessary but not sufficient.
+Correctness invariants, deterministic worst-case operation accounting,
+source-to-code correspondence, initialization, and space must all pass.
+See Section 14 for audit findings and a reproducible counterexample
+to the current O(n) insertion proof obligation.
 
 ### 13.6 Reproducible Section 4 timing experiment
 
@@ -1404,34 +1403,34 @@ the published algorithm and implementation operation counts.
 The optional Section 6 index and a fully implemented A2 dynamic tree
 still require dedicated comparative experiments.
 
-### 13.7 Remaining implementation dependency: worst-case dynamic trees
+### 13.7 Worst-case dynamic-tree source and research integration
 
-**Ibarra (2008), Section 5** requires the operations of a
-Sleator–Tarjan dynamic tree: reroot, path minimum, locate the
-ith node on a path, link, and cut, with worst-case logarithmic
-bounds. The relevant published data-structure reference is:
+**Primary source:** Sleator and Tarjan (1983), *A Data Structure for
+Dynamic Trees*, JCSS 26(3):362–391, Section 5, **Theorem 8**.
+It gives worst-case O(log n) operations under size partitioning
+and **globally biased binary trees**. The supporting source is
+Bent, Sleator and Tarjan (1985), *Biased Search Trees*,
+SIAM J. Computing 14(3), especially globally biased binary trees.
 
-Sleator, D. D. and Tarjan, R. E. (1983), *A Data Structure for
-Dynamic Trees*, Journal of Computer and System Sciences 26(3),
-362–391, DOI 10.1016/0022-0000(83)90006-5,
-**Section 5 and Theorem 8**.
+**Implemented on the research branch:**
+`src/globally_biased_binary_tree.cpp` (weighted join/split,
+rank/global-bias invariants), `src/worst_case_dynamic_tree.cpp`
+(expose, splice, slice, conceal, link, cut, evert, min and kth path
+operations), and `src/dynamic_ibarra_a2.cpp` (Ibarra Section 5
+closest-clique queries, W updates, and mirrored clique-tree changes).
 
-Crucially, that publication distinguishes an amortized implementation
-from a worst-case implementation. The latter uses partitioning by
-size and globally biased binary trees. Substituting an ordinary
-splay-based link-cut tree does **not** establish Ibarra's
-worst-case operation bounds.
+Standalone ST randomized forest tests and A2-versus-A1 differential
+tests pass in the Release workflow. This is **not** an independent
+formal proof that every helper operation maintains Theorem 8's
+precise worst-case prerequisites. The A2 insertion routine
+also dispatches A1 clique-tree mutations through the ST forest,
+and therefore performs up to a linear number of log-time
+primitive calls on a single insertion; see Section 14.
 
-Ibarra also specifies in **Section 5.1** an n-by-n
-clique-intersection-weight matrix, with O(n) updates after
-permitted chordal edge insertions or deletions, and a
-vertex-to-clique-node pointer for each original graph vertex.
-
-**Not yet implemented and not claimed:** a worst-case logarithmic
-dynamic-tree structure, its integration with the exact Ibarra
-Section 5 operations, and its linked O(n)-update weight matrix.
-Therefore the A2 and A2+ variants and all-variant
-comparative benchmarks remain incomplete.
+**Status:** source-method implementation exists as a research
+candidate; worst-case algorithmic acceptance **BLOCKED**. The
+A2/A2+ commands are research-only; production `main`
+remains unchanged.
 
 ### 13.8 Primary-paper complexity accounting: explicit unresolved question
 
@@ -1582,6 +1581,202 @@ implementation requirement.
 the exact worst-case dynamic-tree mechanism is implemented and
 verified. Matching the top-level query and update time limits
 in this alternative does not establish paper-method fidelity.
+
+## 14. Independent audit of Ibarra A2/A2+ — November 19, 2026
+
+### 14.1 Audit scope, evidence, and verdict
+
+**Scope:** Verify that the actual C++ research implementation reproduces
+Ibarra (2008), Sections 3–7, while satisfying the *worst-case*
+operation bounds. The audit inspected
+`src/dynamic_ibarra_a2.cpp`, `src/dynamic_ibarra.cpp`,
+`src/worst_case_dynamic_tree.cpp`,
+`src/globally_biased_binary_tree.cpp`, `src/graph.cpp`,
+their headers and tests, and the original published sources.
+The audit used source-level cost counting plus reproducible
+GitHub Actions Release and sanitizer-based tests.
+
+**Primary sources:** Ibarra (2008), Sections 3.2, 3.4, 4, 5, 5.1,
+and 7 (the user-supplied paper); Sleator and Tarjan (1983),
+Section 5, Theorem 8
+(https://www.cs.cmu.edu/~sleator/papers/dynamic-trees.pdf);
+Bent, Sleator and Tarjan (1985), globally biased-tree procedures
+(https://doi.org/10.1137/0214041).
+The findings below distinguish the paper's claims from the
+properties established for our code.
+
+**Audit verdict: FUNCTIONALLY PROMISING, ASYMPTOTICALLY
+NONCOMPLIANT/NOT PROVED.** A2 and A2+ must not be called
+fully reproduced or merged into `main`.
+The working A1, A1+, Blair–Peyton preprocessing and split-graph
+components remain separate.
+
+### 14.2 Source-to-code traceability
+
+| Published operation | Research implementation | Audit finding |
+| --- | --- | --- |
+| ST globally biased weighted join/split | `globally_biased_binary_tree.cpp` | Rank, ordering, weighted-path and global-bias unit tests pass; formal worst-case validation remains a proof obligation |
+| ST Section 5 expose/conceal/splice/slice | `worst_case_dynamic_tree.cpp` | Differential forest link/cut/evert/path queries pass; size-path and rank invariants are tested but worst-case operation proof must be checked line-by-line |
+| Ibarra Section 5 nearest cliques on a path | `dynamic_ibarra_a2.cpp::closest` | Binary searches using ST kth-path queries; correct on tested chordal graphs |
+| Ibarra Theorem 6 insertion condition | `insert_query`, `W_`, ST path minimum | Differential agreement with A1 on tested graphs; deterministic Graph membership bound unresolved |
+| Ibarra Sections 3.2/3.4 clique-tree updates | `data_.delete_edge` / `data_.insert_edge`, linked through hooks | Maintains the same clique-tree decisions on tests; A1 contract can invoke a linear number of ST operations on **Insert** |
+| Ibarra Section 5.1 matrix W | `W_` with O(n) row formulas | Functional tests pass; initial W is an n-by-n matrix |
+| Ibarra Section 6 accelerated deletion | `enable_fast_delete_queries` | A2+ CLI smoke and differential checks pass; inherits the A2 blockers |
+| Ibarra Section 7 preprocessing | `data_(Graph(n))` and reverse-PEO insertions | Actual cost differs from the A2 table; see Section 14.5 |
+
+### 14.3 BLOCKER B1 — A2 insertion does not establish O(n)
+
+**Actual code path:** `SleatorTarjanChordalGraphA2::insert_edge`
+calls `DynamicChordalGraph::insert_edge`. That method contracts
+a discarded clique through `contract(keep,drop)`. For every
+edge incident to `drop`, `contract` performs `cut(id)`
+and usually `link(keep,other,weight)`. The research branch
+mirrors every cut/link into the published ST forest.
+There is no source-verified batched contraction operation.
+
+If r edges are reattached, the current composition has a
+**worst-case upper bound O(n + r log n)**, given the published
+ST guarantee. Because r can be Theta(n) for one insertion,
+this analysis yields **O(n log n)**, rather than Ibarra
+Section 5 / Section 7's required O(n).
+
+**Adversarial reproducible experiment:**
+For a star G with center vertex 0 and n-1 leaves, select the
+max-degree clique-tree node and insert an edge between its
+noncenter leaf and another leaf. The operation is permitted
+and forms one triangle. Instrumented counters record:
+
+| n | Maximum clique-tree degree | ST link calls | ST cut calls | Total calls |
+| ---: | ---: | ---: | ---: | ---: |
+| 12 | 10 | 11 | 12 | 23 |
+| 24 | 22 | 23 | 24 | 47 |
+| 48 | 46 | 47 | 48 | 95 |
+| 96 | 94 | 95 | 96 | 191 |
+| 192 | 190 | 191 | 192 | 383 |
+| 384 | 382 | 383 | 384 | 767 |
+
+**Observed: 2n-1 ST calls during a single Insert**, independently
+of time spent scanning/updating characteristic vectors.
+This demonstrates a Theta(n) dynamic-tree primitive count.
+It does **not** by itself prove an Omega(n log n) runtime
+lower bound; it does prove the existing code lacks
+a published justification for the stated O(n) worst-case
+insertion bound.
+
+Source: `benchmarks/a2_operation_audit.cpp`;
+recorded output:
+`benchmarks/results/a2_st_insert_operation_counts_2026-11-19.csv`.
+The Release workflow that printed the table passed:
+https://github.com/khemsinghbhati/MTP-3rd-sem/actions/runs/44567624297
+
+**Required source-faithful correction:** Audit the exact
+Ibarra Section 3.4 contraction and Section 5 claimed insertion
+accounting. Only accept a modified implementation if a primary
+publication supports every nontrivial improved update operation
+with a valid O(n) worst-case proof. Do not substitute a simpler
+dynamic tree or relabel O(n log n) as O(n).
+
+### 14.4 BLOCKER B2 — deterministic adjacency lookup
+
+`Graph::has_edge` calls `std::unordered_set<int>::count`
+in `src/graph.cpp`. Standard-library unordered hash sets
+have expected/average constant-time lookup but **not a
+worst-case O(1) bound**. Thus the source code alone does
+not give a deterministic O(log² n) worst-case bound for
+`SleatorTarjanChordalGraphA2::insert_query`, which calls
+`graph_.has_edge(u,v)` before its binary searches.
+
+This is a worst-case *data-structure* proof gap, independent
+of functional success. A remedy must preserve the published
+method and audit both lookup and preprocessing/update costs;
+changing the representation without analyzing costs is not
+an accepted fix.
+
+### 14.5 BLOCKER B3 — preprocessing and memory accounting
+
+Ibarra Section 4 says A1 initial preprocessing O(n+m);
+Section 7 lists A1 O(n+m), A2 O(m+n log n), and
+A2+ O(mn+n²). However, the concrete implementation
+allocates an n-entry `std::vector<unsigned char>`
+for every maximal clique; there can be Theta(n) such cliques.
+Therefore current A1-style materialization performs
+**Theta(nk)** work, up to **Theta(n²)** on sparse chordal graphs,
+and cannot currently be certified as O(n+m).
+
+The research A2 constructor starts with n singleton cliques,
+allocates a full n-by-n matrix `W_` (Omega(n²) memory and
+initialization), and inserts each original edge in reverse
+PEO order through the dynamic update method. The
+source-specified Section 5.1 method permits **O(mn)**
+incremental initialization; our concrete preparation costs
+at least **Omega(n²)** for the matrix, and its analyzed
+bound is O(n²+mn) subject to dynamic-tree update costs.
+
+There is also an explicit **primary-paper discrepancy**:
+Section 5.1 gives O(mn) for the incremental construction
+of W, while the Section 7 table lists O(m+n log n)
+preprocessing for A2. We cannot simultaneously certify
+both for this concrete code. Treat this as a
+reported source inconsistency, not an excuse to claim
+the stronger bound without a published argument.
+
+### 14.6 Correctness and safety evidence, and its limits
+
+The code has two separate independent functional checks:
+
+1. ST forest test: randomized sequences of link/cut/evert
+   and kth-node/minimum-weight path queries are checked against
+   a simple BFS adjacency-list oracle; biased-tree rank and
+   global-bias invariants are checked.
+2. Ibarra A2 test: insert/delete queries and permitted
+   updates are compared against the A1 implementation.
+   Updated maximal cliques, clique-tree edge weights,
+   spanning-tree edge counts, and running-intersection
+   connectivity are reconstructed and checked independently.
+
+Release tests passed including A2 and A2+ CLI samples,
+in https://github.com/khemsinghbhati/MTP-3rd-sem/actions/runs/44564002891.
+A later Release run including the operation-count audit
+also passed. Memory-sanitizer runs and Release runs must
+continue to be reviewed at the specific commit accepted.
+
+**These tests cannot prove** every globally biased tree
+implementation detail or all worst-case bounds. In
+particular, the custom translation's recursion,
+split/join rank updates, and dynamic path-set maintenance
+need explicit published invariant preservation arguments.
+The tested small and random cases are evidence, not proof.
+
+### 14.7 Remaining acceptance gates (no substitutes)
+
+1. **A2 Insert:** Eliminate or source-prove the linear number
+   of log-time ST modifications on a single insertion,
+   and establish the required O(n) bound in worst case.
+2. **Worst-case ST:** Supply a line-by-line mapping from
+   the published size-partition and globally biased
+   operations to the compiled code; verify worst-case
+   operation counts and that every invariant is preserved.
+3. **Insert-Query:** Provide a worst-case adjacency
+   membership bound consistent with O(log² n) total.
+4. **Preprocessing:** Reconcile code's characteristic
+   vectors and W matrix with the paper's table, including
+   the Section 5.1 / 7 discrepancy; report only supported
+   bounds.
+5. **Regression:** Continue independent exhaustive/random
+   differential tests, adversarial star/path/clique
+   cases, address/UB sanitizers, and operation-count
+   instrumentation after each relevant change.
+6. **Source policy:** No alternate heavy-path, amortized
+   splay, or undocumented batch-update substitute is
+   acceptable as a completed Ibarra A2.
+7. **Merge gate:** Keep the research implementation
+   isolated until ALL of these proof obligations are
+   satisfied. Update the existing single report rather
+   than creating another report.
+
+**Audit outcome (2026-11-19): BLOCKED for full paper-faithful A2/A2+.
+The independent tests have passed, but the required time bounds
+have NOT been verified.**
 
 ### Implementation evidence
 
