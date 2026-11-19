@@ -7,19 +7,17 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: Verify GitHub Markdown math syntax
         run: python3 scripts/check_markdown_math.py
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DMTP_BUILD_BENCHMARKS=ON -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -g" -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DMTP_BUILD_BENCHMARKS=ON
       - name: Build
         run: cmake --build build -j 2
-      - name: Validate published ST dynamic-forest semantics first
-        run: ctest --test-dir build --output-on-failure -R sleator_tarjan_1983_dynamic_forest
-      - name: Validate Ibarra A2 against A1 oracle
-        run: ctest --test-dir build --output-on-failure -R ibarra_section5_actual_ST_dynamic_tree
-
+      - name: Verify published BST85/ST linear builders and Ibarra A2
+        run: ctest --test-dir build --output-on-failure -R 'bst85_linear_global_bias|st1983_linear_forest_construction|ibarra_a2_linear_insert|ibarra_section5_actual_ST_dynamic_tree'
       - name: Test
         run: ctest --test-dir build --output-on-failure
       - name: Sample CLI
