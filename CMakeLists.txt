@@ -29,6 +29,10 @@ add_executable(mtp_dynamic_cli src/dynamic_main.cpp)
 target_link_libraries(mtp_dynamic_cli PRIVATE mtp_graphs)
 target_compile_options(mtp_dynamic_cli PRIVATE -Wall -Wextra -Wpedantic)
 
+add_executable(mtp_a2_cli src/a2_main.cpp)
+target_link_libraries(mtp_a2_cli PRIVATE mtp_graphs)
+target_compile_options(mtp_a2_cli PRIVATE -Wall -Wextra -Wpedantic)
+
 add_executable(mtp_indexed_cli src/indexed_main.cpp)
 target_link_libraries(mtp_indexed_cli PRIVATE mtp_graphs)
 target_compile_options(mtp_indexed_cli PRIVATE -Wall -Wextra -Wpedantic)
@@ -109,6 +113,12 @@ if(BUILD_TESTING)
     add_test(NAME ibarra_indexed_sample_cli COMMAND mtp_indexed_cli
              ${CMAKE_CURRENT_SOURCE_DIR}/data/example_7_vertices.txt
              ${CMAKE_CURRENT_SOURCE_DIR}/data/dynamic_example_ops.txt)
+    add_test(NAME ibarra_a2_sample_cli COMMAND mtp_a2_cli
+             ${CMAKE_CURRENT_SOURCE_DIR}/data/example_7_vertices.txt
+             ${CMAKE_CURRENT_SOURCE_DIR}/data/dynamic_example_ops.txt)
+    add_test(NAME ibarra_a2_fast_delete_sample_cli COMMAND mtp_a2_cli
+             ${CMAKE_CURRENT_SOURCE_DIR}/data/example_7_vertices.txt
+             ${CMAKE_CURRENT_SOURCE_DIR}/data/dynamic_example_ops.txt --fast-delete)
 endif()
 
 # Optional reproducible timing experiment (not included in routine CI tests).
