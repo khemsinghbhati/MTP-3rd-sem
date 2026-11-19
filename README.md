@@ -28,6 +28,8 @@ ctest --test-dir build --output-on-failure
 ./build/mtp_cli data/example_7_vertices.txt
 ./build/mtp_dynamic_cli data/example_7_vertices.txt data/dynamic_example_ops.txt
 ./build/mtp_dynamic_cli data/example_7_vertices.txt data/dynamic_example_ops.txt --fast-delete
+./build/mtp_indexed_cli data/example_7_vertices.txt data/dynamic_example_ops.txt
+./build/mtp_indexed_cli data/example_7_vertices.txt data/dynamic_example_ops.txt --fast-delete
 python3 scripts/check_markdown_math.py
 ~~~
 
@@ -56,6 +58,7 @@ To build the optional timing harness (separate from correctness tests):
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DMTP_BUILD_BENCHMARKS=ON
 cmake --build build -j
 ./build/mtp_benchmarks > results.csv
+./build/mtp_benchmark_indexed > indexed_results.csv
 ~~~
 
 The benchmark measures initialization, query, insertion, and deletion
@@ -65,7 +68,16 @@ cache, and scheduling; they are **empirical observations, not proofs** of
 worst-case time bounds. Benchmark results must be compared against the
 published bounds and the actual data structures used.
 
-**Research limitation:** Section 5's worst-case logarithmic dynamic tree
+**Research limitation:** An experimental Section 5 variant now supports
+logarithmic-squared path-based insertion queries and O(n) update operations
+using a size-partitioned heavy-path index rebuilt after each update. The
+core query and intersection-weight update decisions follow Ibarra, while
+the size-partition condition follows Sleator–Tarjan (1983), Section 5.
+The rebuild policy does **not** implement the required worst-case O(log n)
+dynamic-tree link/cut primitives; therefore A2 and A2+ are not certified
+as faithfully reproduced. The exact implementation remains pending.
+
+Previously documented limitation: Section 5's worst-case logarithmic dynamic tree
 remains absent. Source inspection also found potentially inconsistent
 A2 preprocessing accounting between Ibarra Sections 5.1 and 7,
 documented in the single report rather than silently resolved.
@@ -82,7 +94,8 @@ documented in the single report rather than silently resolved.
 | Section 3: Delete-Query / Insert-Query | Implemented, $O(n)$ each (first version) |
 | Section 3: Delete / Insert (incremental updates) | Implemented, $O(n)$ each (first version) |
 | Section 4: $O(n)$ per dynamic operation | Implemented and tested |
-| Section 5: worst-case dynamic tree / $O(\log^2 n)$ insertion query | **Pending** | 
+| Section 5 experimental indexed path query | Implemented; O(log² n) Insert-Query, but uses full O(n) heavy-path rebuilds instead of worst-case dynamic-tree primitives |
+| Section 5: exact worst-case Sleator–Tarjan dynamic tree | **Pending — publication-faithful requirement not yet met** | 
 | Section 6: modified-Yellin fast deletion query | Implemented; $O(\sqrt m)$ query and $O(m+n)$ updates | 
 | Section 8: dynamic split graph + clique/chromatic/independence/cover numbers | Implemented; $O(1)$ queries and valid updates |
 
