@@ -29,11 +29,22 @@ int main() {
                 }
                 Tree::Node* root=nullptr;
                 std::vector<int> expected;
+                std::vector<int> edge_costs;
+                long long total_weight=0;
                 for(int i=0;i<n;++i) {
-                    root=t.global_join(root,leaves[i]);
+                    int cost=-1000+static_cast<int>(rng()%2001);
+                    if(i>0)edge_costs.push_back(cost);
+                    root=t.global_join(root,leaves[i],cost);
                     expected.push_back(i);
+                    total_weight+=leaves[i]->weight;
                     t.check_invariants(root);
                     require(t.sequence(root)==expected,"prefix join order mismatch");
+                    require(root->sum_weight==total_weight,"aggregate subtree weight");
+                    require(t.min_cost(root)==
+                        (edge_costs.empty()?1000000000:
+                         *std::min_element(edge_costs.begin(),edge_costs.end())),
+                        "prefix minimum edge cost incorrect");
+                    require(t.kth(root,i)==leaves[i],"kth prefix node");
                     ++tested;
                 }
                 // Repeatedly cut at arbitrary existing leaves and
@@ -41,6 +52,10 @@ int main() {
                 for(int iteration=0;iteration<200;++iteration) {
                     const int selected=static_cast<int>(rng()%n);
                     auto cuts=t.split(leaves[selected]);
+                    require(cuts.before_cost==(selected>0?edge_costs[selected-1]:0),
+                            "split left boundary edge cost");
+                    require(cuts.after_cost==(selected+1<n?edge_costs[selected]:0),
+                            "split right boundary edge cost");
                     std::vector<int> a(expected.begin(),expected.begin()+selected);
                     std::vector<int> b(expected.begin()+selected+1,expected.end());
                     t.check_invariants(cuts.before);
@@ -50,12 +65,42 @@ int main() {
                     require(t.sequence(cuts.item)==std::vector<int>{selected},
                             "split selected item mismatch");
                     require(t.sequence(cuts.after)==b,"split suffix mismatch");
-                    root=t.global_join(cuts.before,cuts.item);
-                    root=t.global_join(root,cuts.after);
+                    root=t.global_join(cuts.before,cuts.item,cuts.before_cost);
+                    root=t.global_join(root,cuts.after,cuts.after_cost);
                     t.check_invariants(root);
                     require(t.sequence(root)==expected,"split/rejoin order mismatch");
+                    require(root->sum_weight==total_weight,"rejoined subtree weight");
+                    require(t.min_cost(root)==
+                        (edge_costs.empty()?1000000000:
+                         *std::min_element(edge_costs.begin(),edge_costs.end())),
+                        "rejoined path minimum incorrect");
+                    for(int j=0;j<n;++j)
+                        require(t.kth(root,j)==leaves[j],"kth after split/rejoin");
                     ++tested;
                 }
+                // Independent direct root-to-tail light-edge computation.
+                long long prefix=leaves[0]->weight;
+                int expected_light=-1;
+                for(int i=1;i<n;++i) {
+                    if(prefix<=leaves[i]->weight)expected_light=i;
+                    prefix+=leaves[i]->weight;
+                }
+                auto* light=t.light(root);
+                require((light?light->item:-1)==expected_light,
+                        "light edge weight criterion");
+                t.reverse(root);
+                auto reversed=expected;
+                std::reverse(reversed.begin(),reversed.end());
+                require(t.sequence(root)==reversed,
+                        "path reverse order incorrect");
+                require(t.min_cost(root)==
+                    (edge_costs.empty()?1000000000:
+                     *std::min_element(edge_costs.begin(),edge_costs.end())),
+                    "reverse changed edge minimum");
+                t.reverse(root);
+                require(t.sequence(root)==expected,
+                        "restored path reverse order incorrect");
+                t.check_invariants(root);
             }
         }
         std::cout<<"PASS: Bent–Sleator–Tarjan §4 global join/split tests: "
