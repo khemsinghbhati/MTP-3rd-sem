@@ -83,8 +83,7 @@ The currently implemented foundation comprises:
    **only as a test baseline**, not as the production algorithm.
 
 **Remaining work:** published worst-case dynamic-tree implementation from
-Section 5, modified-Yellin fast deletion queries from Section 6,
-associated maintenance, and full performance evaluation.
+Section 5, combination into A2+, and full performance evaluation.
 
 ### 1.2 Project boundaries at this snapshot
 
@@ -93,7 +92,7 @@ associated maintenance, and full performance evaluation.
   $O(n+m)$ static clique-tree construction; CLI; automated tests.
   The explicit clique graph remains as a reference test implementation.
 - **Not yet implemented:** Section 5 dynamic-tree / O(log² n) insertion
-  query, Section 6 O(sqrt(m)) deletion query, and full scaling benchmarks.
+  query and full scaling benchmarks. Section 6 fast deletion is implemented.
 - **No unsupported claim:** the code is a reorganized and validated baseline,
   not an original new dynamic graph algorithm.
 
@@ -1098,6 +1097,7 @@ cannot be marked paper-faithful.
 | 2026-11-19 | Replaced provisional preprocessing with Blair–Peyton Fig. 4.2 | `src/clique_tree_blair_peyton.cpp` |
 | 2026-11-19 | Implemented Ibarra first dynamic chordal updates and oracle tests | `src/dynamic_ibarra.cpp`, `tests/test_ibarra_dynamic.cpp` |
 | 2026-11-19 | Implemented Ibarra O(1) split recognition and updates | `src/dynamic_split_ibarra.cpp`, `tests/test_ibarra_split.cpp` |
+| 2026-11-19 | Implemented Ibarra Section 6 fast delete index and its update hooks | `src/fast_delete_ibarra.cpp`, `tests/test_ibarra_fast.cpp` |
 | Pending | Dynamic queries and incremental updates | Not claimed as completed |
 
 **Reporting rule:** Keep milestone dates and achievements accurate. Clearly
@@ -1319,14 +1319,78 @@ model. The independent test oracle stores the graph separately
 and checks randomized valid sequences. Theorem 8 and Section 8
 are the source of the algorithm and complexity bounds.
 
-### 13.4 Outstanding required variants — not misrepresented as complete
+### 13.4 Ibarra Section 6: modified-Yellin fast deletion queries
+
+**Primary reference:** Ibarra (2008), Sections 6.1–6.3, especially
+**Lemma 7** and the member/overflow/COMMON construction.
+**Source files:** `include/mtp/fast_delete_ibarra.hpp`,
+`src/fast_delete_ibarra.cpp`, optional integration within
+`src/dynamic_ibarra.cpp`. **Tests:** `tests/test_ibarra_fast.cpp`.
+
+For each active maximal clique node `x`, partition its vertex set
+into `x.member` and `x.overflow`, ensuring that:
+
+```math
+|x.member|\le p,\qquad p=\max(1,\lceil\sqrt m\rceil)
+```
+
+Each overflow list is nonempty only when its member list is full.
+Maintain a common-count matrix:
+
+```math
+COMMON[u,v]=|\{x:u,v\in x.member\}|
+```
+
+This counts every clique for which both vertices are in the member
+portion. The query scans only cliques with **nonempty overflow lists**
+and counts those containing both endpoints with at least one endpoint
+in the overflow portion.
+
+The paper proves that the total number of nonisolated clique-member
+occurrences is at most `2m` (Lemma 7). Hence the number of
+overflow-bearing clique elements is `O(m/p)=O(sqrt(m))`.
+Every overflow element is checked in constant time through two
+characteristic bits. Therefore the deletion query runs in
+**O(sqrt(m)+1) worst-case**. Notably, the fast path does **not**
+first call the graph's hash adjacency lookup; a nonedge has
+zero common maximal cliques and is correctly rejected directly.
+
+**Maintenance mapping:** When a chordal edge update creates or
+removes one or two maximal cliques, the dynamic implementation
+notifies the index before the old node's representation is changed
+and after the new node is created. Adding/removing a whole element
+updates the symmetric COMMON counts for all member pairs
+and the global linked list of active overflow elements.
+After the edge count changes, `rebalance(m)` moves members
+between the two portions to restore the threshold invariants.
+The paper's Section 6.3 analysis bounds this by **O(m+n) per
+graph update**, counting the O(n) underlying first-implementation
+tree mutation as well. Updating a member contributes O(p) COMMON
+adjustments; there are O(m/p) overflowing or overfull elements.
+
+**Preprocessing and space:** The implementation creates an
+n-by-n COMMON matrix and per-clique characteristic membership
+vectors, so it is **not** a linear-time preprocessing variant.
+The corresponding Ibarra Section 7 A1+ preprocessing bound is
+`O(mn+n^2)`; the C++ implementation explicitly allocates these
+matrices and lists.
+
+**Validation:** The optional
+`DynamicChordalGraph::enable_fast_delete_queries()` activates
+the index. The fast regression test runs the same independent
+query-oracle and incrementally updated clique-tree checks as the
+standard implementation: exhaustive chordal initial graphs
+up to five vertices and longer randomized update sequences.
+The dynamic CLI supports `--fast-delete` for this mode.
+
+### 13.5 Outstanding required variants — not misrepresented as complete
 
 | Version in Ibarra Section 7 | Current status | Published requirement |
 | --- | --- | --- |
 | A1: first chordal dynamic implementation | Implemented, update tests passing | O(n) for each of four operations |
 | A2: second chordal implementation | NOT IMPLEMENTED | O(log² n) insertion query; O(n log n) deletion; O(n) insertion |
-| A1+: modified-Yellin accelerated deletion query | NOT IMPLEMENTED | O(sqrt(m)) query; O(m+n) updates |
-| A2+: both optimizations | NOT IMPLEMENTED | Both requirements above |
+| A1+: modified-Yellin accelerated deletion query | Implemented and tested | O(sqrt(m)) query; O(m+n) updates |
+| A2+: both optimizations | NOT IMPLEMENTED (A1+ index available) | Both requirements above |
 | Section 8 split-graph degree sequence | Implemented, random tests passing | O(1) query and valid edge update |
 
 A2 requires the **worst-case logarithmic dynamic tree** from
