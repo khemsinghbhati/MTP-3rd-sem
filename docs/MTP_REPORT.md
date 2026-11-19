@@ -1555,6 +1555,29 @@ and independently verifies updated maximal cliques, tree weights,
 and the running-intersection property. GitHub Actions compiles
 and executes both the CLI sample and the query benchmark.
 
+**Measured insertion-query scaling (GitHub Actions Ubuntu runner,
+November 19, 2026):** A path graph gives an adversarial long
+clique-tree path. Each timing averages 2,000 *non-mutating* queries
+on the pair of distant endpoint vertices. Construction times are
+reported separately, because the source-specified reverse-PEO
+edge-insertion initialization is substantially more expensive here.
+
+| n | A1 initialization (ms) | Indexed initialization (ms) | A1 query (ms) | Indexed query (ms) |
+| ---: | ---: | ---: | ---: | ---: |
+| 100 | 0.0665090 | 1.1412110 | 0.0013268 | 0.0001179 |
+| 200 | 0.0738090 | 4.1025190 | 0.0027351 | 0.0001348 |
+| 400 | 0.1450650 | 15.9704420 | 0.0058487 | 0.0001531 |
+| 800 | 0.3111210 | 61.9226670 | 0.0121334 | 0.0002492 |
+| 1600 | 1.0380990 | 278.1260530 | 0.0218950 | 0.0001838 |
+
+Recorded data: benchmarks/results/a1_vs_indexed_path_2026-11-19.csv.
+Run: https://github.com/khemsinghbhati/MTP-3rd-sem/actions/runs/44511341613.
+These are machine- and input-specific observations, not worst-case
+proofs. The experimental indexed variant illustrates the tradeoff
+between fast repeated insertion queries and higher initialization
+cost; it does not satisfy the source-specific ST dynamic-tree
+implementation requirement.
+
 **Research acceptance:** A2 and A2+ remain **INCOMPLETE** until
 the exact worst-case dynamic-tree mechanism is implemented and
 verified. Matching the top-level query and update time limits
