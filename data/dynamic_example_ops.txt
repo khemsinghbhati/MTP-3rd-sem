@@ -1,0 +1,9 @@
+# Ibarra (2008), Sections 3-4.
+# The queries leave the graph unchanged; accepted updates modify the clique tree.
+Show
+Insert-Query 0 4
+Insert 0 4
+Delete-Query 0 4
+Delete 0 4
+Insert-Query 4 6
+Show
