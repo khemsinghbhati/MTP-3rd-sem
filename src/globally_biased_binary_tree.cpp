@@ -214,6 +214,7 @@ GloballyBiasedBinaryTree::Split GloballyBiasedBinaryTree::split(Node* x) {
     Node* left=nullptr;
     Node* right=nullptr;
     Node* current=x;
+    std::vector<Node*> detached_internals;
     while(current->parent) {
         Node* p=current->parent;
         Node* up=p->parent;
@@ -230,8 +231,12 @@ GloballyBiasedBinaryTree::Split GloballyBiasedBinaryTree::split(Node* x) {
         }
         current=p;
         current->parent=up;
-        recycle(p);
+        // Preserve the ancestral chain until after the entire split.
+        // Recycling a parent here erases its parent pointer and would
+        // silently truncate a multi-level split.
+        detached_internals.push_back(p);
     }
+    for(Node* destroyed:detached_internals)recycle(destroyed);
     x->parent=nullptr;
     if(left)left->parent=nullptr;
     if(right)right->parent=nullptr;
