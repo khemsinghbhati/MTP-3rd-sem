@@ -1475,6 +1475,91 @@ the preprocessing accounting above. The splay-based amortized
 link-cut variant is not an acceptable substitution for the
 paper's worst-case claim.
 
+### 13.9 Experimental indexed Section 5 queries (not paper A2)
+
+**Reference mapping and strict status.** This implementation adds a
+fully tested *research variant* of Ibarra (2008), Sections 5 and 5.1:
+fast insertion-query path search and maintained clique-intersection
+weights. It must **not** be labeled the paper's A2 or A2+ until the
+worst-case logarithmic dynamic tree is implemented as specified.
+
+**Exact published sources:**
+
+- Ibarra (2008), Sections 3.3–3.4 and 5, Theorems 5–6:
+  closest clique-subtree nodes x and y, minimum-weight x–y path,
+  admissibility condition, and the optional tree-edge swap.
+- Ibarra (2008), Section 5.1: maintained clique-intersection
+  weight matrix W, O(n) per-update row formulas, and the
+  reverse-PEO edge-insertion preprocessing method.
+- Sleator and Tarjan (1983), Section 5, Theorem 8:
+  size-based heavy/light edges. The code follows the exact
+  criterion that an edge to a child is heavy when twice the
+  child's subtree size exceeds the parent's subtree size.
+
+**Files:** include/mtp/indexed_dynamic_ibarra.hpp,
+src/indexed_dynamic_ibarra.cpp, src/indexed_main.cpp,
+tests/test_ibarra_indexed.cpp, benchmarks/benchmark_indexed.cpp.
+
+**Implemented operations:**
+
+1. Maintain one valid maximal-clique witness for each original
+   vertex, updating it when affected cliques are replaced.
+2. Rebuild a rooted size-based heavy-path partition after a
+   permitted insertion or deletion. A static path segment tree
+   stores separator weights; chains support kth-node and path
+   minimum queries.
+3. Find the closest u-containing and v-containing clique nodes
+   using two binary searches along the witness-to-witness path.
+   The clique-tree connected-subtree property makes membership
+   in u a prefix and membership in v a suffix on that path.
+4. Test Ibarra's insertion condition: the minimum weight on
+   the closest-node path equals the stored intersection W[x,y].
+5. For deletion, update the affected W rows using the Section
+   5.1 formulas: removing v from Kx subtracts one from its
+   overlap with a surviving Kw exactly when v belongs to Kw.
+6. For insertion, compute the new Kz weight row using the
+   published three cases (Kx replaced, Ky replaced, or both
+   survive), and the x-side/y-side components obtained by
+   cutting the minimum-weight tree edge.
+7. Initialize W by the **paper-specified method**: begin with
+   an empty n-vertex chordal graph and insert the target
+   edges in reverse PEO order. This preserves chordality
+   after each insertion.
+
+**Proved/established cost for this actual implementation:**
+
+| Operation | Analyzed worst-case time |
+| --- | --- |
+| Heavy-path index rebuilding after an update | O(n) |
+| kth node on a tree path | O(log n) |
+| Closest u/v clique nodes by binary search | O(log² n) |
+| Minimum separator weight on a tree path | O(log² n) |
+| Matrix intersection lookup | O(1) |
+| Insert-Query | O(log² n) |
+| Insert and Delete, including full index rebuild | O(n) each |
+| Delete-Query (first version) | O(n) |
+| Initialization with W + reverse-PEO edge insertions | O(n² + mn) |
+
+The operation bounds above are for the **whole indexed variant**.
+The code does **not** implement the source's O(log n)-worst-case
+dynamic-tree link/cut/reroot primitives. Instead it deliberately
+rebuilds a static heavy-path index in O(n) after each update.
+That is a transparent method deviation, not a claim to have
+reproduced Sleator–Tarjan's globally biased binary tree.
+
+**Tests:** The indexed regression suite compares insert and
+delete decisions with the first Ibarra implementation on every
+vertex pair, performs permitted update sequences from exhaustive
+small chordal initial graphs and 240 larger seeded random cases,
+and independently verifies updated maximal cliques, tree weights,
+and the running-intersection property. GitHub Actions compiles
+and executes both the CLI sample and the query benchmark.
+
+**Research acceptance:** A2 and A2+ remain **INCOMPLETE** until
+the exact worst-case dynamic-tree mechanism is implemented and
+verified. Matching the top-level query and update time limits
+in this alternative does not establish paper-method fidelity.
+
 ### Implementation evidence
 
 - **Modular C++ implementation:** `include/mtp/` and `src/`, including
