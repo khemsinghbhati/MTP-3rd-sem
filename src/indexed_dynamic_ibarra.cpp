@@ -1,4 +1,5 @@
 #include "mtp/indexed_dynamic_ibarra.hpp"
+#include "mtp/mcs.hpp"
 
 #include <algorithm>
 #include <stdexcept>
