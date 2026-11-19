@@ -67,9 +67,14 @@ void validate(Forest& forest,const Oracle& oracle) {
                 "connectivity mismatch "+std::to_string(u)+","+
                 std::to_string(v));
         if(!connected)continue;
-        require(forest.path_length(u,v)==static_cast<int>(p.size()),
-                "path length mismatch "+std::to_string(u)+","+
-                std::to_string(v));
+        const int actual_length=forest.path_length(u,v);
+        if(actual_length!=static_cast<int>(p.size())) {
+            throw std::runtime_error(stage+": path length mismatch "+
+                std::to_string(u)+","+std::to_string(v)+
+                " expected "+std::to_string(p.size())+
+                " got "+std::to_string(actual_length)+
+                "\nForest snapshot:\n"+forest.debug_state());
+        }
         int best=1000000000;
         for(int j=0;j<static_cast<int>(p.size());++j) {
             require(forest.kth_on_path(u,v,j)==p[j],
