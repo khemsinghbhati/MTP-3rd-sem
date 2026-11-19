@@ -11,6 +11,7 @@ add_library(mtp_graphs
     src/maximal_cliques.cpp
     src/clique_tree_blair_peyton.cpp
     src/dynamic_ibarra.cpp
+    src/fast_delete_ibarra.cpp
     src/dynamic_split_ibarra.cpp
 )
 target_include_directories(mtp_graphs PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
@@ -59,6 +60,11 @@ if(BUILD_TESTING)
     target_link_libraries(mtp_ibarra_split_tests PRIVATE mtp_graphs)
     target_compile_options(mtp_ibarra_split_tests PRIVATE -Wall -Wextra -Wpedantic)
     add_test(NAME ibarra_split_graph_implementation COMMAND mtp_ibarra_split_tests)
+
+    add_executable(mtp_ibarra_fast_tests tests/test_ibarra_fast.cpp)
+    target_link_libraries(mtp_ibarra_fast_tests PRIVATE mtp_graphs)
+    target_compile_options(mtp_ibarra_fast_tests PRIVATE -Wall -Wextra -Wpedantic)
+    add_test(NAME ibarra_fast_delete_query COMMAND mtp_ibarra_fast_tests)
     add_test(NAME ibarra_dynamic_sample_cli COMMAND mtp_dynamic_cli
              ${CMAKE_CURRENT_SOURCE_DIR}/data/example_7_vertices.txt
              ${CMAKE_CURRENT_SOURCE_DIR}/data/dynamic_example_ops.txt)
