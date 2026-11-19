@@ -180,17 +180,15 @@ bool SleatorTarjanChordalGraphA2::insert_edge(int u,int v) {
     const int x=pair.x,y=pair.y;
     const int cap=static_cast<int>(data_.nodes_.size());
     const int common=W_[x][y];
+    // The direct overlap scan is O(n) and therefore permitted during
+    // Insert (but never Insert-Query). It independently validates W.
+    const int direct_common=data_.overlap(x,y);
+    if(common!=direct_common)
+        throw std::logic_error("Section 5.1 matrix W disagrees with clique intersection"
+            " for x="+std::to_string(x)+",y="+std::to_string(y)+
+            ",W="+std::to_string(common)+",overlap="+std::to_string(direct_common));
     const bool drop_x=data_.nodes_[x].size==common+1;
     const bool drop_y=data_.nodes_[y].size==common+1;
-    // Ibarra Section 4: if a clique is subsumed, directly enlarge its
-    // characteristic vector rather than introducing a temporary z node.
-    // Keep the same choice as the linked clique-tree insertion routine.
-    int reused=-1;
-    if(drop_x&&!drop_y)reused=x;
-    else if(drop_y&&!drop_x)reused=y;
-    else if(drop_x&&drop_y)
-        reused=data_.nodes_[x].incident.size()>=
-               data_.nodes_[y].incident.size()?x:y;
     std::vector<bool> old_active(cap,false),on_x_side(cap,false);
     for(int i=0;i<cap;++i)old_active[i]=data_.nodes_[i].active;
     const auto old_x=W_[x];
@@ -235,18 +233,11 @@ bool SleatorTarjanChordalGraphA2::insert_edge(int u,int v) {
 
     link_count_last_=cut_count_last_=0;
     if(!data_.insert_edge(u,v))throw std::logic_error("insert precondition changed");
-    int z=reused;
-    if(z<0) {
-        for(int i=0;i<cap;++i)
-            if(data_.nodes_[i].active&&!old_active[i])z=i;
-    }
-    if(z<0||!data_.nodes_[z].active)
-        throw std::logic_error(
-            "Ibarra new/reused maximal clique missing: u="+std::to_string(u)+
-            ",v="+std::to_string(v)+",x="+std::to_string(x)+
-            ",y="+std::to_string(y)+",dropX="+std::to_string(drop_x)+
-            ",dropY="+std::to_string(drop_y)+",reuse="+std::to_string(reused)+
-            ",z="+std::to_string(z));
+    // Theorem 4: after insertion exactly one maximal clique contains
+    // the newly added edge. It may be a reused old node or a new node.
+    const int z=data_.clique_of_edge(u,v);
+    if(z<0 || !data_.nodes_[z].active)
+        throw std::logic_error("Ibarra's new unique clique containing the inserted edge is missing");
     for(int t=0;t<data_.graph_.vertex_count();++t) {
         const int old=vertex_witness_[t];
         if(data_.nodes_[old].active)continue;
