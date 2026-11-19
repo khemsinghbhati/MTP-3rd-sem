@@ -24,18 +24,35 @@ public:
         int item=-1; // leaf ID, or -1 for an internal node
         int weight=0; // leaf weight; dynamic-tree path weights
         bool live=true;
+        // Sleator–Tarjan (1983), §4–5, path aggregate fields.
+        int edge_cost=0; // internal edge between the rightmost left and leftmost right leaves
+        int minimum_cost=1000000000;
+        long long sum_weight=0;
+        long long left_tilt_min=1000000000000LL;
+        long long right_tilt_min=1000000000000LL;
+        Node* first=nullptr;
+        Node* last=nullptr;
+        int leaf_count=0;
+        bool reversed=false;
         [[nodiscard]] bool is_leaf() const noexcept {return item>=0;}
     };
     struct Split {
         Node* before=nullptr;
         Node* item=nullptr;
         Node* after=nullptr;
+        int before_cost=0;
+        int after_cost=0;
     };
 
     // Each leaf must have a strictly positive integral weight.
     Node* leaf(int item, int weight);
     // Concatenation consumes roots (each must be detached).
-    Node* global_join(Node* left, Node* right);
+    Node* global_join(Node* left, Node* right, int edge_cost=0);
+    // Dynamic path operations (Sleator–Tarjan 1983, §§3–5).
+    void reverse(Node* root);
+    [[nodiscard]] Node* kth(Node* root, int position) const;
+    [[nodiscard]] int min_cost(Node* root) const;
+    [[nodiscard]] Node* light(Node* root) const;
     // Split consumes the tree containing the leaf and returns three roots.
     Split split(Node* leaf);
     // Iterative linear-time independent validation of root-to-leaf order.
@@ -47,12 +64,15 @@ private:
     std::vector<std::unique_ptr<Node>> storage_;
     std::vector<Node*> pool_;
     static int floor_log2(int weight);
-    Node* internal(Node* left, Node* right, int rank);
+    Node* internal(Node* left, Node* right, int rank, int edge_cost);
+    void refresh(Node* x);
+    static void flip(Node* x);
+    static void push(Node* x);
     void set_left(Node* parent, Node* child);
     void set_right(Node* parent, Node* child);
     Node* tilt_left(Node* x);
     Node* tilt_right(Node* x);
-    Node* local_join(Node* left, Node* right);
+    Node* local_join(Node* left, Node* right, int edge_cost);
     void recycle(Node* internal_node);
 };
 
