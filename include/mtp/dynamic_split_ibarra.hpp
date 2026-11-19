@@ -12,6 +12,8 @@ namespace mtp {
 class DynamicSplitGraph {
 public:
     explicit DynamicSplitGraph(const Graph& graph);
+    // Auxiliary degree-list constructor used for the complement graph.
+    explicit DynamicSplitGraph(std::vector<int> degrees);
     [[nodiscard]] bool is_split() const noexcept;
     [[nodiscard]] int clique_number_when_split() const noexcept {return j_;}
     [[nodiscard]] int degree(int vertex) const;
@@ -33,4 +35,21 @@ private:
     void update_boundary_after_insert();
     void update_boundary_after_delete();
 };
+// Ibarra Section 8, final paragraph: maintain this degree-sequence
+// algorithm on G and its complement to obtain four optimization numbers.
+// Precondition: every requested edge update is valid for the graph.
+class DynamicSplitStatistics {
+public:
+    explicit DynamicSplitStatistics(const Graph& graph);
+    [[nodiscard]] bool is_split() const noexcept { return original_.is_split(); }
+    [[nodiscard]] int clique_number() const;
+    [[nodiscard]] int chromatic_number() const { return clique_number(); }
+    [[nodiscard]] int independence_number() const;
+    [[nodiscard]] int clique_cover_number() const { return independence_number(); }
+    void insert_edge(int u, int v);
+    void delete_edge(int u, int v);
+private:
+    DynamicSplitGraph original_, complement_;
+};
+
 } // namespace mtp
