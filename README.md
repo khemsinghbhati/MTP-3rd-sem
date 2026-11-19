@@ -62,11 +62,11 @@ Graph input format: first line contains the number of vertices and edges (`V E`)
 | Section 4: $O(n)$ per dynamic operation | Implemented and tested |
 | Section 5: worst-case dynamic tree / $O(\log^2 n)$ insertion query | **Pending** | 
 | Section 6: modified-Yellin fast deletion query | Implemented; $O(\sqrt m)$ query and $O(m+n)$ updates | 
-| Section 8: dynamic split graph | Implemented; $O(1)$ query and valid update |
+| Section 8: dynamic split graph + clique/chromatic/independence/cover numbers | Implemented; $O(1)$ queries and valid updates |
 
 ## Verification
 
-The Blair–Peyton constructor passed **19,048 exhaustive nonempty chordal graphs** with 1–6 vertices, **800 seeded randomized chordal graphs** with 7–13 vertices, and larger sparse-star and dense-clique cases. Tests independently compare maximal cliques, tree weights, maximum spanning-tree weights, and the induced subtree property. Existing baseline tests remain. The full input parser still uses hashing for duplicate-edge validation; the $O(n+m)$ algorithmic bound assumes an already represented graph.
+The Blair–Peyton constructor passed **19,048 exhaustive nonempty chordal graphs** with 1–6 vertices, **800 seeded randomized chordal graphs** with 7–13 vertices, and larger sparse-star and dense-clique cases. Tests independently compare maximal cliques, tree weights, maximum spanning-tree weights, and the induced subtree property. The split-graph tests also independently check all four optimization numbers against brute-force subset enumeration on small graphs. Existing baseline tests remain. The full input parser still uses hashing for duplicate-edge validation; the $O(n+m)$ algorithmic bound assumes an already represented graph.
 
 ## Research provenance rule (mandatory)
 
