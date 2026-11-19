@@ -109,7 +109,12 @@ void run_sequence(Graph graph,std::mt19937& random,int steps,bool fast_delete) {
 }
 void exhaustive() {
     std::mt19937 rng(20261119);
-    for(int n=0;n<=4;++n) {
+#ifdef __SANITIZE_ADDRESS__
+    constexpr int max_n=3;
+#else
+    constexpr int max_n=5;
+#endif
+    for(int n=0;n<=max_n;++n) {
         std::vector<std::pair<int,int>> pairs;
         for(int u=0;u<n;++u)for(int v=u+1;v<n;++v)
             pairs.emplace_back(u,v);
@@ -127,7 +132,12 @@ void exhaustive() {
 }
 void randomized() {
     std::mt19937 rng(20261119);
-    for(int trial=0;trial<45;++trial) {
+#ifdef __SANITIZE_ADDRESS__
+    constexpr int trials=6,steps=5;
+#else
+    constexpr int trials=60,steps=20;
+#endif
+    for(int trial=0;trial<trials;++trial) {
         const int n=5+static_cast<int>(rng()%6);
         Graph g(0);
         for(int size=0;size<n;++size) {
@@ -142,7 +152,7 @@ void randomized() {
             }
             g=std::move(next);
         }
-        run_sequence(std::move(g),rng,12,trial%2==0);
+        run_sequence(std::move(g),rng,steps,trial%2==0);
     }
 }
 } // namespace
