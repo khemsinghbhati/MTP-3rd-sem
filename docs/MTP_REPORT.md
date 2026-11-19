@@ -593,7 +593,7 @@ condition described earlier, with input validation and automated tests.
 | Graph | `include/mtp/graph.hpp` | `src/graph.cpp` | Undirected simple graph, validated edges and membership |
 | MCS / PEO | `include/mtp/mcs.hpp` | `src/mcs.cpp` | Order vertices using MCS; verify PEO |
 | Maximal cliques | `include/mtp/maximal_cliques.hpp` | `src/maximal_cliques.cpp` | Compute and filter candidates |
-| Direct clique tree | `include/mtp/clique_tree_linear.hpp` | `src/clique_tree_linear.cpp` | $O(n+m)$ clique-tree preprocessing without full $W_G$ |
+| Direct clique tree | `include/mtp/clique_tree_blair_peyton.hpp` | `src/clique_tree_blair_peyton.cpp` | $O(n+m)$ clique-tree preprocessing without full $W_G$ |
 | CLI | - | `src/main.cpp` | Read graph files and use the direct constructor |
 | Tests | - | `tests/test_algorithms.cpp` | Independent oracle checks |
 
@@ -898,87 +898,29 @@ The new source <code>tests/test_clique_tree.cpp</code> verifies:
 These tests do **not** prove performance for large input sizes,
 and do **not** exercise incremental dynamic edge operations.
 
-### 9.2.3 Production: direct clique tree in worst-case linear time
+### 9.2.3 Production: published Blair–Peyton expanded MCS
 
-**Paper alignment.** Ibarra (2008), Section 2 (paper pp. 40:5–40:6)
-cites $O(n+m)$ algorithms for initial maximal-clique and clique-tree
-computation. Section 4 (p. 40:11) uses this preprocessing.
-The paper does *not* give the full preprocessing pseudocode: the
-elimination-forest contraction below is our independently implemented
-linear-time realization of that required output and asymptotic bound,
-not a verbatim extraction from Ibarra.
+**Reference:** Blair and Peyton (1993), Section 4.2.2, Figure 4.2,
+Theorem 4.3. The former elimination-forest contraction prototype
+has been deleted because its correspondence to a published algorithm
+was unverified.
 
-**Implementation:** `include/mtp/clique_tree_linear.hpp` and
-`src/clique_tree_linear.cpp`. The CLI invokes this constructor
-directly and never constructs the full $W_G$.
+The production function `build_clique_tree_blair_peyton()` replays the
+**MCS-derived** PEO right to left. It counts already-numbered neighbors,
+starts a new maximal clique whenever the count does not exceed the
+previous count, and connects that clique to the clique containing its
+lowest-labeled separator vertex. This follows Figure 4.2's decision
+rules. Disconnected components are joined by dummy zero-weight links
+as prescribed by Ibarra (2008), Section 2.
 
-The **elimination forest** is built from a valid PEO by connecting
-each vertex $u$ to its earliest later neighbor $p(u)$, if any. Define
-candidate cliques $C_u$ as in Section 5. The code performs:
+The construction scans each adjacency list a constant number of times.
+Clique member insertions total `O(n+m)`; therefore its worst-case
+running time is **O(n+m)** for a represented graph with MCS ordering.
+Correctness is justified by Blair–Peyton's theorem and checked by
+independent exhaustive/random regression tests (Section 13.1).
+No pairwise construction of `W_G` occurs in the production path.
 
-1. Compute positions, parents, and later-neighbor counts by scanning
-   adjacency lists.
-2. For each child $u$ of $p=p(u)$, if the parent-subsumption cardinality
-   condition holds, record $u$ as one witness that $C_p$ is non-maximal.
-3. Contract exactly one witnessed edge for each non-maximal candidate.
-   The contraction edges form a subforest, so linear-time DFS assigns
-   every original candidate vertex to a unique remaining maximal clique.
-4. For each *uncontracted* elimination-forest edge from $u$ to $p(u)$,
-   connect the corresponding maximal-clique nodes. The separator weight
-   equals the number of later neighbors of $u$.
-5. For disconnected input graphs, link the component clique trees
-   with zero-weight dummy edges, as in the paper.
-
-**Why this works.** For each original vertex $v$, the candidate nodes
-containing $v$ form a connected subtree of the elimination forest:
-if $v$ is a later neighbor of $u$, then $v$ is also contained in the
-candidate of each vertex along the parent chain from $u$ to $v$.
-The contraction of an edge for which one candidate is contained in
-the other preserves this property.
-
-Every maximal clique is a candidate (Section 5.1). To see why the
-witness rule catches *every* non-maximal candidate $C_p$, take a
-maximal clique $C_w$ strictly containing $C_p$. Since $C_p$ already
-contains every later neighbor of $p$, the representative $w$ must
-occur earlier than $p$. The parent path from $w$ to $p$ consists of
-candidates containing every vertex of $C_p$. In particular, if $u$
-is the child of $p$ on this path, $C_p$ is a strict subset of $C_u$,
-which forces the cardinality witness condition. Thus contraction
-removes exactly the non-maximal candidate nodes.
-
-Before contraction, the intersection of candidates at a parent edge
-$(u,p(u))$ is exactly the set of later neighbors of $u$. Because the
-running-intersection property is preserved and each contracted
-component's representative contains its removed candidates,
-the intersection size across a surviving edge is unchanged. This
-gives the correct tree-edge weight without a clique-pair scan.
-
-All adjacency scans, candidate-member copies, witness checks,
-contraction edges, DFS steps, and emitted tree edges have total
-size $O(n+m)$. Hence, given an adjacency-list representation of
-the original chordal graph:
-
-```math
-T_{\mathrm{preprocess}}(n,m)=O(n+m)
-```
-
-The bound is **worst case** for the construction and PEO verification
-code. Building the in-memory graph from externally supplied text is
-a separate input-handling step.
-
-**Evidence:** `tests/test_linear_clique_tree.cpp` verifies the
-maximal-clique set, correct edge weights, tree connectivity,
-running-intersection property, and maximum total intersection weight
-against an independent pairwise Kruskal oracle. It checks all
-**19,048 chordal graphs on 1–6 vertices**, **800 seeded randomized**
-chordal graphs, and larger star and complete graphs. The full pairwise
-algorithm is never used inside the constructor.
-
-**Scope:** This fixes the *static preprocessing* deviation. It does
-not implement Ibarra's four dynamic operations, his characteristic
-vectors, dynamic trees, or the faster deletion-query structure.
-
-### 9.3 Remaining: Section 5 and Section 6 optimized dynamics
+### 9.3 Remaining: Section 5 dynamic-tree optimization and Section 7 comparisons
 
 First implementation (Sections 3–4) is complete. The remaining faster
 variants must be implemented from the paper, with their exact supporting
@@ -1043,23 +985,10 @@ as newly invented implementation methods.
    **O(n+m)** clique-tree construction.
    DOI: 10.1016/S0304-3975(03)00221-4.
 
-**Current method audit — not complete:** Our existing
-`build_clique_tree_linear()` constructs an elimination forest and
-contracts selected parent relationships. The implementation has been
-validated computationally, and its own operations have an
-O(n+m) analysis. However, its **exact contraction algorithm has not yet
-been matched step by step to the pseudocode of Blair–Peyton Figure 4.2
-or Habib et al. Algorithm 4**. It must therefore remain a **provisional
-research implementation**, not a source-approved reproduction.
-
-**Correction implemented (2026-11-19):** The production build and CLI
-now call \`build_clique_tree_blair_peyton()\`, which follows the decision
-rules and parent selection from Blair–Peyton Figure 4.2. The provisional
-elimination-forest implementation is no longer compiled into production. Preserve existing
-tests as regression checks, not substitutes for algorithm provenance.
-Do not claim that merging the two papers' techniques constitutes a
-published algorithm unless a publication expressly supports that
-combination.
+**Source audit closed (2026-11-19):** The provisional
+elimination-forest constructor was removed. Production now uses
+`build_clique_tree_blair_peyton()`, mapped to published Figure 4.2
+in Section 13.1.
 
 **Acceptance record required for every module:**
 paper and bibliographic identity; exact section/algorithm/lemma;
@@ -1091,7 +1020,7 @@ cannot be marked paper-faithful.
 | 2026-11-18 | Exhaustive verification for $n\le6$ and 600 random chordal cases | `tests/test_algorithms.cpp` |
 | 2026-11-18 | Added weighted clique graph and static clique tree | `src/clique_graph.cpp`, `src/clique_tree.cpp` |
 | 2026-11-18 | Verified 19,048 chordal cases, brute-force maximum tree checks, and 600 random cases | `tests/test_clique_tree.cpp` |
-| 2026-11-18 | Replaced production clique-graph enumeration with direct linear clique-tree construction | `src/clique_tree_linear.cpp`, `src/main.cpp` |
+| 2026-11-18 | Replaced production clique-graph enumeration with direct linear clique-tree construction | `src/clique_tree_blair_peyton.cpp`, `src/main.cpp` |
 | 2026-11-18 | Replaced expected-time hash PEO validation with worst-case linear grouped marking | `src/mcs.cpp` |
 | 2026-11-18 | Added 19,048 exhaustive, 800 randomized, and large-graph tests of direct clique tree | `tests/test_linear_clique_tree.cpp` |
 | 2026-11-19 | Replaced provisional preprocessing with Blair–Peyton Fig. 4.2 | `src/clique_tree_blair_peyton.cpp` |
@@ -1158,12 +1087,12 @@ Ibarra (2008), Section 2, cites earlier linear-time preprocessing methods.
 | Figure 4.2 operation | C++ implementation |
 | --- | --- |
 | Select a maximum-cardinality numbered vertex | `maximum_cardinality_search(G)` |
-| Compute `new_card` as numbered-neighbor count | `current_card` in `src/clique_tree_blair_peyton.cpp` |
-| Begin new clique when new cardinality is at most previous | `if (current_card <= previous_card)` |
+| Compute `new_card` as numbered-neighbor count | `new_cardinality` in `src/clique_tree_blair_peyton.cpp` |
+| Begin new clique when new cardinality is at most previous | `if (new_cardinality <= previous_cardinality)` |
 | Start clique with numbered neighbors | Add each later neighbor of chosen vertex |
-| For nonempty separator, choose its smallest PEO index | `minimum_labeled_neighbor` |
+| For nonempty separator, choose its smallest PEO index | `lowest_label_neighbor` |
 | Link new clique to clique assigned to selected separator vertex | `clique_of_vertex[minimum_labeled_neighbor]` |
-| Assign current vertex to current clique and add it | `clique_of_vertex[u]=s` and `push_back(u)` |
+| Assign current vertex to current clique and add it | `clique_of[v]=active_clique` and `push_back(u)` |
 
 The MCS selection stage is already carried out by
 `maximum_cardinality_search`; the construction replays Figure 4.2's
