@@ -10,6 +10,7 @@
 #include <vector>
 
 using Forest=mtp::SleatorTarjanWorstCaseForest;
+static std::string stage;
 struct Oracle {
     std::vector<std::vector<std::pair<int,int>>> adjacent;
     explicit Oracle(int n):adjacent(n){}
@@ -54,7 +55,7 @@ struct Oracle {
     }
 };
 void require(bool ok,const std::string& explanation) {
-    if(!ok)throw std::runtime_error(explanation);
+    if(!ok)throw std::runtime_error(stage+": "+explanation);
 }
 void validate(Forest& forest,const Oracle& oracle) {
     forest.check_invariants();
@@ -85,15 +86,16 @@ int main() {
     try {
         {
             Forest x(2); Oracle reference(2);
+            stage="two-vertex initialization";
             x.check_invariants();
             x.link(0,1,7);reference.link(0,1,7);
-            validate(x,reference);
-            x.evert(0);validate(x,reference);
-            x.evert(1);validate(x,reference);
+            stage="two-vertex after link";validate(x,reference);
+            x.evert(0);stage="two-vertex evert 0";validate(x,reference);
+            x.evert(1);stage="two-vertex evert 1";validate(x,reference);
             x.cut(0,1);reference.cut(0,1);
-            validate(x,reference);
+            stage="two-vertex after cut";validate(x,reference);
             x.link(1,0,3);reference.link(1,0,3);
-            validate(x,reference);
+            stage="two-vertex after relink";validate(x,reference);
         }
         std::mt19937 rng(20261119);
         for(int n=3;n<=12;++n) {
@@ -115,6 +117,7 @@ int main() {
                     } else {
                         forest.evert(u);
                     }
+                    stage="n="+std::to_string(n)+" trial="+std::to_string(trial)+" step="+std::to_string(step)+" endpoints="+std::to_string(u)+","+std::to_string(v);
                     validate(forest,oracle);
                 }
             }
