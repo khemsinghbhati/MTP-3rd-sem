@@ -241,7 +241,12 @@ bool SleatorTarjanChordalGraphA2::insert_edge(int u,int v) {
             if(data_.nodes_[i].active&&!old_active[i])z=i;
     }
     if(z<0||!data_.nodes_[z].active)
-        throw std::logic_error("Ibarra new/reused maximal clique missing");
+        throw std::logic_error(
+            "Ibarra new/reused maximal clique missing: u="+std::to_string(u)+
+            ",v="+std::to_string(v)+",x="+std::to_string(x)+
+            ",y="+std::to_string(y)+",dropX="+std::to_string(drop_x)+
+            ",dropY="+std::to_string(drop_y)+",reuse="+std::to_string(reused)+
+            ",z="+std::to_string(z));
     for(int t=0;t<data_.graph_.vertex_count();++t) {
         const int old=vertex_witness_[t];
         if(data_.nodes_[old].active)continue;
