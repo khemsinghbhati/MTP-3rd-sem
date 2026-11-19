@@ -4,13 +4,30 @@
 #include <utility>
 
 namespace mtp {
-DynamicSplitGraph::DynamicSplitGraph(const Graph& graph) {
-    const int n = graph.vertex_count();
-    degree_.resize(n);
+namespace {
+std::vector<int> graph_degrees(const Graph& graph) {
+    std::vector<int> degrees(graph.vertex_count());
+    for (int v=0;v<graph.vertex_count();++v)
+        degrees[v]=static_cast<int>(graph.neighbors(v).size());
+    return degrees;
+}
+std::vector<int> complement_degrees(const Graph& graph) {
+    auto degrees=graph_degrees(graph);
+    const int n=graph.vertex_count();
+    for (int& degree:degrees) degree=n-1-degree;
+    return degrees;
+}
+} // namespace
+
+DynamicSplitGraph::DynamicSplitGraph(const Graph& graph)
+    : DynamicSplitGraph(graph_degrees(graph)) {}
+DynamicSplitGraph::DynamicSplitGraph(std::vector<int> degrees)
+    : degree_(std::move(degrees)) {
+    const int n=static_cast<int>(degree_.size());
     std::vector<int> counts(n+1,0);
-    for (int v=0;v<n;++v) {
-        degree_[v]=static_cast<int>(graph.neighbors(v).size());
-        ++counts[degree_[v]];
+    for (int d : degree_) {
+        if (d<0 || d>=n) throw std::invalid_argument("invalid degree sequence");
+        ++counts[d];
     }
     first_.resize(n+1);
     last_.resize(n+1);
@@ -125,4 +142,24 @@ void DynamicSplitGraph::delete_edge(int u,int v) {
     --degree_[u];--degree_[v];
     update_boundary_after_delete();
 }
+DynamicSplitStatistics::DynamicSplitStatistics(const Graph& graph)
+    : original_(graph), complement_(complement_degrees(graph)) {}
+
+int DynamicSplitStatistics::clique_number() const {
+    if (!is_split()) throw std::logic_error("graph is not split");
+    return original_.clique_number_when_split();
+}
+int DynamicSplitStatistics::independence_number() const {
+    if (!is_split()) throw std::logic_error("graph is not split");
+    return complement_.clique_number_when_split();
+}
+void DynamicSplitStatistics::insert_edge(int u,int v) {
+    original_.insert_edge(u,v);
+    complement_.delete_edge(u,v);
+}
+void DynamicSplitStatistics::delete_edge(int u,int v) {
+    original_.delete_edge(u,v);
+    complement_.insert_edge(u,v);
+}
+
 } // namespace mtp
