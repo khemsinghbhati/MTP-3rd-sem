@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
             return 2;
         }
 
-        // Paper-aligned O(n+m) preprocessing: do not enumerate W_G.
+        // Blair-Peyton Fig. 4.2 O(n+m) preprocessing: do not enumerate W_G.
         const auto clique_tree = mtp::build_clique_tree_blair_peyton(graph, peo);
         const auto& cliques = clique_tree.cliques;
         std::cout << "Maximal cliques (" << cliques.size() << "):\n";
