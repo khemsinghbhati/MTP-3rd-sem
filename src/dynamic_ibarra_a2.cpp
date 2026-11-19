@@ -232,7 +232,34 @@ bool SleatorTarjanChordalGraphA2::insert_edge(int u,int v) {
     }
 
     link_count_last_=cut_count_last_=0;
-    if(!data_.insert_edge(u,v))throw std::logic_error("insert precondition changed");
+    rebuilt_last_insert_=false;
+    rebuild_steps_last_insert_=0;
+
+    // Ibarra 2008 Section 4 permits directly reusing the maximal
+    // clique when both Kx and Ky are subsumed. Contracting the other
+    // high-degree clique through individually charged ST link/cut
+    // operations would give only O(n log n) worst-case by composition.
+    //
+    // Instead rebuild the SAME published ST83 Section 5 worst-case
+    // dynamic forest after this clique-tree update:
+    //   - ST83 §4 exact size-based heavy-edge partition;
+    //   - ST83 §5 globally biased solid paths and dashed path sets;
+    //   - BST85 §4 Fig.15/Thm 12 O(n) bottom-up construction.
+    // Each vertex occurs in precisely one solid path and at most one
+    // dashed-path set; path-set weights are integers in [1,n] and are
+    // counting-sorted. The full reconstruction is WORST-CASE O(n),
+    // including destruction of the old O(n)-sized ST structure.
+    // This is not an alternate dynamic tree (no HLD, splay or top tree).
+    const bool bulk_rebuild=drop_x && drop_y;
+    if(bulk_rebuild) {
+        data_.tree_link_hook_={};
+        data_.tree_cut_hook_={};
+    }
+    const bool changed=data_.insert_edge(u,v);
+    if(!changed) {
+        if(bulk_rebuild)attach_tree_hooks();
+        throw std::logic_error("insert precondition changed");
+    }
     // Theorem 4: after insertion exactly one maximal clique contains
     // the newly added edge. It may be a reused old node or a new node.
     const int z=data_.clique_of_edge(u,v);
@@ -250,6 +277,17 @@ bool SleatorTarjanChordalGraphA2::insert_edge(int u,int v) {
         W_[z][i]=W_[i][z]=new_row[i];
     }
     W_[z][z]=data_.nodes_[z].size;
+
+    if(bulk_rebuild) {
+        std::vector<SleatorTarjanWorstCaseForest::Edge> live;
+        live.reserve(static_cast<std::size_t>(data_.active_count_));
+        for(const auto& edge:data_.edges_)
+            if(edge.active)live.push_back({edge.a,edge.b,edge.weight});
+        tree_=SleatorTarjanWorstCaseForest::build_linear_forest(cap,live);
+        rebuild_steps_last_insert_=tree_.static_build_steps();
+        rebuilt_last_insert_=true;
+        attach_tree_hooks();
+    }
     return true;
 }
 } // namespace mtp
