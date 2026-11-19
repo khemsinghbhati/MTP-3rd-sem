@@ -2,12 +2,12 @@
 
 **M.Tech CSE | IIT Bhubaneswar | End-semester presentation: November 30, 2026**
 
-Private working repository implementing Louis Ibarra's *Fully Dynamic Algorithms for Chordal Graphs and Split Graphs* (2008, DOI 10.1145/1383369.1383371). **The paper's methods and asymptotic bounds are requirements.** Static preprocessing is implemented; the four dynamic operations are not yet implemented.
+Private working repository implementing Louis Ibarra's *Fully Dynamic Algorithms for Chordal Graphs and Split Graphs* (2008, DOI 10.1145/1383369.1383371). **The paper's methods and asymptotic bounds are requirements.** Blair–Peyton clique-tree preprocessing, Ibarra's first four dynamic chordal operations, the optional fast deletion-query index, and his constant-time split-graph algorithm are implemented. Section 5's dynamic-tree optimization remains unfinished.
 
 ## Project structure
 
-- `include/mtp/` — modular interfaces for MCS/PEO, maximal cliques, and the direct clique-tree constructor.
-- `src/` — paper-aligned production algorithms and the CLI. The quadratic clique-graph/Kruskal implementations are compiled only into the **test baseline** library.
+- `include/mtp/` — MCS/PEO, Blair–Peyton clique tree, Ibarra dynamic chordal queries/updates, modified-Yellin fast index, and split-graph interfaces.
+- `src/` — published-source-aligned algorithms and CLIs. The quadratic clique-graph/Kruskal implementations are compiled only into the **test baseline** library.
 - `tests/` — exhaustive, randomized, and independent small-graph verification.
 - `data/` — example input graphs.
 - `docs/MTP_REPORT.md` — **one evolving detailed technical report**.
@@ -26,6 +26,8 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j
 ctest --test-dir build --output-on-failure
 ./build/mtp_cli data/example_7_vertices.txt
+./build/mtp_dynamic_cli data/example_7_vertices.txt data/dynamic_example_ops.txt
+./build/mtp_dynamic_cli data/example_7_vertices.txt data/dynamic_example_ops.txt --fast-delete
 python3 scripts/check_markdown_math.py
 ~~~
 
@@ -52,17 +54,19 @@ Graph input format: first line contains the number of vertices and edges (`V E`)
 | --- | --- |
 | MCS and deterministic PEO verification | **$O(n+m)$; implemented and tested** |
 | Maximal clique enumeration | **$O(n+m)$; implemented and tested** |
-| Direct initial clique-tree construction | **$O(n+m)$; implemented/tested, reference-mapping audit pending** |
+| Blair–Peyton Fig. 4.2 initial clique-tree construction | **$O(n+m)$; implemented and independently tested** |
 | Explicit weighted clique graph + Kruskal | **Reference baseline only** (not production) |
 | Disconnected graphs and dummy clique-tree edges | **Implemented and tested** |
-| Section 3: Delete-Query / Insert-Query | Pending |
-| Section 3: Delete / Insert (incremental updates) | Pending |
-| Section 4: $O(n)$ per dynamic operation | Pending |
-| Sections 5–6: optimized data structures and bounds | Pending |
+| Section 3: Delete-Query / Insert-Query | Implemented, $O(n)$ each (first version) |
+| Section 3: Delete / Insert (incremental updates) | Implemented, $O(n)$ each (first version) |
+| Section 4: $O(n)$ per dynamic operation | Implemented and tested |
+| Section 5: worst-case dynamic tree / $O(\log^2 n)$ insertion query | **Pending** | 
+| Section 6: modified-Yellin fast deletion query | Implemented; $O(\sqrt m)$ query and $O(m+n)$ updates | 
+| Section 8: dynamic split graph | Implemented; $O(1)$ query and valid update |
 
 ## Verification
 
-The direct clique-tree constructor passed **19,048 exhaustive chordal graphs** with 1–6 vertices, **800 seeded randomized chordal graphs** with 7–13 vertices, and larger sparse-star and dense-clique cases. Tests independently compare maximal cliques, tree weights, maximum spanning-tree weights, and the induced subtree property. Existing baseline tests remain. The full input parser still uses hashing for duplicate-edge validation; the $O(n+m)$ algorithmic bound assumes an already represented graph.
+The Blair–Peyton constructor passed **19,048 exhaustive nonempty chordal graphs** with 1–6 vertices, **800 seeded randomized chordal graphs** with 7–13 vertices, and larger sparse-star and dense-clique cases. Tests independently compare maximal cliques, tree weights, maximum spanning-tree weights, and the induced subtree property. Existing baseline tests remain. The full input parser still uses hashing for duplicate-edge validation; the $O(n+m)$ algorithmic bound assumes an already represented graph.
 
 ## Research provenance rule (mandatory)
 
@@ -96,13 +100,11 @@ separate reference/archive folder.
   with an explicit O(n+m) bound.
   [Published article](https://doi.org/10.1016/S0304-3975(97)00241-7).
 
-**Audit required:** The existing direct clique-tree constructor in
-src/clique_tree_linear.cpp uses an elimination-forest contraction.
-Its output and O(n+m) running time have been tested/analyzed, but an exact
-correspondence between its contraction rule and a published algorithm
-has **not yet been established**. Until mapped line by line or replaced
-with a verified published algorithm, this component must be described as
-**provisional**, not as a fully source-approved method.
+**Source correction completed:** Production uses Blair–Peyton Figure 4.2
+via `src/clique_tree_blair_peyton.cpp`; the earlier provisional
+elimination-forest contraction is not used in production. Ibarra
+Sections 3–4 and 6 and 8 are explicitly mapped to code and tests in
+`docs/MTP_REPORT.md`. The Section 5 optimized dynamic tree is **not yet implemented**.
 
 ## Mathematical notation and report policy
 
@@ -114,4 +116,4 @@ w(i,j)=|K_i\cap K_j|
 
 All developments must update the single file `docs/MTP_REPORT.md` with: source section, definition, algorithm, correctness argument, complexity, worked example, tests, and limitations.
 
-**Scope limitation:** The current $O(n+m)$ clique-tree construction is a direct elimination-forest contraction procedure. Ibarra cites linear-time initial construction algorithms in Section 2, but does not spell out that specific procedure. We therefore claim alignment of the **preprocessing bound and clique-tree invariants**, not verbatim pseudocode from the paper. Implementing and validating the paper's actual Section 3 update rules and Sections 4–6 data structures is the next priority.
+**Scope and complexity limitation:** The published Blair–Peyton clique tree itself is built in $O(n+m)$ time. The concrete dynamic-class constructor also allocates an n-bit-like (byte-vector) characteristic vector for each maximal clique, costing $\Theta(nk)$ for k cliques; it cannot honestly claim end-to-end linear initialization on sparse stars. The first four update operations are $O(n)$ each; the Section 6 optional fast index provides $O(\sqrt m)$ deletion queries. Completing the paper's Section 5 **worst-case** dynamic-tree structure and comparing empirical scaling remain mandatory.
