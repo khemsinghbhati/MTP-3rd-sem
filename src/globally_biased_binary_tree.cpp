@@ -506,6 +506,11 @@ void GloballyBiasedBinaryTree::check_invariants(Node* root) const {
         push(u);
         if(!u||!u->live||!visited.insert(u).second)
             throw std::logic_error("inactive or repeated node");
+        // Bent–Sleator–Tarjan 1985 §4: rank(root) is bounded
+        // by the logarithm of the total external weight.
+        if(u->sum_weight<1 || u->sum_weight>1000000000LL ||
+           u->rank>1+floor_log2(static_cast<int>(u->sum_weight)))
+            throw std::logic_error("global biased rank/weight upper bound");
         if(u->is_leaf()) {
             if(u->left||u->right || u->rank!=floor_log2(u->weight))
                 throw std::logic_error("leaf rank invariant");
