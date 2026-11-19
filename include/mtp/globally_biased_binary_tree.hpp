@@ -46,6 +46,10 @@ public:
 
     // Each leaf must have a strictly positive integral weight.
     Node* leaf(int item, int weight);
+    // The ST expose/conceal steps change the weight of a detached leaf.
+    void set_detached_leaf_weight(Node* leaf, int new_weight);
+    // Recycle a detached path-set leaf; main-tree vertex leaves persist.
+    void release_detached_leaf(Node* leaf);
     // Concatenation consumes roots (each must be detached).
     Node* global_join(Node* left, Node* right, int edge_cost=0);
     // Dynamic path operations (Sleator–Tarjan 1983, §§3–5).
@@ -63,6 +67,7 @@ public:
 private:
     std::vector<std::unique_ptr<Node>> storage_;
     std::vector<Node*> pool_;
+    std::vector<Node*> leaf_pool_;
     static int floor_log2(int weight);
     Node* internal(Node* left, Node* right, int rank, int edge_cost);
     void refresh(Node* x);
