@@ -19,6 +19,8 @@ public:
 
     // Rejects self-loops and out-of-range IDs. Repeated edges are ignored.
     void add_edge(int u, int v);
+    // Delete an existing edge. O(n) worst case for adjacency-vector removal.
+    void remove_edge(int u, int v);
 
 private:
     void validate_vertex(int vertex) const;
