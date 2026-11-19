@@ -143,6 +143,6 @@ int main() {
         }
         std::cout<<"PASS: ST1983 worst-case dynamic-forest functional tests\n";
     }catch(const std::exception& ex){
-        std::cerr<<"FAIL: "<<ex.what()<<'\n';return 1;
+        std::cerr<<"FAIL at "<<stage<<": "<<ex.what()<<'\n';return 1;
     }
 }
