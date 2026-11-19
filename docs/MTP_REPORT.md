@@ -1433,6 +1433,48 @@ Section 5 operations, and its linked O(n)-update weight matrix.
 Therefore the A2 and A2+ variants and all-variant
 comparative benchmarks remain incomplete.
 
+### 13.8 Primary-paper complexity accounting: explicit unresolved question
+
+**Source cross-check:** The authoritative uploaded Ibarra (2008) PDF
+contains a potential inconsistency requiring explicit resolution before
+claiming full source-level complexity compliance:
+
+- **Section 5.1, printed page 40:13** specifies an `n × n` intersection
+  matrix `W` with one entry for every pair of maximal-clique IDs.
+  It states `O(n³)` for direct initial pairwise characteristic-vector
+  comparisons, and an alternative **`O(mn)`** method using a
+  PEO-compatible sequence of legal edge insertions.
+  Dynamic updates to `W` then take **`O(n)`**.
+- **Section 7, printed page 40:17** states the A2 preprocessing
+  complexity as **`O(m+n log n)`**. On sparse connected graphs,
+  `m=O(n)`, whereas explicitly initializing a full `n × n`
+  matrix takes `Omega(n²)` time/space. The quoted Section 5.1
+  `O(mn)` approach also exceeds the table's A2 bound when
+  `m=Theta(n)`.
+
+The literal statements are verified by inspecting the PDF pages,
+not by trusting imperfect text extraction. This report does not
+silently equate these two figures, or label the discrepancy
+resolved. Additional published clarification or a paper-supported
+implicit/lazy representation would be required to justify the
+smaller preprocessing figure alongside a full weight matrix.
+
+**Related warning:** Section 4 specifies length-`n` characteristic
+vectors for up to `n` maximal cliques, yet Section 7 states
+`O(m+n)` A1 preprocessing. Our concrete eager byte-vector
+representation uses `Theta(nk)` initialization and space for
+`k` maximal cliques. We report that implementation cost
+rather than asserting end-to-end linear initialization.
+
+**Required validation before accepting A2/A2+:** Implement the
+published **worst-case** Sleator–Tarjan (1983) global-biased-tree
+dynamic forest and the source-specified Section 5.1 intersection
+matrix updates; verify `O(log n)` path/reroot/link/cut primitives
+and `O(log² n)` insertion queries, then resolve and report
+the preprocessing accounting above. The splay-based amortized
+link-cut variant is not an acceptable substitution for the
+paper's worst-case claim.
+
 ### Implementation evidence
 
 - **Modular C++ implementation:** `include/mtp/` and `src/`, including
