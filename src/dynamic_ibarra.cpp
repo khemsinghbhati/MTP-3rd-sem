@@ -114,8 +114,12 @@ int DynamicChordalGraph::clique_of_edge(int u, int v) const {
 // Ibarra (2008), Theorem 4: an existing edge is deletable iff it
 // belongs to exactly one maximal clique.
 bool DynamicChordalGraph::delete_query(int u, int v) const {
+    // When the fast index is enabled, its intersection count is zero
+    // on nonedges, so an adjacency hash lookup is unnecessary. This
+    // preserves Ibarra's O(sqrt(m)) WORST-CASE query bound.
+    if (fast_) return fast_->count_common_cliques(u,v)==1;
     if (!graph_.has_edge(u, v)) return false;
-    return fast_ ? fast_->count_common_cliques(u,v)==1 : clique_of_edge(u,v)>=0;
+    return clique_of_edge(u,v)>=0;
 }
 
 DynamicChordalGraph::EndpointPair
