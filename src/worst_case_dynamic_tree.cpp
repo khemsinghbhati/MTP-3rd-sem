@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <stdexcept>
+#include <string>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -266,6 +267,16 @@ int SleatorTarjanWorstCaseForest::path_length(int u,int v) {
 void SleatorTarjanWorstCaseForest::check_invariants() {
     std::unordered_set<Node*> visited;
     for(int v=0;v<static_cast<int>(vertex_.size());++v) {
+        // ST1983 Section 5: vertex weight equals one plus the
+        // weights of all dashed paths entering that vertex.
+        // This is a debug-only O(n^2) oracle, never used by operations.
+        long long expected=1;
+        for(int t=0;t<static_cast<int>(vertex_.size());++t)
+            if(dashed_parent_[t]==v)expected+=weight(path(t));
+        if(vertex_[v]->weight!=expected)
+            throw std::logic_error("ST vertex weight invariant failed at "+
+                std::to_string(v)+" expected "+std::to_string(expected)+
+                " actual "+std::to_string(vertex_[v]->weight));
         Node* p=path(v);
         if(visited.insert(p).second)paths_.check_invariants(p);
         if(path_entry_[v]) {
