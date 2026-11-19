@@ -186,7 +186,7 @@ void randomized() {
 int main() {
     try {
         targeted(); exhaustive(); randomized();
-        std::cout << "PASS: direct clique tree construction\n"
+        std::cout << "PASS: Blair-Peyton Fig 4.2 clique tree construction\n"
                   << "PASS: 19,048 exhaustive chordal graphs on n<=6\n"
                   << "PASS: 800 randomized chordal graphs, large star and clique\n";
     } catch (const std::exception& e) {
