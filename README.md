@@ -103,6 +103,27 @@ documented in the single report rather than silently resolved.
 
 The Blair–Peyton constructor passed **19,048 exhaustive nonempty chordal graphs** with 1–6 vertices, **800 seeded randomized chordal graphs** with 7–13 vertices, and larger sparse-star and dense-clique cases. Tests independently compare maximal cliques, tree weights, maximum spanning-tree weights, and the induced subtree property. The split-graph tests also independently check all four optimization numbers against brute-force subset enumeration on small graphs. Existing baseline tests remain. The full input parser still uses hashing for duplicate-edge validation; the $O(n+m)$ algorithmic bound assumes an already represented graph.
 
+## A2/A2+ source-fidelity audit (November 19, 2026)
+
+**Research status: NOT ACCEPTED as meeting the paper's worst-case
+bounds.** The research branch implements Sleator–Tarjan (1983)
+globally biased dynamic-tree operations and connects them to Ibarra
+Sections 5–5.1. A2/A2+ differential and Release CLI tests pass.
+
+**Confirmed gap:** on star graphs with n vertices a single permitted
+A2 insertion triggers exactly **2n-1** ST link/cut calls in the
+current implementation. The direct combination has an
+O(n log n) *proved upper bound*, not the paper's required
+O(n) insertion. Additional worst-case lookup and preprocessing
+accounting gaps remain. **No substitute is accepted.**
+The implementation stays on the research branch; it has not
+been merged into `main`.
+
+See **[Section 14: independent source/complexity audit](
+docs/MTP_REPORT.md#14-independent-audit-of-ibarra-a2a2--november-19-2026)**
+and the evidence in
+`benchmarks/results/a2_st_insert_operation_counts_2026-11-19.csv`.
+
 ## Research provenance rule (mandatory)
 
 **No original algorithm design is permitted in this implementation project.**
