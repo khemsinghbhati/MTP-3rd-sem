@@ -61,14 +61,16 @@ void IndexedDynamicChordalGraph::HeavyPathIndex::build(
     for(auto it=order.rbegin();it!=order.rend();++it) {
         const int u=*it;
         subtree_size[u]=1;
-        int largest=0;
         for (const auto [v,w] : adjacency[u]) {
             (void)w;
-            if(parent[v]!=u || v==u) continue;
-            subtree_size[u]+=subtree_size[v];
-            if(subtree_size[v]>largest) {
-                largest=subtree_size[v];heavy[u]=v;
-            }
+            if(parent[v]==u && v!=u)subtree_size[u]+=subtree_size[v];
+        }
+        // Exact size-partition rule: 2*size(child)>size(parent).
+        // At most one child qualifies; other child edges are light.
+        for (const auto [v,w] : adjacency[u]) {
+            (void)w;
+            if(parent[v]==u && v!=u &&
+               2*subtree_size[v]>subtree_size[u])heavy[u]=v;
         }
     }
 
