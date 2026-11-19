@@ -248,6 +248,10 @@ GloballyBiasedBinaryTree::global_join(Node* x,Node* y,int edge_cost) {
         const int s=x->rank;
         Node* u=x->right->rank<s ? x : x->right;
         Node* v=y->left->rank<s ? y : y->left;
+        // Case 4 inspects grandchildren. Propagate pending path
+        // reversals of these child nodes before selecting their arcs.
+        push(u);
+        push(v);
         Node* ux=u->right;
         Node* vy=v->left;
         ux->parent=nullptr;
