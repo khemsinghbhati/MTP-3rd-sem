@@ -33,6 +33,14 @@ DynamicChordalGraph::DynamicChordalGraph(Graph graph)
         link(edge.first, edge.second, edge.weight);
 }
 
+void DynamicChordalGraph::enable_fast_delete_queries() {
+    fast_ = std::make_unique<FastCliqueIntersectionIndex>(
+        graph_.vertex_count(), static_cast<int>(graph_.edge_count()));
+    for (int i=0;i<static_cast<int>(nodes_.size());++i)
+        if (nodes_[i].active)
+            fast_->add_clique(i,nodes_[i].contains);
+}
+
 int DynamicChordalGraph::allocate_node(std::vector<unsigned char> bits) {
     int id;
     if (!free_nodes_.empty()) {
@@ -107,7 +115,7 @@ int DynamicChordalGraph::clique_of_edge(int u, int v) const {
 // belongs to exactly one maximal clique.
 bool DynamicChordalGraph::delete_query(int u, int v) const {
     if (!graph_.has_edge(u, v)) return false;
-    return clique_of_edge(u, v) >= 0;
+    return fast_ ? fast_->count_common_cliques(u,v)==1 : clique_of_edge(u,v)>=0;
 }
 
 DynamicChordalGraph::EndpointPair
@@ -192,6 +200,7 @@ bool DynamicChordalGraph::delete_edge(int u, int v) {
     if (!delete_query(u, v)) return false;
     const int x = clique_of_edge(u, v);
     const int k = nodes_[x].size;
+    if (fast_) fast_->remove_clique(x);
     std::vector<unsigned char> xu = nodes_[x].contains, xv = xu;
     xu[v] = 0; xv[u] = 0;
     struct Neighbor { int other, weight, side; };
@@ -219,6 +228,11 @@ bool DynamicChordalGraph::delete_edge(int u, int v) {
     if (absorb_u >= 0) contract(absorb_u, x);
     if (absorb_v >= 0) contract(absorb_v, x2);
     graph_.remove_edge(u, v);
+    if (fast_) {
+        if (nodes_[x].active) fast_->add_clique(x,nodes_[x].contains);
+        if (nodes_[x2].active) fast_->add_clique(x2,nodes_[x2].contains);
+        fast_->rebalance(static_cast<int>(graph_.edge_count()));
+    }
     return true;
 }
 
@@ -251,6 +265,10 @@ bool DynamicChordalGraph::insert_edge(int u, int v) {
     bits[u] = bits[v] = 1;
     const bool drop_x = nodes_[x].size == common + 1;
     const bool drop_y = nodes_[y].size == common + 1;
+    if (fast_) {
+        if (drop_x) fast_->remove_clique(x);
+        if (drop_y) fast_->remove_clique(y);
+    }
     cut(xy);
     const int z = allocate_node(std::move(bits));
     link(x, z, common + 1);
@@ -258,6 +276,10 @@ bool DynamicChordalGraph::insert_edge(int u, int v) {
     if (drop_x) contract(z, x);
     if (drop_y) contract(z, y);
     graph_.add_edge(u, v);
+    if (fast_) {
+        fast_->add_clique(z,nodes_[z].contains);
+        fast_->rebalance(static_cast<int>(graph_.edge_count()));
+    }
     return true;
 }
 
