@@ -1366,6 +1366,73 @@ independent update-sequence tests, prove the source-to-code mapping and
 its time bounds, and measure empirical scaling before marking it
 complete. Do not claim complete paper reproduction until then.
 
+### 13.6 Reproducible Section 4 timing experiment
+
+The timing harness in `benchmarks/benchmark_dynamic.cpp` constructs star
+graphs with `n=50,100,200,400,800,1600` vertices and repeatedly performs
+200 permitted edge insertions and deletions between distinct leaves.
+Each insertion creates a triangle; deleting the same leaf–leaf edge
+restores the star. Thus no test operation violates chordality.
+The benchmark records mean milliseconds for each of the four Ibarra
+Section 4 operations and separately times initialization.
+
+**Reproduce with:**
+
+~~~bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DMTP_BUILD_BENCHMARKS=ON
+cmake --build build -j
+./build/mtp_benchmarks
+~~~
+
+**Observed GitHub Actions Ubuntu runner results, November 19, 2026.**
+These are single-run descriptive timings, not hardware-independent
+guarantees or a formal asymptotic proof:
+
+| n | build (ms) | Insert-Query avg (ms) | Insert avg (ms) | Delete-Query avg (ms) | Delete avg (ms) |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 50 | 0.02175 | 0.00068 | 0.00163 | 0.00007 | 0.00025 |
+| 100 | 0.03474 | 0.00122 | 0.00274 | 0.00009 | 0.00040 |
+| 200 | 0.07939 | 0.00207 | 0.00473 | 0.00018 | 0.00056 |
+| 400 | 0.17384 | 0.00371 | 0.00822 | 0.00045 | 0.00105 |
+| 800 | 0.43729 | 0.00641 | 0.01448 | 0.00087 | 0.00194 |
+| 1600 | 1.56191 | 0.01312 | 0.02908 | 0.00177 | 0.00393 |
+
+The observed growth of tree initialization is influenced by
+per-clique characteristic-vector allocation. The timings do not
+establish O(n) worst-case update bounds; those are justified from
+the published algorithm and implementation operation counts.
+The optional Section 6 index and a fully implemented A2 dynamic tree
+still require dedicated comparative experiments.
+
+### 13.7 Remaining implementation dependency: worst-case dynamic trees
+
+**Ibarra (2008), Section 5** requires the operations of a
+Sleator–Tarjan dynamic tree: reroot, path minimum, locate the
+ith node on a path, link, and cut, with worst-case logarithmic
+bounds. The relevant published data-structure reference is:
+
+Sleator, D. D. and Tarjan, R. E. (1983), *A Data Structure for
+Dynamic Trees*, Journal of Computer and System Sciences 26(3),
+362–391, DOI 10.1016/0022-0000(83)90006-5,
+**Section 5 and Theorem 8**.
+
+Crucially, that publication distinguishes an amortized implementation
+from a worst-case implementation. The latter uses partitioning by
+size and globally biased binary trees. Substituting an ordinary
+splay-based link-cut tree does **not** establish Ibarra's
+worst-case operation bounds.
+
+Ibarra also specifies in **Section 5.1** an n-by-n
+clique-intersection-weight matrix, with O(n) updates after
+permitted chordal edge insertions or deletions, and a
+vertex-to-clique-node pointer for each original graph vertex.
+
+**Not yet implemented and not claimed:** a worst-case logarithmic
+dynamic-tree structure, its integration with the exact Ibarra
+Section 5 operations, and its linked O(n)-update weight matrix.
+Therefore the A2 and A2+ variants and all-variant
+comparative benchmarks remain incomplete.
+
 ### Implementation evidence
 
 - **Modular C++ implementation:** `include/mtp/` and `src/`, including
