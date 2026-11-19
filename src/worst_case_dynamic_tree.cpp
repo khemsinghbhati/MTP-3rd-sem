@@ -159,7 +159,7 @@ SleatorTarjanWorstCaseForest::splice(Node* p) {
 // ST83 Section 5, published expose procedure, with path-set changes.
 SleatorTarjanWorstCaseForest::Node*
 SleatorTarjanWorstCaseForest::expose(int u) {
-    auto parts=paths_.split(vertex_[u]);
+    auto parts=split_vertex(u);
     int revised=vertex_[u]->weight+weight(parts.before);
     paths_.set_detached_leaf_weight(vertex_[u],revised);
     if(parts.before) {
