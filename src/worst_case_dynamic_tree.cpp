@@ -12,9 +12,13 @@ namespace mtp {
 
 SleatorTarjanWorstCaseForest::SleatorTarjanWorstCaseForest(int n)
     : vertex_(n), path_set_root_(n,nullptr), path_entry_(n,nullptr),
+      path_root_(n,nullptr),
       dashed_parent_(n,-1), dashed_cost_(n,0), entry_owner_(n,-1) {
     if(n<0)throw std::invalid_argument("negative node count");
-    for(int v=0;v<n;++v)vertex_[v]=paths_.leaf(v,1);
+    for(int v=0;v<n;++v) {
+        vertex_[v]=paths_.leaf(v,1);
+        path_root_[v]=vertex_[v];
+    }
 }
 
 void SleatorTarjanWorstCaseForest::verify_vertex(int u) const {
@@ -42,9 +46,19 @@ int SleatorTarjanWorstCaseForest::weight(Node* p) {
         throw std::overflow_error("path weight outside supported range");
     return static_cast<int>(p->sum_weight);
 }
+SleatorTarjanWorstCaseForest::BST::Split
+SleatorTarjanWorstCaseForest::split_vertex(int v) {
+    auto pieces=paths_.split(vertex_[v]);
+    if(pieces.before)path_root_[tail(pieces.before)]=pieces.before;
+    path_root_[v]=pieces.item;
+    if(pieces.after)path_root_[tail(pieces.after)]=pieces.after;
+    return pieces;
+}
 SleatorTarjanWorstCaseForest::Node*
 SleatorTarjanWorstCaseForest::concatenate(Node* p,Node* q,int c) {
-    return paths_.global_join(p,q,c);
+    Node* merged=paths_.global_join(p,q,c);
+    path_root_[tail(merged)]=merged;
+    return merged;
 }
 
 void SleatorTarjanWorstCaseForest::insert_path_set(Node* p,int v) {
@@ -96,7 +110,7 @@ void SleatorTarjanWorstCaseForest::delete_path_set(Node* p,int v) {
 SleatorTarjanWorstCaseForest::Node*
 SleatorTarjanWorstCaseForest::max_path(int v) const {
     Node* r=path_set_root_[v];
-    return r?path(r->first->item):nullptr;
+    return r?path_root_[r->first->item]:nullptr;
 }
 
 // ST83 Section 5, published splice procedure, with its path-set changes.
@@ -106,7 +120,7 @@ SleatorTarjanWorstCaseForest::splice(Node* p) {
     const int v=dashed_parent_[t];
     if(v<0)throw std::logic_error("cannot splice a root path");
     const int dashed_weight=dashed_cost_[t];
-    auto parts=paths_.split(vertex_[v]);
+    auto parts=split_vertex(v);
     const int old_weight=vertex_[v]->weight;
     const int new_weight=old_weight-weight(p)+weight(parts.before);
     if(new_weight<=0)
@@ -150,7 +164,7 @@ SleatorTarjanWorstCaseForest::slice(Node* p) {
     Node* at=paths_.light(p);
     if(!at)throw std::logic_error("slice requires an existing light edge");
     const int v=at->item;
-    auto parts=paths_.split(vertex_[v]);
+    auto parts=split_vertex(v);
     if(!parts.before)
         throw std::logic_error("light edge has no lower path");
     paths_.set_detached_leaf_weight(
@@ -182,7 +196,7 @@ void SleatorTarjanWorstCaseForest::conceal(Node* p) {
     const int v=first(p);
     Node* heavy=max_path(v);
     if(heavy && 2LL*weight(heavy)>vertex_[v]->weight) {
-        auto parts=paths_.split(vertex_[v]);
+        auto parts=split_vertex(v);
         if(parts.before)
             throw std::logic_error("head has a predecessor");
         const int h_tail=tail(heavy),hcost=dashed_cost_[h_tail];
@@ -200,6 +214,7 @@ void SleatorTarjanWorstCaseForest::evert(int u) {
     verify_vertex(u);
     Node* p=expose(u);
     paths_.reverse(p);
+    path_root_[tail(p)]=p;
     dashed_parent_[u]=-1;
     conceal(p);
 }
@@ -224,7 +239,7 @@ void SleatorTarjanWorstCaseForest::cut(int u,int v) {
     if(u==v)throw std::invalid_argument("invalid self cut");
     evert(u);
     Node* p=expose(v);
-    auto parts=paths_.split(vertex_[v]);
+    auto parts=split_vertex(v);
     if(parts.before || !parts.after || parts.after->leaf_count!=1 ||
        first(parts.after)!=u)
         throw std::invalid_argument("ST cut requires an existing edge");
@@ -297,6 +312,8 @@ void SleatorTarjanWorstCaseForest::check_invariants() {
                 std::to_string(v)+" expected "+std::to_string(expected)+
                 " actual "+std::to_string(vertex_[v]->weight));
         Node* p=path(v);
+        if(path_root_[tail(p)]!=p)
+            throw std::logic_error("ST path-tail root cache invalid");
         if(visited.insert(p).second)paths_.check_invariants(p);
         if(path_entry_[v]) {
             if(dashed_parent_[v]<0 ||entry_owner_[v]!=dashed_parent_[v] ||
