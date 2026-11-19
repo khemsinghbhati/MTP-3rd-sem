@@ -28,6 +28,15 @@ int main(){
                 }
                 BST::Node* root=tree.build_linear(leaves,boundary);
                 tree.check_invariants(root);
+                // BST85 Figure 15 O(n) proof invariant:
+                // nodes on the rightmost spine strictly decrease in rank.
+                for(auto* node=root;node && !node->is_leaf();
+                    node=node->right) {
+                    if(node->rank<=node->right->rank)
+                        throw std::runtime_error("BST85 right-spine rank "
+                            "invariant failed at n="+std::to_string(n)+
+                            " trial="+std::to_string(trial));
+                }
                 require(root->leaf_count==n,"wrong number of leaves");
                 require(tree.linear_build_steps()<=40LL*n,
                     "construction exceeds published linear work bound at n="+
