@@ -52,7 +52,7 @@ Candidate make_candidate(int k,const std::vector<int>& labels) {
 }
 int main() {
     std::mt19937 rng(20261119);
-    std::cout<<"n,best_min_center_degree,degree_u,degree_v,st_links,st_cuts,st_calls\n";
+    std::cout<<"n,best_min_center_degree,degree_u,degree_v,st_links,st_cuts,st_calls,rebuild_flag,linear_st_build_steps\n";
     for(int k : {12,24,48}) {
         const int n=2*k+3;
         std::vector<int> order(n);
@@ -77,6 +77,8 @@ int main() {
         const int cuts=a2.dynamic_tree_cut_count_last_update();
         std::cout<<n<<','<<best_min<<','<<best.degree_u<<','
                  <<best.degree_v<<','<<links<<','<<cuts<<','
-                 <<links+cuts<<'\n';
+                 <<links+cuts<<','
+                 <<a2.rebuilt_dynamic_forest_last_insert()<<','
+                 <<a2.linear_rebuild_steps_last_insert()<<'\n';
     }
 }
