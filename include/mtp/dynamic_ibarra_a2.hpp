@@ -31,6 +31,15 @@ public:
     [[nodiscard]] int dynamic_tree_cut_count_last_update() const noexcept {
         return cut_count_last_;
     }
+    // Explicit accounting: high-degree contraction invokes the
+    // published O(n) static ST builder instead of Theta(n) log-time
+    // link/cut calls. Counted separately from incremental ST calls.
+    [[nodiscard]] bool rebuilt_dynamic_forest_last_insert() const noexcept {
+        return rebuilt_last_insert_;
+    }
+    [[nodiscard]] long long linear_rebuild_steps_last_insert() const noexcept {
+        return rebuild_steps_last_insert_;
+    }
 
 private:
     DynamicChordalGraph data_;
@@ -38,6 +47,8 @@ private:
     std::vector<int> vertex_witness_;
     std::vector<std::vector<int>> W_;
     int link_count_last_=0,cut_count_last_=0;
+    bool rebuilt_last_insert_=false;
+    long long rebuild_steps_last_insert_=0;
     [[nodiscard]] std::pair<int,int> closest(int u,int v);
     void initialize_weights();
     void attach_tree_hooks();
