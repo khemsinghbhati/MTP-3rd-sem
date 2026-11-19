@@ -7,6 +7,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: Verify GitHub Markdown math syntax
@@ -15,6 +16,8 @@ jobs:
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DMTP_BUILD_BENCHMARKS=ON
       - name: Build
         run: cmake --build build -j 2
+      - name: Verify published BST85/ST linear builders and Ibarra A2
+        run: ctest --test-dir build --output-on-failure -R 'bst85_linear_global_bias|st1983_linear_forest_construction|ibarra_a2_linear_insert|ibarra_section5_actual_ST_dynamic_tree'
       - name: Test
         run: ctest --test-dir build --output-on-failure
       - name: Sample CLI

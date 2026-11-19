@@ -2,19 +2,7 @@
 
 **M.Tech CSE | IIT Bhubaneswar | End-semester presentation: November 30, 2026**
 
-Private working repository implementing Louis Ibarra's *Fully Dynamic Algorithms for Chordal Graphs and Split Graphs* (2008, DOI 10.1145/1383369.1383371). **The paper's methods and asymptotic bounds are requirements.** Blair–Peyton clique-tree preprocessing, Ibarra's first four dynamic chordal operations, the optional fast deletion-query index, and his constant-time split-graph algorithm are implemented. Section 5's dynamic-tree optimization remains unfinished.
-
-> **Research status (November 19, 2026):** A published-method
-> Sleator–Tarjan (1983) A2/A2+ implementation exists in the separate
-> `research/sleator-tarjan-worst-case` branch. Functional, differential
-> and adversarial tests pass, but **the required O(n) insertion bound
-> has not been proved**, and the paper's preprocessing summary
-> conflicts with its n-by-n W matrix/characteristic-vector
-> initialization for sparse inputs. This experimental code is
-> **not merged**. The full verified findings, source references,
-> and measured A1-versus-ST-A2 performance are recorded in
-> [docs/MTP_REPORT.md, Section 14](docs/MTP_REPORT.md#14-independent-audit-of-ibarra-a2a2--november-19-2026).
-> No algorithm substitute has been accepted.
+Private working repository implementing Louis Ibarra's *Fully Dynamic Algorithms for Chordal Graphs and Split Graphs* (2008, DOI 10.1145/1383369.1383371). **The paper's methods and asymptotic bounds are requirements.** Blair–Peyton clique-tree preprocessing, Ibarra's first four dynamic chordal operations, the optional fast deletion-query index, and his constant-time split-graph algorithm are implemented. Section 5's worst-case Sleator–Tarjan dynamic tree is implemented and tested; **the source-backed O(n) insertion repair is proved in Section 15**, while the paper's stronger preprocessing-table claim remains inconsistent with its explicitly dense W representation.
 
 ## Project structure
 
@@ -114,6 +102,53 @@ documented in the single report rather than silently resolved.
 ## Verification
 
 The Blair–Peyton constructor passed **19,048 exhaustive nonempty chordal graphs** with 1–6 vertices, **800 seeded randomized chordal graphs** with 7–13 vertices, and larger sparse-star and dense-clique cases. Tests independently compare maximal cliques, tree weights, maximum spanning-tree weights, and the induced subtree property. The split-graph tests also independently check all four optimization numbers against brute-force subset enumeration on small graphs. Existing baseline tests remain. The full input parser still uses hashing for duplicate-edge validation; the $O(n+m)$ algorithmic bound assumes an already represented graph.
+
+## A2/A2+ published-source insertion repair — November 20, 2026
+
+**Worst-case A2 Insert: O(n) in the revised research
+implementation.** Source-based proof in
+[Section 15 of the technical report](
+docs/MTP_REPORT.md#15-published-source-on-a2-insertion-repair--november-20-2026).
+
+The corrected implementation uses **the same published
+Sleator–Tarjan (1983) worst-case globally biased
+dynamic forest**. When one inserted graph edge
+causes both neighboring maximal cliques to be
+subsumed, per-neighbor ST link/cut updates
+are replaced by a fresh construction of that
+**same ST forest**, using:
+
+1. ST83 Sections 4–5: size-based partition and globally
+   biased binary trees for paths and dashed path sets.
+2. Bent–Sleator–Tarjan (1985), Section 4, Figure 15 and
+   Theorem 12: actual O(n) globally biased tree construction.
+3. Counting-sort dashed-path cardinalities in [1,n]
+   and O(1) machine-word leaf-rank computations.
+
+Across all paths and path sets, each vertex appears
+O(1) times, so the complete rebuilding costs
+O(n). This is a **source-supported maintenance-schedule
+refinement** that preserves Ibarra's clique-tree transformation
+and ST's exact data structure; it is not a splay/HLD/top-tree
+substitute. Ibarra does not literally specify this
+rebuilding schedule, and the report distinguishes
+the new composition from verbatim Ibarra pseudocode.
+
+The graph membership lookup is deterministic
+O(log n) worst-case via std::set.
+
+**Separate unresolved source discrepancy:** Ibarra's
+Section 7 preprocessing summary cannot hold for our
+literal dense n-by-n W matrix and n-length
+characteristic-vector materialization on an empty graph.
+This limitation remains explicitly documented
+in Section 14.5 of the report; O(n) **insertion**
+does not magically imply linear **initialization**.
+
+Source-focused tests: tests/test_bst85_linear_builder.cpp,
+tests/test_linear_st_forest.cpp,
+tests/test_a2_linear_insertion.cpp, plus
+tests/test_ibarra_a2.cpp and sanitizer workflows.
 
 ## Research provenance rule (mandatory)
 
