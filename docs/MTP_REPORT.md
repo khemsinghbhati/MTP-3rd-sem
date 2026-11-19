@@ -719,16 +719,21 @@ implementations:
 [Direct clique-tree construction] ----- COMPLETE: O(n+m)
                  |
                  v
-[Ibarra Section 3 edge queries] ------- PENDING
+[Ibarra Section 3 edge queries] ------- COMPLETE (A1)
                  |
                  v
-[Ibarra Section 3 edge updates] ------- PENDING
+[Ibarra Section 3 edge updates] ------- COMPLETE (A1)
                  |
                  v
-[Section 4 O(n) implementation] ------- PENDING
+[Section 4 O(n) implementation] ------- COMPLETE (A1)
                  |
                  v
-[Sections 5-6 optimizations] ---------- PENDING
+[Section 6 fast Delete-Query] --------- COMPLETE (A1+)
+                 |
+                 v
+[Section 5 worst-case dynamic tree] --- NOT IMPLEMENTED (A2/A2+)
+
+[Section 8 split graph + 4 numbers] --- COMPLETE
 
 Explicit W_G + Kruskal = test baseline ONLY.
 ```
@@ -1006,7 +1011,7 @@ cannot be marked paper-faithful.
 | Confirm required clique-tree representation | Verified static clique-tree properties in Section 2 | COMPLETE |
 | Validate complete parent-rule filtering proof | A proof sketch is included in Section 9.2.3; check against cited primary literature | IN REVIEW |
 | Replace unsupported production clique-tree method | Blair–Peyton Fig. 4.2 integrated and source mapped | COMPLETE |
-| Validate paper's stated complexity bounds from primary text | Section 1.3 checked; dynamic implementations remain pending | PARTIAL |
+| Validate paper's stated complexity bounds from primary text | Table in Section 7 checked; Section 5 remains pending | PARTIAL |
 | Implement Sections 3–4 dynamic queries | Theorems 4–6 and Section 4 | COMPLETE — TESTED |
 | Implement Section 3 incremental updates and compare against rebuilding | Clique tree split, contract, swap | COMPLETE — TESTED |
 | Benchmark runtime/scaling for all variants | Experimental evaluation | OPEN |
@@ -1026,8 +1031,9 @@ cannot be marked paper-faithful.
 | 2026-11-19 | Replaced provisional preprocessing with Blair–Peyton Fig. 4.2 | `src/clique_tree_blair_peyton.cpp` |
 | 2026-11-19 | Implemented Ibarra first dynamic chordal updates and oracle tests | `src/dynamic_ibarra.cpp`, `tests/test_ibarra_dynamic.cpp` |
 | 2026-11-19 | Implemented Ibarra O(1) split recognition and updates | `src/dynamic_split_ibarra.cpp`, `tests/test_ibarra_split.cpp` |
+| 2026-11-19 | Extended Section 8 to four optimization numbers via complement degrees | `tests/test_ibarra_split_stats.cpp` |
 | 2026-11-19 | Implemented Ibarra Section 6 fast delete index and its update hooks | `src/fast_delete_ibarra.cpp`, `tests/test_ibarra_fast.cpp` |
-| Pending | Dynamic queries and incremental updates | Not claimed as completed |
+| Pending | Ibarra Section 5 worst-case dynamic-tree implementation and combined A2+ | Not claimed as completed |
 
 **Reporting rule:** Keep milestone dates and achievements accurate. Clearly
 separate implemented results, test evidence, open obligations, and proposed
@@ -1238,6 +1244,30 @@ At most one degree entry crosses the partition boundary per update,
 so the degree sequence and both sums are maintained in **O(1)**.
 `is_split()` compares the two maintained sums in **O(1)**.
 Counting-sort initialization and graph-degree scans are **O(n+m)**.
+
+**Four optimization numbers (Ibarra, Section 8, final paragraph):**
+When the current graph is split, Theorem 8 supplies its maximum-clique
+size `j`. Because split graphs are perfect, their chromatic number is
+also `j`. The **complement of a split graph is itself split**, so
+maintaining a second degree-sequence index for the complement supplies
+its clique number, which equals the original graph's independence
+number. By perfectness, the clique-cover number equals that
+independence number.
+
+Implementation: `DynamicSplitStatistics` holds `original_` and
+`complement_` degree-sequence indexes. Inserting `(u,v)` into
+the original graph increments the original degree entries and
+**decrements** the corresponding complement degree entries;
+deletion performs the reverse. Each of these paired operations
+has `O(1)` worst-case cost in Ibarra's Section 8 representation.
+The four queries perform only boundary lookups and return `O(1)`.
+They reject numeric queries when the graph is not split.
+
+Independent regression: `tests/test_ibarra_split_stats.cpp` checks
+all four values against exhaustive subset enumeration for random
+valid update sequences on graphs with at most seven vertices, including
+empty and disconnected cases. This is in addition to the earlier
+split-recognition update test.
 
 **Precondition:** The caller must insert only an absent edge and
 delete only an existing edge. The degree-only data structure does
