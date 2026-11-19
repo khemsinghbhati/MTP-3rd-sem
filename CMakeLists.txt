@@ -9,7 +9,7 @@ add_library(mtp_graphs
     src/graph.cpp
     src/mcs.cpp
     src/maximal_cliques.cpp
-    src/clique_tree_linear.cpp
+    src/clique_tree_blair_peyton.cpp
 )
 target_include_directories(mtp_graphs PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_compile_options(mtp_graphs PRIVATE -Wall -Wextra -Wpedantic)
