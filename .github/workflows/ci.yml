@@ -19,3 +19,6 @@ jobs:
         run: ctest --test-dir build --output-on-failure
       - name: Sample CLI
         run: ./build/mtp_cli data/example_7_vertices.txt
+
+      - name: Run reproducible Section 4 benchmark (star graphs)
+        run: ./build/mtp_benchmarks
