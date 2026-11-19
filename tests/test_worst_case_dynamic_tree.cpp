@@ -103,12 +103,19 @@ int main() {
             stage="two-vertex after relink";validate(x,reference);
         }
         std::mt19937 rng(20261119);
-        for(int n=3;n<=12;++n) {
-            for(int trial=0;trial<30;++trial) {
+#ifdef __SANITIZE_ADDRESS__
+        // ASan builds emphasize memory-safety smoke tests;
+        // Release builds retain the complete randomized suite.
+        constexpr int max_n=8, trials=4, steps=80;
+#else
+        constexpr int max_n=12, trials=30, steps=120;
+#endif
+        for(int n=3;n<=max_n;++n) {
+            for(int trial=0;trial<trials;++trial) {
                 Forest forest(n);
                 Oracle oracle(n);
                 std::vector<std::string> history;
-                for(int step=0;step<120;++step) {
+                for(int step=0;step<steps;++step) {
                     const int u=static_cast<int>(rng()%n);
                     int v=static_cast<int>(rng()%n);
                     if(v==u) v=(v+1)%n;
