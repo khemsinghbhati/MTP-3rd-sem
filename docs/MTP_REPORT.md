@@ -1582,6 +1582,10 @@ the exact worst-case dynamic-tree mechanism is implemented and
 verified. Matching the top-level query and update time limits
 in this alternative does not establish paper-method fidelity.
 
+> Note (20 Nov 2026): the O(n) insertion blocker documented below
+> was addressed by the published-source linear-ST construction
+> proved in Section 15; original counterexamples are preserved.
+
 ## 14. Independent audit of Ibarra A2/A2+ — November 19, 2026
 
 ### 14.1 Audit scope, evidence, and verdict
@@ -1943,6 +1947,147 @@ deterministic adjacency representation change:
   for the final accepted commit. Passing
   tests does not substitute for a worst-case
   proof of globally biased path-set helpers.
+
+
+## 15. Published-source O(n) A2 insertion repair — November 20, 2026
+
+### 15.1 References and method status
+
+The earlier O(n log n) direct-composition analysis in Section 14 applies
+to the earlier implementation that called the dynamic-tree link/cut
+functions independently for every high-degree clique-tree contraction.
+The revised code uses the EXACT Sleator–Tarjan globally biased forest,
+but for a double-subsumption insertion reconstructs it using a later
+published linear-time globally biased tree constructor.
+
+Primary published building blocks:
+
+- Ibarra (2008), Sections 3.4, 4, and 5.1: clique-tree update,
+  direct characteristic-vector replacement, and O(n) W row update.
+- Sleator and Tarjan (1983), Sections 4–5, Theorem 8: size-based
+  heavy-edge partition, the globally biased dynamic tree,
+  and O(log n) worst-case forest primitives.
+  https://www.cs.cmu.edu/~sleator/papers/dynamic-trees.pdf
+- Bent, Sleator and Tarjan (1985), Section 4, Figure 15,
+  Theorem 12: O(t) ACTUAL-TIME bottom-up construction of a
+  globally biased binary tree on t ordered, weighted items.
+  https://www.ime.usp.br/~cris/aulas/14_2_331/projetos/BentSleatorTarjan85.pdf
+
+IMPORTANT SOURCE DISTINCTION: Ibarra does not explicitly describe
+rebuilding the entire forest after an insertion. Our method is a
+source-supported composition of the original ST83 exact forest with
+BST85's published linear construction. It changes the maintenance
+schedule in the double-subsumption case, NOT the dynamic-tree
+data structure or the chordal graph algorithm. This deviation from
+the literal operation schedule must be disclosed in the MTP.
+
+### 15.2 Source-to-code mapping
+
+| Published operation | Implemented location |
+| --- | --- |
+| BST85 Figure 15 rightmost-leaf ascent, graft, tilt-left and promotions | GloballyBiasedBinaryTree::build_linear |
+| O(1) positive integer rank computation on the word RAM | GloballyBiasedBinaryTree::floor_log2 (five fixed shifts) |
+| ST83 Section 4 heavy edge: 2 size(child) > size(parent) | SleatorTarjanWorstCaseForest::initialize_linear_forest |
+| ST83 node weight: size(v) minus heavy-child size | initialize_linear_forest leaf weights |
+| ST83 globally biased solid path representation | paths_.build_linear and path_root_ |
+| ST83 dashed path sets ordered by decreasing path size | counting-sort weights [1,N] then sets_.build_linear |
+| Ibarra Section 4 subsumed clique-vector replacement | DynamicChordalGraph::insert_edge |
+| Source-based O(N) dynamic forest regeneration for two absorbed cliques | SleatorTarjanChordalGraphA2::insert_edge |
+| ST83 published O(log n) link/cut/evert/path queries | unchanged SleatorTarjanWorstCaseForest methods |
+
+### 15.3 Proof of worst-case O(n) A2 Insert
+
+Let n be the number of original vertices and N=n+2 the fixed
+clique-node capacity. A chordal graph has at most n maximal cliques,
+so a valid clique tree has O(N) vertices and O(N) edges.
+
+LEMMA (O(N) exact ST forest construction). The static constructor
+build_linear_forest on a forest of N nodes uses O(N) worst-case
+word-RAM operations and O(N) auxiliary memory.
+
+PROOF:
+1. Adjacency lists, DFS parents, subtree sizes, and the ST83
+   size-heavy child of each node are computed with O(N) edge
+   and vertex visits. Isolated nodes need no special handling.
+2. For each vertex v the external leaf weight is defined as
+   size(v)-size(heavy_child(v)) if the latter exists, otherwise
+   size(v). All weights are positive integers in [1,N].
+   The leaf rank floor(log2 weight) is computed in constant
+   time using fixed word-sized shifts, not repeated division.
+3. The maximal solid paths partition the N vertices. Every
+   vertex is included in exactly one path leaf list. Applying
+   BST85 Figure 15 and Theorem 12 to each such list costs
+   O(sum of path lengths)=O(N), including a one-time
+   aggregate postorder traversal for each resulting tree.
+4. Each dashed edge contributes one entry to exactly one
+   parent path set. There are at most N-1 such entries.
+   A path's weight equals size(tail(path)) and lies in [1,N].
+   Bucket counting-sort across all dashed paths is O(N).
+   BST85's O(t) constructor applied to each sorted path
+   set costs O(sum of path-set sizes)=O(N).
+5. The newly constructed globally biased tree has O(N)
+   allocated nodes. Destroying the previous representation
+   during replacement costs O(N).
+Thus the total static construction and replacement cost is
+worst-case O(N)=O(n). QED.
+
+CASE 1 (no old clique becomes non-maximal): Ibarra's update uses
+O(1) dynamic-tree link/cut operations. With ST83's O(log n)
+bound, these add O(log n); all vector and W-row work is O(n).
+
+CASE 2 (exactly one old clique becomes non-maximal): Section 4's
+direct characteristic-vector expansion similarly performs only
+O(1) ST operations. Remaining clique-tree and W work is O(n).
+
+CASE 3 (both old cliques become non-maximal): The clique-tree
+contraction may redirect Theta(n) neighbors. The revised code
+temporarily detaches the ST update hooks, performs the correct
+O(n) clique-tree adjacency-list transformation, collects its
+O(n) active edges, and applies the lemma to reconstruct the
+SAME ST83 globally biased forest in O(n). It reattaches the
+hooks only after the new representation is complete.
+The published Section 5.1 W-row update is O(n).
+
+All three insertion cases, including the Insert-Query precheck
+(O(log^2 n), which is O(n)), therefore take O(n) worst-case
+in the specified conventional fixed-word RAM model.
+The optional Section 6 A2+ index retains its additional
+O(m+n) insertion-update cost.
+
+### 15.4 Adversarial operation counts and tests
+
+In the original double-star counterexample, the former code
+issued 25 ST primitives at n=27 and 49 primitives at n=51.
+The new source-based static-ST reconstruction gives:
+
+| n | Former ST link/cut calls | New ST link/cut calls | Counted linear-build work |
+| ---: | ---: | ---: | ---: |
+| 27 | 25 | 0 | 358 |
+| 51 | 49 | 0 | 692 |
+| 99 | 3 | 0 | 1349 |
+
+The measured work is consistent with the published linear
+construction, but the proof is the sum-of-path-size argument
+above plus BST85 Theorem 12, not a timing extrapolation.
+
+Verification files on research/a2-linear-st-construction:
+- tests/test_bst85_linear_builder.cpp: weighted rank,
+  neighbor-bias, order, minimum path edge, and work counts.
+- tests/test_linear_st_forest.cpp: exact source-based ST
+  size partition with BFS path oracle, followed by dynamic
+  link/cut/evert operations.
+- tests/test_a2_linear_insertion.cpp: repeated chordal
+  double-star insert/delete cycles, all source invariants,
+  and independent A1 differential query checks.
+- tests/test_ibarra_a2.cpp: previous exhaustive and
+  randomized chordal correctness tests, also A2+.
+
+LIMITATION REMAINING: The published preprocessing table
+in Ibarra Section 7 is inconsistent with materializing
+an n-by-n matrix W and n full length-n vectors on m=0.
+See Section 14.5. The present repair establishes the
+per-insertion worst-case bound; it does NOT claim to
+solve that separate source/preprocessing discrepancy.
 
 ### Implementation evidence
 
