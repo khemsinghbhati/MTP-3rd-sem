@@ -21,6 +21,144 @@ SleatorTarjanWorstCaseForest::SleatorTarjanWorstCaseForest(int n)
     }
 }
 
+// Static construction of THE SAME Sleator–Tarjan (1983) Section 5
+// worst-case dynamic-tree representation, not an HLD/splay substitute.
+// ST1983 §4: heavy edge iff 2*size(child)>size(parent).
+// ST1983 §5: path vertex weight = size(v)-size(heavy child),
+// and dashed paths are stored in globally biased path sets sorted by
+// decreasing path weight.
+// Bent–Sleator–Tarjan (1985) §4, Fig.15, Theorem 12 establishes
+// linear-time static construction of each globally biased binary tree.
+// The total number of leaves across ALL solid-path BSTs is n;
+// across ALL dashed path-set BSTs it is <n. Count sort their
+// integer weights in [1,n] to achieve total O(n) initialization.
+SleatorTarjanWorstCaseForest
+SleatorTarjanWorstCaseForest::build_linear_forest(
+    int n,const std::vector<Edge>& edges) {
+    SleatorTarjanWorstCaseForest result(n);
+    result.initialize_linear_forest(edges);
+    return result;
+}
+void SleatorTarjanWorstCaseForest::initialize_linear_forest(
+    const std::vector<Edge>& edges) {
+    const int n=static_cast<int>(vertex_.size());
+    if(edges.size()>static_cast<std::size_t>(n>0?n-1:0))
+        throw std::invalid_argument("n-vertex forest has at most n-1 edges");
+    std::vector<std::vector<std::pair<int,int>>> adjacency(n);
+    for(const auto& edge:edges) {
+        verify_vertex(edge.u);verify_vertex(edge.v);
+        if(edge.u==edge.v)
+            throw std::invalid_argument("self edge in static ST forest");
+        adjacency[edge.u].push_back({edge.v,edge.cost});
+        adjacency[edge.v].push_back({edge.u,edge.cost});
+    }
+    std::vector<int> parent(n,-2),parent_cost(n,0),order;
+    order.reserve(n);
+    for(int r=0;r<n;++r) {
+        if(parent[r]!=-2)continue;
+        parent[r]=-1;
+        std::vector<int> stack{r};
+        while(!stack.empty()) {
+            const int u=stack.back();stack.pop_back();
+            order.push_back(u);
+            for(const auto& [v,c]:adjacency[u]) {
+                if(v==parent[u])continue;
+                if(parent[v]!=-2)
+                    throw std::invalid_argument("input is not a forest");
+                parent[v]=u;parent_cost[v]=c;
+                stack.push_back(v);
+            }
+        }
+    }
+
+    // A standard reverse DFS computes subtree sizes and the
+    // size-partition of the rooted underlying clique forest.
+    std::vector<int> subtree(n,1),heavy(n,-1);
+    for(auto it=order.rbegin();it!=order.rend();++it) {
+        const int v=*it;
+        if(parent[v]>=0)subtree[parent[v]]+=subtree[v];
+    }
+    for(int u=0;u<n;++u)
+        for(const auto& [v,c]:adjacency[u]) {
+            (void)c;
+            if(parent[v]!=u)continue;
+            if(2LL*subtree[v]>subtree[u]) {
+                if(heavy[u]!=-1)
+                    throw std::logic_error("two heavy children");
+                heavy[u]=v;
+            }
+        }
+
+    for(int v=0;v<n;++v) {
+        const int weight=subtree[v]-
+                         (heavy[v]>=0?subtree[heavy[v]]:0);
+        paths_.set_detached_leaf_weight(vertex_[v],weight);
+    }
+    // Form each maximal heavy path in bottom-to-top order, with
+    // exactly one globally biased BST leaf per original vertex.
+    // A path begins at a vertex with no heavy child.
+    std::vector<int> path_tails;
+    path_tails.reserve(n);
+    for(int bottom=0;bottom<n;++bottom) {
+        if(heavy[bottom]>=0)continue;
+        std::vector<Node*> leaves;
+        std::vector<int> costs;
+        int u=bottom;
+        leaves.push_back(vertex_[u]);
+        while(parent[u]>=0 && heavy[parent[u]]==u) {
+            costs.push_back(parent_cost[u]);
+            u=parent[u];
+            leaves.push_back(vertex_[u]);
+        }
+        Node* p=paths_.build_linear(leaves,costs);
+        static_steps_+=paths_.linear_build_steps();
+        const int top=u;
+        path_root_[top]=p;
+        path_tails.push_back(top);
+        if(parent[top]>=0) {
+            dashed_parent_[top]=parent[top];
+            dashed_cost_[top]=parent_cost[top];
+        }
+    }
+
+    // Counting-sort all dashed paths by size, descending.
+    // ST83 §5 path-set invariant requires descending path weight,
+    // with arbitrary order permitted among ties.
+    std::vector<std::vector<int>> buckets(n+1),children(n);
+    for(int tail: path_tails) {
+        const int owner=dashed_parent_[tail];
+        if(owner<0)continue;
+        const int path_weight=weight(path_root_[tail]);
+        if(path_weight<1 || path_weight>n)
+            throw std::logic_error("invalid ST path size");
+        buckets[path_weight].push_back(tail);
+    }
+    for(int w=n;w>=1;--w)
+        for(int tail:buckets[w])
+            children[dashed_parent_[tail]].push_back(tail);
+
+    // BST85 Theorem 12 applies independently to each path-set tree.
+    // The total number of path-set leaves is at most n-1.
+    for(int owner=0;owner<n;++owner) {
+        if(children[owner].empty())continue;
+        std::vector<Node*> leaves;
+        leaves.reserve(children[owner].size());
+        for(int tail:children[owner]) {
+            Node* p=path_root_[tail];
+            if(!p||p->last->item!=tail)
+                throw std::logic_error("static ST dashed path cache");
+            Node* entry=sets_.leaf(tail,weight(p));
+            path_entry_[tail]=entry;
+            entry_owner_[tail]=owner;
+            leaves.push_back(entry);
+        }
+        std::vector<int> costs(leaves.size()-1,0);
+        path_set_root_[owner]=sets_.build_linear(leaves,costs);
+        static_steps_+=sets_.linear_build_steps();
+    }
+    static_steps_+=6LL*n+2LL*edges.size();
+}
+
 void SleatorTarjanWorstCaseForest::verify_vertex(int u) const {
     if(u<0||u>=static_cast<int>(vertex_.size()))
         throw std::out_of_range("ST vertex outside forest");
