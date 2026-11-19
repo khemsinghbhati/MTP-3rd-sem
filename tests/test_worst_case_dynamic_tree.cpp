@@ -125,10 +125,8 @@ int main() {
                     history.push_back(action);
                     stage="n="+std::to_string(n)+" trial="+std::to_string(trial)+" step="+std::to_string(step)+" endpoints="+std::to_string(u)+","+std::to_string(v)+" action "+action;
                     if(step>=55) {
-                        stage+="
-Sequence:";
-                        for(const auto& item:history)stage+="
-"+item;
+                        stage+="\nSequence:";
+                        for(const auto& item:history)stage+="\n"+item;
                     }
                     validate(forest,oracle);
                 }
