@@ -40,14 +40,17 @@ void print_tree(const mtp::CliqueTree& tree) {
 }
 }
 int main(int argc,char** argv) {
-    if(argc!=3) {
+    if(argc!=3 && argc!=4) {
         std::cerr << "Usage: mtp_dynamic_cli graph.txt operations.txt\n"
                   << "Commands: Delete-Query u v | Insert-Query u v | "
                      "Delete u v | Insert u v | Show\n";
         return 1;
     }
     try {
+        if (argc==4 && std::string(argv[3])!="--fast-delete")
+            throw std::runtime_error("unknown command line flag");
         mtp::DynamicChordalGraph dynamic(load_graph(argv[1]));
+        if (argc==4) dynamic.enable_fast_delete_queries();
         std::ifstream script(argv[2]);
         if(!script)throw std::runtime_error("cannot open operations file");
         std::string line;
