@@ -10,8 +10,17 @@ namespace mtp {
 
 int GloballyBiasedBinaryTree::floor_log2(int weight) {
     if(weight<=0)throw std::invalid_argument("nonpositive leaf weight");
+    // Word-RAM O(1) (not a repeated division loop):
+    // weight is a 32-bit signed positive count <= number of vertices.
+    // Each branch halves the search field by a fixed power of 2.
+    // Five constant-time shift steps establish the exact bit rank.
+    unsigned int x=static_cast<unsigned int>(weight);
     int result=0;
-    while(weight>1) { weight/=2; ++result; }
+    if(x>=(1u<<16)) {x>>=16;result+=16;}
+    if(x>=(1u<<8)) {x>>=8;result+=8;}
+    if(x>=(1u<<4)) {x>>=4;result+=4;}
+    if(x>=(1u<<2)) {x>>=2;result+=2;}
+    if(x>=2u)++result;
     return result;
 }
 
