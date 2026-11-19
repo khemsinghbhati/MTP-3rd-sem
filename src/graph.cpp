@@ -1,6 +1,7 @@
 #include "mtp/graph.hpp"
 
 #include <stdexcept>
+#include <algorithm>
 
 namespace mtp {
 
@@ -47,6 +48,19 @@ void Graph::add_edge(int u, int v) {
         adjacency_[static_cast<std::size_t>(v)].push_back(u);
         ++edge_count_;
     }
+}
+
+void Graph::remove_edge(int u, int v) {
+    validate_vertex(u);
+    validate_vertex(v);
+    if (u == v) throw std::invalid_argument("self-loops are not allowed");
+    if (neighbor_sets_[static_cast<std::size_t>(u)].erase(v) == 0) return;
+    neighbor_sets_[static_cast<std::size_t>(v)].erase(u);
+    auto& first = adjacency_[static_cast<std::size_t>(u)];
+    auto& second = adjacency_[static_cast<std::size_t>(v)];
+    first.erase(std::remove(first.begin(), first.end(), v), first.end());
+    second.erase(std::remove(second.begin(), second.end(), u), second.end());
+    --edge_count_;
 }
 
 } // namespace mtp
