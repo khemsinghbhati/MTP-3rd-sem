@@ -22,3 +22,6 @@ jobs:
 
       - name: Run reproducible Section 4 benchmark (star graphs)
         run: ./build/mtp_benchmarks
+
+      - name: Compare Section 5 indexed and first-implementation queries
+        run: ./build/mtp_benchmark_indexed
