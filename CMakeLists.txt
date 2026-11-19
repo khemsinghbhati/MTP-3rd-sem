@@ -74,3 +74,11 @@ if(BUILD_TESTING)
              ${CMAKE_CURRENT_SOURCE_DIR}/data/example_7_vertices.txt
              ${CMAKE_CURRENT_SOURCE_DIR}/data/dynamic_example_ops.txt)
 endif()
+
+# Optional reproducible timing experiment (not included in routine CI tests).
+option(MTP_BUILD_BENCHMARKS "Build asymptotic-performance benchmark harness" OFF)
+if(MTP_BUILD_BENCHMARKS)
+    add_executable(mtp_benchmarks benchmarks/benchmark_dynamic.cpp)
+    target_link_libraries(mtp_benchmarks PRIVATE mtp_graphs)
+    target_compile_options(mtp_benchmarks PRIVATE -Wall -Wextra -Wpedantic)
+endif()
