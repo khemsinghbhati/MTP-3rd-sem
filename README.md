@@ -105,24 +105,46 @@ The Blair–Peyton constructor passed **19,048 exhaustive nonempty chordal graph
 
 ## A2/A2+ source-fidelity audit (November 19, 2026)
 
-**Research status: NOT ACCEPTED as meeting the paper's worst-case
-bounds.** The research branch implements Sleator–Tarjan (1983)
-globally biased dynamic-tree operations and connects them to Ibarra
-Sections 5–5.1. A2/A2+ differential and Release CLI tests pass.
+**Research status: NOT ACCEPTED as meeting every published
+worst-case bound.** The research branch implements the
+Sleator–Tarjan (1983) globally biased dynamic-tree method
+and Ibarra Sections 5–5.1. A2/A2+ Release differential
+tests, CLI integration, and high-degree insertion/deletion
+cycles pass; source-specific complexity obligations remain.
 
-**Confirmed gap:** on star graphs with n vertices a single permitted
-A2 insertion triggers exactly **2n-1** ST link/cut calls in the
-current implementation. The direct combination has an
-O(n log n) *proved upper bound*, not the paper's required
-O(n) insertion. Additional worst-case lookup and preprocessing
-accounting gaps remain. **No substitute is accepted.**
-The implementation stays on the research branch; it has not
-been merged into `main`.
+**Fixed:** The graph adjacency membership check now uses
+a deterministic balanced-tree `std::set`, giving
+O(log n) worst-case lookup within the O(log² n)
+Insert-Query operation.
 
-See **[Section 14: independent source/complexity audit](
-docs/MTP_REPORT.md#14-independent-audit-of-ibarra-a2a2--november-19-2026)**
-and the evidence in
-`benchmarks/results/a2_st_insert_operation_counts_2026-11-19.csv`.
+**Ibarra Section 4 optimization:** The research A2 directly
+enlarges the vector of an absorbed clique, rather than
+constructing and contracting a temporary clique. This
+reduced one valid star insertion from 2n-1 dynamic-tree
+calls to **one cut**. However, two adjacent high-degree
+cliques can both be absorbed: a verified n=51 example
+still requires **49** ST calls on one permitted insertion.
+No source-verified argument establishes O(n) worst-case
+insertion for that actual code path.
+
+**Preprocessing discrepancy:** On n isolated vertices
+(m=0), our implementation allocates n² characteristic
+entries and (n+2)² matrix W entries. Consequently this
+literal representation has Omega(n²) initialization
+time/space; Ibarra Section 7 nevertheless lists
+O(n log n) preprocessing for A2 in that case.
+
+**No substitutes. No research-branch merge.** The full
+implementation remains isolated until its exact
+published worst-case requirements are verified.
+Production `main` is unchanged.
+
+Read **[the Section 14 code-and-paper audit](
+docs/MTP_REPORT.md#14-independent-audit-of-ibarra-a2a2--november-19-2026)**.
+Evidence:
+`benchmarks/results/a2_section4_insert_st_calls_2026-11-19.csv`,
+`benchmarks/results/a2_two_hub_search_2026-11-19.csv`,
+and `benchmarks/results/a2_empty_preprocessing_2026-11-19.csv`.
 
 ## Research provenance rule (mandatory)
 
