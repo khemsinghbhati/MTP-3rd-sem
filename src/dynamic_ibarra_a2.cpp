@@ -177,6 +177,15 @@ bool SleatorTarjanChordalGraphA2::insert_edge(int u,int v) {
     const int common=W_[x][y];
     const bool drop_x=data_.nodes_[x].size==common+1;
     const bool drop_y=data_.nodes_[y].size==common+1;
+    // Ibarra Section 4: if a clique is subsumed, directly enlarge its
+    // characteristic vector rather than introducing a temporary z node.
+    // Keep the same choice as the linked clique-tree insertion routine.
+    int reused=-1;
+    if(drop_x&&!drop_y)reused=x;
+    else if(drop_y&&!drop_x)reused=y;
+    else if(drop_x&&drop_y)
+        reused=data_.nodes_[x].incident.size()>=
+               data_.nodes_[y].incident.size()?x:y;
     std::vector<bool> old_active(cap,false),on_x_side(cap,false);
     for(int i=0;i<cap;++i)old_active[i]=data_.nodes_[i].active;
     const auto old_x=W_[x];
@@ -222,10 +231,13 @@ bool SleatorTarjanChordalGraphA2::insert_edge(int u,int v) {
 
     link_count_last_=cut_count_last_=0;
     if(!data_.insert_edge(u,v))throw std::logic_error("insert precondition changed");
-    int z=-1;
-    for(int i=0;i<cap;++i)
-        if(data_.nodes_[i].active&&!old_active[i])z=i;
-    if(z<0)throw std::logic_error("new maximal clique not created");
+    int z=reused;
+    if(z<0) {
+        for(int i=0;i<cap;++i)
+            if(data_.nodes_[i].active&&!old_active[i])z=i;
+    }
+    if(z<0||!data_.nodes_[z].active)
+        throw std::logic_error("Ibarra new/reused maximal clique missing");
     for(int t=0;t<data_.graph_.vertex_count();++t) {
         const int old=vertex_witness_[t];
         if(data_.nodes_[old].active)continue;
