@@ -2,7 +2,7 @@
 
 **M.Tech CSE | IIT Bhubaneswar | End-semester presentation: November 30, 2026**
 
-Private working repository implementing Louis Ibarra's *Fully Dynamic Algorithms for Chordal Graphs and Split Graphs* (2008, DOI 10.1145/1383369.1383371). **The paper's methods and asymptotic bounds are requirements.** Blair–Peyton clique-tree preprocessing, Ibarra's first four dynamic chordal operations, the optional fast deletion-query index, and his constant-time split-graph algorithm are implemented. Section 5's dynamic-tree optimization remains unfinished.
+Private working repository implementing Louis Ibarra's *Fully Dynamic Algorithms for Chordal Graphs and Split Graphs* (2008, DOI 10.1145/1383369.1383371). **The paper's methods and asymptotic bounds are requirements.** Blair–Peyton clique-tree preprocessing, Ibarra's first four dynamic chordal operations, the optional fast deletion-query index, and his constant-time split-graph algorithm are implemented. Section 5's worst-case Sleator–Tarjan dynamic tree is implemented and tested; **the source-backed O(n) insertion repair is proved in Section 15**, while the paper's stronger preprocessing-table claim remains inconsistent with its explicitly dense W representation.
 
 ## Project structure
 

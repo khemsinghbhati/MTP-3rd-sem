@@ -1,5 +1,16 @@
 # M.Tech Thesis Project — End-Semester Technical Report
 
+> **Main-branch status (November 20, 2026):** This report covers A1,
+> A1+, the split-graph algorithm, and the source-backed A2/A2+
+> globally biased Sleator–Tarjan implementation. Section 14 preserves
+> the historical O(n) insertion audit failure; **Section 15 documents
+> the corrected O(n) worst-case insertion via BST85 linear rebuilding
+> of the SAME ST83 forest**. Ibarra did not explicitly prescribe
+> the full-forest rebuild schedule, so that source-supported refinement
+> is disclosed rather than presented as literal pseudocode.
+> **Important:** the Section 7 preprocessing-table discrepancy for dense
+> W and characteristic vectors remains independently documented.
+
 **Project:** Chordal Graphs: Foundations, Maximal Cliques, Clique Trees, and Dynamic Algorithms  
 **Student:** Khem Singh  
 **Program:** M.Tech, Computer Science and Engineering, IIT Bhubaneswar  
