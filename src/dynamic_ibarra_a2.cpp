@@ -172,7 +172,12 @@ bool SleatorTarjanChordalGraphA2::delete_edge(int u,int v) {
 // derivable in O(1) per surviving clique, via the old x/y rows.
 bool SleatorTarjanChordalGraphA2::insert_edge(int u,int v) {
     if(!insert_query(u,v))return false;
-    const auto [x,y]=closest(u,v);
+    // Section 3.4's actual insertion endpoints must also identify
+    // the clique whose characteristic vector is reused by Section 4.
+    // The query can use any nearest witness pair; insertion follows
+    // the same endpoints as the maintained tree mutation.
+    const auto pair=data_.closest_pair(u,v);
+    const int x=pair.x,y=pair.y;
     const int cap=static_cast<int>(data_.nodes_.size());
     const int common=W_[x][y];
     const bool drop_x=data_.nodes_[x].size==common+1;
@@ -193,7 +198,6 @@ bool SleatorTarjanChordalGraphA2::insert_edge(int u,int v) {
     // An allowed insertion swaps the minimum-weight x--y path edge
     // for {x,y} (Ibarra, Theorem 6). The two resulting components
     // identify the side-specific Section 5.1 weight formula.
-    const auto pair=data_.closest_pair(u,v);
     int cut_id=-1;
     if(pair.path_edges.size()==1)cut_id=pair.path_edges[0];
     else {
