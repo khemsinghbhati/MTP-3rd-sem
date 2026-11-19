@@ -17,6 +17,9 @@ jobs:
         run: cmake --build build -j 2
       - name: Validate published ST dynamic-forest semantics first
         run: ctest --test-dir build --output-on-failure -R sleator_tarjan_1983_dynamic_forest
+      - name: Validate Ibarra A2 against A1 oracle
+        run: ctest --test-dir build --output-on-failure -R ibarra_section5_actual_ST_dynamic_tree
+
       - name: Test
         run: ctest --test-dir build --output-on-failure
       - name: Sample CLI
