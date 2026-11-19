@@ -70,6 +70,11 @@ if(BUILD_TESTING)
     target_link_libraries(mtp_ibarra_fast_tests PRIVATE mtp_graphs)
     target_compile_options(mtp_ibarra_fast_tests PRIVATE -Wall -Wextra -Wpedantic)
     add_test(NAME ibarra_fast_delete_query COMMAND mtp_ibarra_fast_tests)
+
+    add_executable(mtp_ibarra_fast_stress_tests tests/test_ibarra_fast_stress.cpp)
+    target_link_libraries(mtp_ibarra_fast_stress_tests PRIVATE mtp_graphs)
+    target_compile_options(mtp_ibarra_fast_stress_tests PRIVATE -Wall -Wextra -Wpedantic)
+    add_test(NAME ibarra_fast_large_sparse_dense COMMAND mtp_ibarra_fast_stress_tests)
     add_test(NAME ibarra_dynamic_sample_cli COMMAND mtp_dynamic_cli
              ${CMAKE_CURRENT_SOURCE_DIR}/data/example_7_vertices.txt
              ${CMAKE_CURRENT_SOURCE_DIR}/data/dynamic_example_ops.txt)
