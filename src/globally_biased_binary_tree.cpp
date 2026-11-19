@@ -23,11 +23,12 @@ GloballyBiasedBinaryTree::Node* GloballyBiasedBinaryTree::leaf(
     x->rank=floor_log2(weight);
     x->item=item;
     x->weight=weight;
+    refresh(x);
     return x;
 }
 
 GloballyBiasedBinaryTree::Node* GloballyBiasedBinaryTree::internal(
-    Node* a,Node* b,int rank) {
+    Node* a,Node* b,int rank,int cost) {
     if(!a||!b)throw std::logic_error("internal node needs both children");
     Node* root;
     if(!pool_.empty()) {root=pool_.back();pool_.pop_back();*root=Node();}
@@ -37,9 +38,94 @@ GloballyBiasedBinaryTree::Node* GloballyBiasedBinaryTree::internal(
     }
     root->rank=rank;
     root->item=-1;
+    root->edge_cost=cost;
     set_left(root,a);
     set_right(root,b);
+    refresh(root);
     return root;
+}
+
+void GloballyBiasedBinaryTree::refresh(Node* x) {
+    constexpr long long infinity=1000000000000LL;
+    if(x->is_leaf()) {
+        x->sum_weight=x->weight;
+        x->left_tilt_min=x->right_tilt_min=infinity;
+        x->minimum_cost=1000000000;
+        x->first=x->last=x;
+        x->leaf_count=1;
+        return;
+    }
+    const Node* a=x->left;
+    const Node* b=x->right;
+    if(!a||!b)throw std::logic_error("refresh on malformed tree");
+    x->sum_weight=a->sum_weight+b->sum_weight;
+    x->minimum_cost=std::min({x->edge_cost,a->minimum_cost,b->minimum_cost});
+    x->leaf_count=a->leaf_count+b->leaf_count;
+    x->first=a->first;
+    x->last=b->last;
+    x->left_tilt_min=std::min({
+        a->left_tilt_min,
+        a->sum_weight-static_cast<long long>(b->first->weight),
+        b->left_tilt_min==infinity?infinity:
+            a->sum_weight+b->left_tilt_min});
+    x->right_tilt_min=std::min({
+        b->right_tilt_min,
+        b->sum_weight-static_cast<long long>(a->last->weight),
+        a->right_tilt_min==infinity?infinity:
+            b->sum_weight+a->right_tilt_min});
+}
+void GloballyBiasedBinaryTree::flip(Node* x) {
+    if(!x||x->is_leaf())return;
+    std::swap(x->left,x->right);
+    std::swap(x->first,x->last);
+    std::swap(x->left_tilt_min,x->right_tilt_min);
+    x->reversed=!x->reversed;
+}
+void GloballyBiasedBinaryTree::push(Node* x) {
+    if(!x||x->is_leaf()||!x->reversed)return;
+    flip(x->left);
+    flip(x->right);
+    x->reversed=false;
+}
+void GloballyBiasedBinaryTree::reverse(Node* root) {flip(root);}
+GloballyBiasedBinaryTree::Node*
+GloballyBiasedBinaryTree::kth(Node* root,int position) const {
+    if(!root||position<0||position>=root->leaf_count)
+        throw std::out_of_range("kth node on path");
+    while(!root->is_leaf()) {
+        push(root);
+        if(position<root->left->leaf_count)root=root->left;
+        else {
+            position-=root->left->leaf_count;
+            root=root->right;
+        }
+    }
+    return root;
+}
+int GloballyBiasedBinaryTree::min_cost(Node* root) const {
+    return root?root->minimum_cost:1000000000;
+}
+GloballyBiasedBinaryTree::Node*
+GloballyBiasedBinaryTree::light(Node* root) const {
+    if(!root||root->left_tilt_min>0)return nullptr;
+    // Sleator–Tarjan (1983), §5: rightmost violated lefttilt.
+    long long offset=0;
+    while(!root->is_leaf()) {
+        push(root);
+        const Node* a=root->left;
+        const Node* b=root->right;
+        if(b->left_tilt_min!=1000000000000LL &&
+           offset+a->sum_weight+b->left_tilt_min<=0) {
+            offset+=a->sum_weight;
+            root=root->right;
+        } else if(offset+a->sum_weight-b->first->weight<=0) {
+            return b->first;
+        } else if(a->left_tilt_min!=1000000000000LL &&
+                  offset+a->left_tilt_min<=0) {
+            root=root->left;
+        } else return nullptr;
+    }
+    return nullptr;
 }
 
 void GloballyBiasedBinaryTree::set_left(Node* p,Node* c) {
@@ -58,32 +144,38 @@ void GloballyBiasedBinaryTree::recycle(Node* x) {
 // Bent–Sleator–Tarjan (1985), Section 4, "tilt left".
 GloballyBiasedBinaryTree::Node*
 GloballyBiasedBinaryTree::tilt_left(Node* x) {
+    push(x);
     if(x->is_leaf())return x;
     if(x->left->rank==x->rank && x->right->rank==x->rank) {
         ++x->rank;return x;
     }
     if(x->right->rank==x->rank && x->left->rank!=x->rank) {
         Node* y=x->right;
+        push(y);
         Node* beta=y->left;
         set_right(x,beta);
         set_left(y,x);
         y->parent=nullptr;
+        refresh(x);refresh(y);
         return y;
     }
     return x;
 }
 GloballyBiasedBinaryTree::Node*
 GloballyBiasedBinaryTree::tilt_right(Node* x) {
+    push(x);
     if(x->is_leaf())return x;
     if(x->left->rank==x->rank && x->right->rank==x->rank) {
         ++x->rank;return x;
     }
     if(x->left->rank==x->rank && x->right->rank!=x->rank) {
         Node* y=x->left;
+        push(y);
         Node* beta=y->right;
         set_left(x,beta);
         set_right(y,x);
         y->parent=nullptr;
+        refresh(x);refresh(y);
         return y;
     }
     return x;
@@ -91,28 +183,31 @@ GloballyBiasedBinaryTree::tilt_right(Node* x) {
 
 // The locally biased join is used ONLY in split (B–S–T 1985 §4).
 GloballyBiasedBinaryTree::Node*
-GloballyBiasedBinaryTree::local_join(Node* x,Node* y) {
+GloballyBiasedBinaryTree::local_join(Node* x,Node* y,int edge_cost) {
+    push(x);push(y);
     if(!x)return y;
     if(!y)return x;
     if(x->rank==y->rank ||
        (x->rank>y->rank&&x->is_leaf()) ||
        (x->rank<y->rank&&y->is_leaf())) {
-        return internal(x,y,std::max(x->rank,y->rank)+1);
+        return internal(x,y,std::max(x->rank,y->rank)+1,edge_cost);
     }
     if(x->rank>y->rank) {
         x=tilt_left(x);
         Node* z=x->right;
         z->parent=nullptr;
-        Node* joined=local_join(z,y);
+        Node* joined=local_join(z,y,edge_cost);
         set_right(x,joined);
+        refresh(x);
         x->parent=nullptr;
         return x;
     }
     y=tilt_right(y);
     Node* z=y->left;
     z->parent=nullptr;
-    Node* joined=local_join(x,z);
+    Node* joined=local_join(x,z,edge_cost);
     set_left(y,joined);
+    refresh(y);
     y->parent=nullptr;
     return y;
 }
@@ -120,12 +215,13 @@ GloballyBiasedBinaryTree::local_join(Node* x,Node* y) {
 // Global join cases 1–4b(v): Bent–Sleator–Tarjan (1985), §4,
 // Figure 14, including all equal-rank cases.
 GloballyBiasedBinaryTree::Node*
-GloballyBiasedBinaryTree::global_join(Node* x,Node* y) {
+GloballyBiasedBinaryTree::global_join(Node* x,Node* y,int edge_cost) {
+    push(x);push(y);
     if(!x)return y;
     if(!y)return x;
     if(x->rank==y->rank) {
         if(x->is_leaf()||y->is_leaf())
-            return internal(x,y,x->rank+1);
+            return internal(x,y,x->rank+1,edge_cost);
         // Equal rank, both internal: Case 4.
         const int s=x->rank;
         Node* u=x->right->rank<s ? x : x->right;
@@ -134,7 +230,7 @@ GloballyBiasedBinaryTree::global_join(Node* x,Node* y) {
         Node* vy=v->left;
         ux->parent=nullptr;
         vy->parent=nullptr;
-        Node* z=global_join(ux,vy);
+        Node* z=global_join(ux,vy,edge_cost);
         if(z->rank==s) { // Case 4a
             Node* zl=z->left;
             Node* zr=z->right;
@@ -196,14 +292,14 @@ GloballyBiasedBinaryTree::global_join(Node* x,Node* y) {
         if(x->is_leaf())return internal(x,y,x->rank+1);
         x=tilt_left(x);
         Node* old_right=x->right;old_right->parent=nullptr;
-        set_right(x,global_join(old_right,y));
+        set_right(x,global_join(old_right,y,edge_cost));
         x->parent=nullptr;
         return x;
     }
-    if(y->is_leaf())return internal(x,y,y->rank+1);
+    if(y->is_leaf())return internal(x,y,y->rank+1,edge_cost);
     y=tilt_right(y);
     Node* old_left=y->left;old_left->parent=nullptr;
-    set_left(y,global_join(x,old_left));
+    set_left(y,global_join(x,old_left,edge_cost));
     y->parent=nullptr;
     return y;
 }
