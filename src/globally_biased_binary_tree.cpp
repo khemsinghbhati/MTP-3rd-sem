@@ -367,6 +367,7 @@ std::vector<int> GloballyBiasedBinaryTree::sequence(Node* root) const {
     std::vector<Node*> stack{root};
     while(!stack.empty()) {
         Node* u=stack.back();stack.pop_back();
+        push(u); // realize a pending path reversal before visiting children
         if(u->is_leaf())answer.push_back(u->item);
         else {
             if(!u->left||!u->right)
@@ -388,6 +389,7 @@ void GloballyBiasedBinaryTree::check_invariants(Node* root) const {
     std::vector<Node*> leaves;
     while(!stack.empty()) {
         auto* u=stack.back();stack.pop_back();
+        push(u);
         if(!u||!u->live||!visited.insert(u).second)
             throw std::logic_error("inactive or repeated node");
         if(u->is_leaf()) {
