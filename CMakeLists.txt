@@ -78,6 +78,11 @@ if(BUILD_TESTING)
     target_compile_options(mtp_ibarra_split_stats_tests PRIVATE -Wall -Wextra -Wpedantic)
     add_test(NAME ibarra_split_four_numbers COMMAND mtp_ibarra_split_stats_tests)
 
+    add_executable(mtp_deterministic_graph_tests tests/test_deterministic_graph_lookup.cpp)
+    target_link_libraries(mtp_deterministic_graph_tests PRIVATE mtp_graphs)
+    target_compile_options(mtp_deterministic_graph_tests PRIVATE -Wall -Wextra -Wpedantic)
+    add_test(NAME deterministic_graph_membership COMMAND mtp_deterministic_graph_tests)
+
     add_executable(mtp_ibarra_a2_tests tests/test_ibarra_a2.cpp)
     target_link_libraries(mtp_ibarra_a2_tests PRIVATE mtp_graphs)
     target_compile_options(mtp_ibarra_a2_tests PRIVATE -Wall -Wextra -Wpedantic)
