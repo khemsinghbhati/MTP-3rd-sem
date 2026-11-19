@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstddef>
-#include <unordered_set>
+#include <set>
 #include <vector>
 
 namespace mtp {
@@ -15,6 +15,7 @@ public:
     [[nodiscard]] int vertex_count() const noexcept;
     [[nodiscard]] std::size_t edge_count() const noexcept;
     [[nodiscard]] const std::vector<int>& neighbors(int vertex) const;
+    // Deterministic O(log n) worst-case membership; preserves A2 Insert-Query O(log^2 n).
     [[nodiscard]] bool has_edge(int u, int v) const;
 
     // Rejects self-loops and out-of-range IDs. Repeated edges are ignored.
@@ -26,7 +27,7 @@ private:
     void validate_vertex(int vertex) const;
 
     std::vector<std::vector<int>> adjacency_;
-    std::vector<std::unordered_set<int>> neighbor_sets_;
+    std::vector<std::set<int>> neighbor_sets_;
     std::size_t edge_count_ = 0;
 };
 
