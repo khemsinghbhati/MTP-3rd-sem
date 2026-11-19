@@ -49,7 +49,8 @@ int main(int argc,char** argv) {
     try {
         if (argc==4 && std::string(argv[3])!="--fast-delete")
             throw std::runtime_error("unknown command line flag");
-        // Research variant: HLD rebuild, NOT Ibarra\x27s worst-case dynamic tree.\n        mtp::IndexedDynamicChordalGraph dynamic(load_graph(argv[1]));
+        // Research variant: indexed heavy paths rebuilt after each update.
+        mtp::IndexedDynamicChordalGraph dynamic(load_graph(argv[1]));
         if (argc==4) dynamic.enable_fast_delete_queries();
         std::ifstream script(argv[2]);
         if(!script)throw std::runtime_error("cannot open operations file");
