@@ -1,0 +1,21 @@
+name: Published BST85 linear construction research
+on:
+  push:
+    branches: [research/a2-linear-st-construction]
+  workflow_dispatch:
+jobs:
+  validate-linear-construction:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure Release
+        run: cmake -S . -B build-linear -DCMAKE_BUILD_TYPE=Release
+      - name: Compile focused tests
+        run: cmake --build build-linear --target mtp_bst85_linear_tests mtp_globally_biased_tests mtp_worst_case_forest_tests mtp_ibarra_a2_tests -j 4
+      - name: Verify BST85 Figure 15 linear builder
+        run: ctest --test-dir build-linear --output-on-failure -R bst85_linear_global_bias
+      - name: Verify Sleator Tarjan dynamic forest
+        run: ctest --test-dir build-linear --output-on-failure -R sleator_tarjan_1983_dynamic_forest
+      - name: Verify Ibarra A2
+        run: ctest --test-dir build-linear --output-on-failure -R ibarra_section5_actual_ST_dynamic_tree
