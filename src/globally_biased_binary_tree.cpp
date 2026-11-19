@@ -302,7 +302,7 @@ GloballyBiasedBinaryTree::global_join(Node* x,Node* y,int edge_cost) {
     }
     // Cases 1–3 (unequal rank).
     if(x->rank>y->rank) {
-        if(x->is_leaf())return internal(x,y,x->rank+1);
+        if(x->is_leaf())return internal(x,y,x->rank+1,edge_cost);
         x=tilt_left(x);
         Node* old_right=x->right;old_right->parent=nullptr;
         set_right(x,global_join(old_right,y,edge_cost));
