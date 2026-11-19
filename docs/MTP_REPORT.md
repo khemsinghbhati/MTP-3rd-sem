@@ -1829,8 +1829,8 @@ The code has two separate independent functional checks:
    spanning-tree edge counts, and running-intersection
    connectivity are reconstructed and checked independently.
 
-Release tests passed including A2 and A2+ CLI samples,
-in https://github.com/khemsinghbhati/MTP-3rd-sem/actions/runs/44564002891.
+Release tests passed, including Section 4 clique reuse, repeated two-hub cycles, and A2/A2+ CLI samples,
+in https://github.com/khemsinghbhati/MTP-3rd-sem/actions/runs/44582444381.
 A later Release run including the operation-count audit
 also passed. Memory-sanitizer runs and Release runs must
 continue to be reviewed at the specific commit accepted.
@@ -1875,6 +1875,74 @@ demonstrable initialization lower bound contradicting
 the paper's A2 preprocessing summary. These are
 research acceptance blockers, not merely testing
 or compiler errors.
+
+### 14.8 Final empirical A1 vs **actual ST-backed A2** comparison
+
+A Release benchmark on path graphs distinguishes
+construction from repeated insertion queries and
+compares `DynamicChordalGraph` (Ibarra A1) against
+`SleatorTarjanChordalGraphA2` using the actual
+published-method ST1983 dynamic forest. The prior
+heavy-path experiment remains a separately labeled
+research alternative and is **not** used for A2
+performance conclusions.
+
+The query uses the two path endpoints (which form
+a long chordless cycle if connected) and repeats
+the non-mutating Insert-Query 700 times at each size.
+
+| n | A1 construction ms | ST-A2 construction ms | A1 query ms | ST-A2 query ms |
+| ---: | ---: | ---: | ---: | ---: |
+| 64 | 0.055153 | 3.393333 | 0.000995 | 0.045888 |
+| 128 | 0.049923 | 13.087767 | 0.002645 | 0.093860 |
+| 256 | 0.096499 | 23.435337 | 0.004042 | 0.083736 |
+| 512 | 0.199641 | 61.656551 | 0.007889 | 0.098593 |
+| 1024 | 0.475324 | 189.852227 | 0.017170 | 0.122071 |
+
+**Observed:** In this workload the current A2
+implementation is **slower** in absolute time
+than A1, despite Ibarra's asymptotic comparison
+of O(log² n) versus O(n) Insert-Query. This is
+plausibly due to a high constant overhead from
+the globally biased ST dynamic tree and the
+implementation's multiple expose/evert/restore
+procedures. We have **not proved** any particular
+crossover size, and timings are not worst-case
+operation proofs.
+
+Source:
+`benchmarks/benchmark_a2_st.cpp`;
+CSV:
+`benchmarks/results/a1_vs_st_a2_path_2026-11-19.csv`.
+The observed data is from the successful Release
+workflow:
+https://github.com/khemsinghbhati/MTP-3rd-sem/actions/runs/44582444381.
+
+### 14.9 Test evidence and nonmerge decision
+
+After the Section 4 insertion refactor and
+deterministic adjacency representation change:
+
+- The dedicated Release workflow passed the ST
+  forest oracle; A2/A2+ versus A1 chordal
+  differential tests; repeated two-high-degree
+  insertion/deletion cycles; A2 and A2+ CLI;
+  star/double-star, randomized-relabeled
+  two-hub insertion counts; empty graph
+  preprocessing footprint; and actual A1-vs-A2
+  timing comparison.
+- The research branch is **not** merged into
+  `main` because its O(n) insertion complexity
+  remains unproved and the source/representation
+  preprocessing bounds are demonstrably
+  inconsistent on m=0. This is a deliberate
+  enforcement of the strict published-method
+  acceptance policy.
+- Results from sanitizer-enabled CI are
+  separately tracked and must be recorded
+  for the final accepted commit. Passing
+  tests does not substitute for a worst-case
+  proof of globally biased path-set helpers.
 
 ### Implementation evidence
 
