@@ -1,6 +1,8 @@
 #pragma once
 #include "mtp/graph.hpp"
 #include "mtp/clique_tree.hpp"
+#include "mtp/fast_delete_ibarra.hpp"
+#include <memory>
 #include <list>
 #include <vector>
 
@@ -11,6 +13,9 @@ namespace mtp {
 class DynamicChordalGraph {
 public:
     explicit DynamicChordalGraph(Graph graph);
+    // Optional Ibarra Sections 6.2-6.3 accelerated deletion-query index.
+    // Extra initialization O(mn+n^2); queries O(sqrt(m)+1), updates O(m+n).
+    void enable_fast_delete_queries();
     [[nodiscard]] bool delete_query(int u, int v) const;
     [[nodiscard]] bool insert_query(int u, int v) const;
     bool delete_edge(int u, int v);
@@ -35,6 +40,7 @@ private:
         std::vector<int> path_edges;
     };
     Graph graph_;
+    std::unique_ptr<FastCliqueIntersectionIndex> fast_;
     std::vector<Node> nodes_;
     std::vector<Edge> edges_;
     std::vector<int> free_nodes_, free_edges_;
