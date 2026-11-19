@@ -1,6 +1,7 @@
 #pragma once
 #include "mtp/globally_biased_binary_tree.hpp"
 #include <vector>
+#include <string>
 
 namespace mtp {
 
@@ -23,6 +24,7 @@ public:
     [[nodiscard]] int kth_on_path(int u,int v,int index);
     [[nodiscard]] int path_length(int u,int v);
     void check_invariants();
+    [[nodiscard]] std::string debug_state() const;
 
 private:
     using BST=GloballyBiasedBinaryTree;
