@@ -11,6 +11,7 @@ namespace mtp {
 // Maintains clique characteristic vectors and a clique tree under permitted
 // updates. All four operations O(n) worst-case with O(1) linked-list link/cut.
 class DynamicChordalGraph {
+    friend class IndexedDynamicChordalGraph;
 public:
     explicit DynamicChordalGraph(Graph graph);
     // Optional Ibarra Sections 6.2-6.3 accelerated deletion-query index.
