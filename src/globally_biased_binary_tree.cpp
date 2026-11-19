@@ -150,6 +150,94 @@ GloballyBiasedBinaryTree::light(Node* root) const {
     return nullptr;
 }
 
+// Bent, Sleator & Tarjan (1985), "Biased Search Trees", Section 4,
+// paragraph after Figure 14, Figure 15 and Theorem 12.
+// This is the paper's BOTTOM-UP builder, not k global_join calls.
+//
+// Each internal binary-tree node represents the separator/boundary
+// between consecutive leaves (Sleator-Tarjan 1983 Section 5). The
+// boundary cost stays with the internal node under tilt-left rotations.
+// No path aggregate is consulted while constructing; we compute
+// all aggregates by ONE postorder traversal after the rank topology
+// is complete. Thus maintaining aggregates does not spoil O(k).
+GloballyBiasedBinaryTree::Node*
+GloballyBiasedBinaryTree::build_linear(
+    const std::vector<Node*>& leaves,
+    const std::vector<int>& boundary_cost) {
+    if(leaves.empty()) {
+        if(!boundary_cost.empty())
+            throw std::invalid_argument("empty leaf sequence has costs");
+        return nullptr;
+    }
+    if(boundary_cost.size()+1!=leaves.size())
+        throw std::invalid_argument("one cost per leaf boundary required");
+    linear_steps_=0;
+    for(Node* l:leaves)
+        if(!l||!l->is_leaf()||l->parent||!l->live)
+            throw std::invalid_argument("linear builder requires detached live leaves");
+    Node* root=leaves.front();
+    Node* rightmost=root;
+    for(std::size_t i=1;i<leaves.size();++i) {
+        Node* y=leaves[i];
+        Node* x=rightmost;
+        // Figure 15: find the maximal right-path node whose
+        // parent's rank does not exceed rank(y).
+        while(x->parent && x->parent->rank<=y->rank) {
+            x=x->parent;
+            ++linear_steps_;
+        }
+        Node* old_parent=x->parent;
+        Node* added=internal(x,y,std::max(x->rank,y->rank)+1,
+                             boundary_cost[i-1]);
+        ++linear_steps_;
+        if(!old_parent) {
+            root=added;
+        } else {
+            // x was on the rightmost spine of the old search tree.
+            if(old_parent->right!=x)
+                throw std::logic_error("linear builder lost rightmost spine");
+            set_right(old_parent,added);
+            Node* current=old_parent;
+            for(;;) {
+                Node* ancestor=current->parent;
+                if(ancestor && ancestor->right!=current)
+                    throw std::logic_error("linear tilt left spine broken");
+                const int previous_rank=current->rank;
+                Node* revised=tilt_left(current);
+                if(ancestor)set_right(ancestor,revised);
+                else root=revised;
+                ++linear_steps_;
+                // The paper stops after the first tilt without a rank
+                // promotion. Rotations preserve the rank of that parent.
+                if(revised!=current || current->rank==previous_rank ||
+                   !ancestor)
+                    break;
+                current=ancestor;
+            }
+        }
+        rightmost=y;
+    }
+
+    // Recompute subtree sums, path minima, first/last, and tilt minima
+    // once in O(k), without adding O(log k) per inserted leaf.
+    std::vector<std::pair<Node*,bool>> stack{{root,false}};
+    while(!stack.empty()) {
+        const auto [x,done]=stack.back();stack.pop_back();
+        if(!done) {
+            stack.push_back({x,true});
+            if(!x->is_leaf()) {
+                stack.push_back({x->right,false});
+                stack.push_back({x->left,false});
+            }
+        } else {
+            refresh(x);
+            ++linear_steps_;
+        }
+    }
+    root->parent=nullptr;
+    return root;
+}
+
 void GloballyBiasedBinaryTree::set_left(Node* p,Node* c) {
     if(!p||!c)throw std::logic_error("invalid left pointer");
     p->left=c;c->parent=p;
