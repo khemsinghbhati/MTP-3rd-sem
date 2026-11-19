@@ -14,6 +14,7 @@ add_library(mtp_graphs
     src/indexed_dynamic_ibarra.cpp
     src/globally_biased_binary_tree.cpp
     src/worst_case_dynamic_tree.cpp
+    src/dynamic_ibarra_a2.cpp
     src/fast_delete_ibarra.cpp
     src/dynamic_split_ibarra.cpp
 )
@@ -72,6 +73,11 @@ if(BUILD_TESTING)
     target_link_libraries(mtp_ibarra_split_stats_tests PRIVATE mtp_graphs)
     target_compile_options(mtp_ibarra_split_stats_tests PRIVATE -Wall -Wextra -Wpedantic)
     add_test(NAME ibarra_split_four_numbers COMMAND mtp_ibarra_split_stats_tests)
+
+    add_executable(mtp_ibarra_a2_tests tests/test_ibarra_a2.cpp)
+    target_link_libraries(mtp_ibarra_a2_tests PRIVATE mtp_graphs)
+    target_compile_options(mtp_ibarra_a2_tests PRIVATE -Wall -Wextra -Wpedantic)
+    add_test(NAME ibarra_section5_actual_ST_dynamic_tree COMMAND mtp_ibarra_a2_tests)
 
     add_executable(mtp_worst_case_forest_tests tests/test_worst_case_dynamic_tree.cpp)
     target_link_libraries(mtp_worst_case_forest_tests PRIVATE mtp_graphs)
