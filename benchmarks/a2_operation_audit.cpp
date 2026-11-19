@@ -10,7 +10,7 @@
 #include <algorithm>
 
 int main() {
-    std::cout<<"case,n,maximum_clique_tree_degree,st_links,st_cuts,st_total_calls\n";
+    std::cout<<"case,n,maximum_clique_tree_degree,central_u_degree,central_v_degree,st_links,st_cuts,st_total_calls\n";
     for(int n : {12,24,48,96,192,384}) {
         mtp::Graph g(n);
         for(int v=1;v<n;++v)g.add_edge(0,v);
@@ -32,7 +32,7 @@ int main() {
         if(!dynamic.insert_query(u,v) || !dynamic.insert_edge(u,v))
             throw std::runtime_error("star leaf-to-leaf insertion rejected");
         dynamic.check_dynamic_tree_invariants();
-        std::cout<<"star,"<<n<<','<<degree[hub]<<','
+        std::cout<<"star,"<<n<<','<<degree[hub]<<",0,0,"
                  <<dynamic.dynamic_tree_link_count_last_update()<<','
                  <<dynamic.dynamic_tree_cut_count_last_update()<<','
                  <<dynamic.dynamic_tree_link_count_last_update()+
@@ -60,13 +60,22 @@ int main() {
             ++degree[edge.first];++degree[edge.second];
         }
         const int maximum=*std::max_element(degree.begin(),degree.end());
+        int du=-1,dv=-1;
+        for(int i=0;i<c;++i) {
+            const auto& member=tree.cliques[i];
+            if(member.size()!=2)continue;
+            if(std::find(member.begin(),member.end(),0)==member.end())continue;
+            if(std::find(member.begin(),member.end(),1)!=member.end())du=degree[i];
+            if(std::find(member.begin(),member.end(),2)!=member.end())dv=degree[i];
+        }
+        if(du<0||dv<0)throw std::runtime_error("missing central cliques");
         if(!dynamic.insert_query(1,2)||!dynamic.insert_edge(1,2))
             throw std::runtime_error("double-star triangle insertion rejected");
         dynamic.check_dynamic_tree_invariants();
-        std::cout<<"double_star,"<<n<<','<<maximum<<','
+        std::cout<<"double_star,"<<n<<','<<maximum<<','<<du<<','<<dv<<','
                  <<dynamic.dynamic_tree_link_count_last_update()<<','
                  <<dynamic.dynamic_tree_cut_count_last_update()<<','
                  <<dynamic.dynamic_tree_link_count_last_update()+
-                   dynamic.dynamic_tree_cut_count_last_update()<<'\\n';
+                   dynamic.dynamic_tree_cut_count_last_update()<<'\n';
     }
 }
