@@ -4,6 +4,18 @@
 
 Private working repository implementing Louis Ibarra's *Fully Dynamic Algorithms for Chordal Graphs and Split Graphs* (2008, DOI 10.1145/1383369.1383371). **The paper's methods and asymptotic bounds are requirements.** Blair–Peyton clique-tree preprocessing, Ibarra's first four dynamic chordal operations, the optional fast deletion-query index, and his constant-time split-graph algorithm are implemented. Section 5's dynamic-tree optimization remains unfinished.
 
+> **Research status (November 19, 2026):** A published-method
+> Sleator–Tarjan (1983) A2/A2+ implementation exists in the separate
+> `research/sleator-tarjan-worst-case` branch. Functional, differential
+> and adversarial tests pass, but **the required O(n) insertion bound
+> has not been proved**, and the paper's preprocessing summary
+> conflicts with its n-by-n W matrix/characteristic-vector
+> initialization for sparse inputs. This experimental code is
+> **not merged**. The full verified findings, source references,
+> and measured A1-versus-ST-A2 performance are recorded in
+> [docs/MTP_REPORT.md, Section 14](docs/MTP_REPORT.md#14-independent-audit-of-ibarra-a2a2--november-19-2026).
+> No algorithm substitute has been accepted.
+
 ## Project structure
 
 - `include/mtp/` — MCS/PEO, Blair–Peyton clique tree, Ibarra dynamic chordal queries/updates, modified-Yellin fast index, and split-graph interfaces.
