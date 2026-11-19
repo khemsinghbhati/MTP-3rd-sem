@@ -81,12 +81,14 @@ int DynamicChordalGraph::link(int a, int b, int weight) {
     edge.active = true;
     edge.a = a; edge.b = b; edge.weight = weight;
     edge.in_a = it_a; edge.in_b = it_b;
+    if(tree_link_hook_)tree_link_hook_(a,b,weight);
     return id;
 }
 
 void DynamicChordalGraph::cut(int id) {
     auto& edge = edges_[id];
     if (!edge.active) throw std::logic_error("cutting inactive tree edge");
+    if(tree_cut_hook_)tree_cut_hook_(edge.a,edge.b);
     nodes_[edge.a].incident.erase(edge.in_a);
     nodes_[edge.b].incident.erase(edge.in_b);
     edge.active = false;
