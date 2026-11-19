@@ -147,7 +147,7 @@ GloballyBiasedBinaryTree::tilt_left(Node* x) {
     push(x);
     if(x->is_leaf())return x;
     if(x->left->rank==x->rank && x->right->rank==x->rank) {
-        ++x->rank;return x;
+        ++x->rank;refresh(x);return x;
     }
     if(x->right->rank==x->rank && x->left->rank!=x->rank) {
         Node* y=x->right;
@@ -239,6 +239,9 @@ GloballyBiasedBinaryTree::global_join(Node* x,Node* y,int edge_cost) {
             set_left(z,x);
             set_right(z,y);
             z->rank=s+1;
+            if(u!=x)refresh(u);
+            if(v!=y)refresh(v);
+            refresh(x);refresh(y);refresh(z);
             z->parent=nullptr;
             return z;
         }
@@ -251,6 +254,9 @@ GloballyBiasedBinaryTree::global_join(Node* x,Node* y,int edge_cost) {
             set_left(u,x);
             set_right(u,y);
             u->rank=s+1;
+            refresh(x);refresh(v);
+            if(v!=y)refresh(y);
+            refresh(u);
             u->parent=nullptr;
             return u;
         }
@@ -261,6 +267,8 @@ GloballyBiasedBinaryTree::global_join(Node* x,Node* y,int edge_cost) {
             set_left(v,x);
             set_right(v,y);
             v->rank=s+1;
+            refresh(u);if(u!=x)refresh(x);
+            refresh(y);refresh(v);
             v->parent=nullptr;
             return v;
         }
@@ -268,6 +276,8 @@ GloballyBiasedBinaryTree::global_join(Node* x,Node* y,int edge_cost) {
             set_left(v,z);
             set_right(x,y);
             ++x->rank;
+            refresh(v);if(v!=y)refresh(y);
+            refresh(x);
             x->parent=nullptr;
             return x;
         }
@@ -275,6 +285,8 @@ GloballyBiasedBinaryTree::global_join(Node* x,Node* y,int edge_cost) {
             set_right(u,z);
             set_left(y,x);
             ++y->rank;
+            refresh(u);if(u!=x)refresh(x);
+            refresh(y);
             y->parent=nullptr;
             return y;
         }
@@ -282,6 +294,7 @@ GloballyBiasedBinaryTree::global_join(Node* x,Node* y,int edge_cost) {
             // Case 4b(v).
             set_left(v,z);
             set_right(x,y);
+            refresh(v);refresh(y);refresh(x);
             x->parent=nullptr;
             return x;
         }
@@ -293,6 +306,7 @@ GloballyBiasedBinaryTree::global_join(Node* x,Node* y,int edge_cost) {
         x=tilt_left(x);
         Node* old_right=x->right;old_right->parent=nullptr;
         set_right(x,global_join(old_right,y,edge_cost));
+        refresh(x);
         x->parent=nullptr;
         return x;
     }
@@ -300,6 +314,7 @@ GloballyBiasedBinaryTree::global_join(Node* x,Node* y,int edge_cost) {
     y=tilt_right(y);
     Node* old_left=y->left;old_left->parent=nullptr;
     set_left(y,global_join(x,old_left,edge_cost));
+    refresh(y);
     y->parent=nullptr;
     return y;
 }
@@ -309,19 +324,26 @@ GloballyBiasedBinaryTree::Split GloballyBiasedBinaryTree::split(Node* x) {
         throw std::invalid_argument("split requires active leaf");
     Node* left=nullptr;
     Node* right=nullptr;
+    // Push pending reverse flags from the root down to the selected leaf.
+    std::vector<Node*> ancestry;
+    for(Node* u=x;u;u=u->parent)ancestry.push_back(u);
+    for(auto it=ancestry.rbegin();it!=ancestry.rend();++it)push(*it);
     Node* current=x;
     std::vector<Node*> detached_internals;
+    int before_cost=0,after_cost=0;
     while(current->parent) {
         Node* p=current->parent;
         Node* up=p->parent;
         if(p->left==current) {
             Node* sibling=p->right;
             sibling->parent=nullptr;
-            right=right?local_join(right,sibling):sibling;
+            if(!right)after_cost=p->edge_cost;
+            right=right?local_join(right,sibling,p->edge_cost):sibling;
         } else if(p->right==current) {
             Node* sibling=p->left;
             sibling->parent=nullptr;
-            left=left?local_join(sibling,left):sibling;
+            if(!left)before_cost=p->edge_cost;
+            left=left?local_join(sibling,left,p->edge_cost):sibling;
         } else {
             throw std::logic_error("malformed parent while splitting");
         }
@@ -336,7 +358,7 @@ GloballyBiasedBinaryTree::Split GloballyBiasedBinaryTree::split(Node* x) {
     x->parent=nullptr;
     if(left)left->parent=nullptr;
     if(right)right->parent=nullptr;
-    return {left,x,right};
+    return {left,x,right,before_cost,after_cost};
 }
 
 std::vector<int> GloballyBiasedBinaryTree::sequence(Node* root) const {
