@@ -271,6 +271,44 @@ bool DynamicChordalGraph::insert_edge(int u, int v) {
     bits[u] = bits[v] = 1;
     const bool drop_x = nodes_[x].size == common + 1;
     const bool drop_y = nodes_[y].size == common + 1;
+    // Ibarra (2008), Section 4, paragraph 'We implement Insert':
+    // when Kx or Ky is subsumed by Kz, update that clique's
+    // characteristic vector directly. We do not build a temporary
+    // tree node and then contract it. This source-prescribed
+    // simplification avoids unnecessary ST operations in A2.
+    if (tree_link_hook_ && (drop_x || drop_y)) {
+        int keep=x, drop=-1;
+        if (!drop_x) keep=y;
+        else if (drop_y) {
+            // Both are subsumed; either source-permitted choice is valid.
+            // Retaining the higher-degree clique avoids extra rewiring,
+            // but this does NOT prove O(n) for two high-degree cliques.
+            keep = nodes_[x].incident.size()>=nodes_[y].incident.size()?x:y;
+            drop = keep==x?y:x;
+        }
+        if (fast_) {
+            fast_->remove_clique(keep);
+            if (drop>=0)fast_->remove_clique(drop);
+        }
+        if (drop>=0) {
+            contract(keep,drop);
+        } else {
+            // Only one clique subsumed: its expanded separator is the
+            // former x-y tree edge, which changes weight by +1.
+            cut(xy);
+            link(x,y,common+1);
+        }
+        auto& k=nodes_[keep];
+        if (keep==x) k.contains[v]=1;
+        else k.contains[u]=1;
+        k.size=common+2;
+        graph_.add_edge(u,v);
+        if(fast_) {
+            fast_->add_clique(keep,k.contains);
+            fast_->rebalance(static_cast<int>(graph_.edge_count()));
+        }
+        return true;
+    }
     if (fast_) {
         if (drop_x) fast_->remove_clique(x);
         if (drop_y) fast_->remove_clique(y);
