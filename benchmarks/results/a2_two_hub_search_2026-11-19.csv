@@ -1,0 +1,4 @@
+n,best_min_center_degree,degree_u,degree_v,st_links,st_cuts,st_calls
+27,13,13,13,12,13,25
+51,25,25,25,24,25,49
+99,2,49,2,1,2,3
