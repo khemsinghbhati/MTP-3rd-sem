@@ -3,16 +3,16 @@
 **Project:** Chordal Graphs: Foundations, Maximal Cliques, Clique Trees, and Dynamic Algorithms  
 **Student:** Khem Singh  
 **Program:** M.Tech, Computer Science and Engineering, IIT Bhubaneswar  
-**Report updated:** November 18, 2026  
+**Report updated:** November 19, 2026  
 **End-semester presentation:** November 30, 2026  
 **Primary target literature:** Louis Ibarra (2008), *Fully Dynamic Algorithms for Chordal Graphs and Split Graphs*, ACM Transactions on Algorithms, 4(4), 40:1–40:20, DOI 10.1145/1383369.1383371.
 
 > **Document status:** This is the single evolving technical report for the
 > end-semester thesis presentation. It documents completed theory, implemented
 > algorithms, formal arguments, testing, open proof obligations, and planned
-> dynamic-graph modules. The project does **not** yet implement the complete
-> dynamic algorithm. The supplied Ibarra (2008) paper now serves as the
-> primary source for the clique graph, clique tree, and planned update rules.
+> dynamic-graph modules. The project now implements Ibarra's **first** dynamic chordal-graph
+> algorithm and his constant-time split-graph degree-sequence algorithm.
+> His optimized chordal-graph variants (Sections 5–6) remain outstanding.
 
 ---
 
@@ -66,8 +66,9 @@ by our implementation:
 
 Here $n=|V|$ is the number of vertices and $m=|E|$ the number of edges.
 The article describes these bounds as worst-case unless specified otherwise.
-The code in this repository currently builds a **static** clique tree and
-does not claim any of these dynamic bounds.
+The code now implements the first four O(n) dynamic chordal operations,
+with clique characteristic vectors and incremental tree updates. The
+Sections 5–6 optimized chordal variants are not yet implemented.
 
 ### 1.1 Current implementation baseline
 
@@ -81,8 +82,9 @@ The currently implemented foundation comprises:
 5. Keeping an explicit clique graph and maximum-spanning-tree method
    **only as a test baseline**, not as the production algorithm.
 
-**Remaining work:** chordality-preserving edge queries, dynamic updates,
-and performance experiments.
+**Remaining work:** published worst-case dynamic-tree implementation from
+Section 5, modified-Yellin fast deletion queries from Section 6,
+associated maintenance, and full performance evaluation.
 
 ### 1.2 Project boundaries at this snapshot
 
@@ -90,8 +92,8 @@ and performance experiments.
   $O(n+m)$ PEO verification; maximal-clique extraction; direct
   $O(n+m)$ static clique-tree construction; CLI; automated tests.
   The explicit clique graph remains as a reference test implementation.
-- **Not yet implemented:** insertion/deletion queries, incremental
-  clique-tree updates, and running-time experiments for dynamic operations.
+- **Not yet implemented:** Section 5 dynamic-tree / O(log² n) insertion
+  query, Section 6 O(sqrt(m)) deletion query, and full scaling benchmarks.
 - **No unsupported claim:** the code is a reorganized and validated baseline,
   not an original new dynamic graph algorithm.
 
@@ -977,9 +979,11 @@ algorithm is never used inside the constructor.
 not implement Ibarra's four dynamic operations, his characteristic
 vectors, dynamic trees, or the faster deletion-query structure.
 
-### 9.3 Then: dynamic queries and updates
+### 9.3 Remaining: Section 5 and Section 6 optimized dynamics
 
-Study edge insertion and deletion separately. For each operation:
+First implementation (Sections 3–4) is complete. The remaining faster
+variants must be implemented from the paper, with their exact supporting
+data structures. For each new optimized operation:
 
 1. State its exact precondition and chordality-preservation criterion.
 2. Implement a **query that makes no modification** to the graph.
@@ -1049,9 +1053,10 @@ been matched step by step to the pseudocode of Blair–Peyton Figure 4.2
 or Habib et al. Algorithm 4**. It must therefore remain a **provisional
 research implementation**, not a source-approved reproduction.
 
-**Preferred correction:** Replace or formally map that implementation
-to Blair–Peyton's explicitly published expanded-MCS construction, given
-that our production graph ordering already uses MCS. Preserve existing
+**Correction implemented (2026-11-19):** The production build and CLI
+now call \`build_clique_tree_blair_peyton()\`, which follows the decision
+rules and parent selection from Blair–Peyton Figure 4.2. The provisional
+elimination-forest implementation is no longer compiled into production. Preserve existing
 tests as regression checks, not substitutes for algorithm provenance.
 Do not claim that merging the two papers' techniques constitutes a
 published algorithm unless a publication expressly supports that
@@ -1072,11 +1077,11 @@ cannot be marked paper-faithful.
 | Confirm Ibarra's exact clique-graph edge definition | Verified against Ibarra Section 2 | COMPLETE |
 | Confirm required clique-tree representation | Verified static clique-tree properties in Section 2 | COMPLETE |
 | Validate complete parent-rule filtering proof | A proof sketch is included in Section 9.2.3; check against cited primary literature | IN REVIEW |
-| Map direct clique-tree constructor to published algorithm | Blair–Peyton Fig. 4.2 / Habib et al. Algorithm 4 | OPEN — REQUIRED |
+| Replace unsupported production clique-tree method | Blair–Peyton Fig. 4.2 integrated and source mapped | COMPLETE |
 | Validate paper's stated complexity bounds from primary text | Section 1.3 checked; dynamic implementations remain pending | PARTIAL |
-| Implement dynamic insert/delete queries | Central thesis target | OPEN |
-| Implement incremental updates and compare against rebuilding | Central thesis target | OPEN |
-| Benchmark runtime/scaling once dynamics are implemented | Experimental evaluation | OPEN |
+| Implement Sections 3–4 dynamic queries | Theorems 4–6 and Section 4 | COMPLETE — TESTED |
+| Implement Section 3 incremental updates and compare against rebuilding | Clique tree split, contract, swap | COMPLETE — TESTED |
+| Benchmark runtime/scaling for all variants | Experimental evaluation | OPEN |
 
 ## 11. Development log
 
@@ -1090,6 +1095,9 @@ cannot be marked paper-faithful.
 | 2026-11-18 | Replaced production clique-graph enumeration with direct linear clique-tree construction | `src/clique_tree_linear.cpp`, `src/main.cpp` |
 | 2026-11-18 | Replaced expected-time hash PEO validation with worst-case linear grouped marking | `src/mcs.cpp` |
 | 2026-11-18 | Added 19,048 exhaustive, 800 randomized, and large-graph tests of direct clique tree | `tests/test_linear_clique_tree.cpp` |
+| 2026-11-19 | Replaced provisional preprocessing with Blair–Peyton Fig. 4.2 | `src/clique_tree_blair_peyton.cpp` |
+| 2026-11-19 | Implemented Ibarra first dynamic chordal updates and oracle tests | `src/dynamic_ibarra.cpp`, `tests/test_ibarra_dynamic.cpp` |
+| 2026-11-19 | Implemented Ibarra O(1) split recognition and updates | `src/dynamic_split_ibarra.cpp`, `tests/test_ibarra_split.cpp` |
 | Pending | Dynamic queries and incremental updates | Not claimed as completed |
 
 **Reporting rule:** Keep milestone dates and achievements accurate. Clearly
@@ -1130,6 +1138,210 @@ they are presented as independently verified results:
    *Generating and Characterizing the Perfect Elimination Orderings of a
    Chordal Graph*. Theoretical Computer Science, 307, 303–317.
    DOI: 10.1016/S0304-3975(03)00221-4.
+
+## 13. Paper-faithful implementation milestones — November 19, 2026
+
+This section overrides the older *baseline* status in Sections 7–9. In
+particular, an explicitly constructed weighted clique graph and Kruskal are
+not part of the production preprocessing path. They remain as test oracles.
+
+### 13.1 Published MCS-to-clique-tree preprocessing
+
+**Primary reference:** Blair and Peyton (1993), *An Introduction to
+Chordal Graphs and Clique Trees*, **Section 4.2.2, Figure 4.2**;
+especially Lemmas 7–10 and Theorem 4.3. The authors explicitly connect
+their expanded MCS to Prim's maximum-weight spanning-tree algorithm.
+Ibarra (2008), Section 2, cites earlier linear-time preprocessing methods.
+
+**Source-to-code mapping:**
+
+| Figure 4.2 operation | C++ implementation |
+| --- | --- |
+| Select a maximum-cardinality numbered vertex | `maximum_cardinality_search(G)` |
+| Compute `new_card` as numbered-neighbor count | `current_card` in `src/clique_tree_blair_peyton.cpp` |
+| Begin new clique when new cardinality is at most previous | `if (current_card <= previous_card)` |
+| Start clique with numbered neighbors | Add each later neighbor of chosen vertex |
+| For nonempty separator, choose its smallest PEO index | `minimum_labeled_neighbor` |
+| Link new clique to clique assigned to selected separator vertex | `clique_of_vertex[minimum_labeled_neighbor]` |
+| Assign current vertex to current clique and add it | `clique_of_vertex[u]=s` and `push_back(u)` |
+
+The MCS selection stage is already carried out by
+`maximum_cardinality_search`; the construction replays Figure 4.2's
+MCS ordering and clique/edge decisions in reverse PEO order.
+For disconnected graphs, a zero-cardinality new clique starts a new
+strict clique tree, joined by dummy edge weight zero in accordance
+with **Ibarra (2008), Section 2**.
+
+**Complexity:** Numbered-neighbor scans sum to `O(n+m)` across
+all vertices; creation of all clique-member lists also totals
+`O(n+m)`. There is no enumeration of all edges of `W_G`.
+The constructor uses `O(n+m)` time and space for an adjacency-list
+input and a valid MCS-derived PEO, including PEO verification.
+
+**Verification:** `tests/test_linear_clique_tree.cpp` now exercises
+the Blair–Peyton constructor on 19,048 chordal nonempty graphs
+with at most six vertices, 800 randomized chordal inputs,
+and larger star/complete graphs. It compares maximal cliques,
+running-intersection connectivity and intersection edge weights
+with independent reference computations. Source: Blair–Peyton
+Figure 4.2 is the correctness basis; tests detect implementation defects.
+
+### 13.2 Ibarra first dynamic implementation: complete source mapping
+
+**Primary reference:** Ibarra (2008), Sections **3.1–3.4**,
+Theorems **4–6**, and **Section 4**.
+**Code:** `include/mtp/dynamic_ibarra.hpp`,
+`src/dynamic_ibarra.cpp`; CLI: `src/dynamic_main.cpp`.
+
+The class stores each active maximal clique with a characteristic
+vector and maintains a connected clique-tree representation, using
+weight-zero dummy tree links across disconnected components.
+
+#### Delete-Query(u,v) — Ibarra Theorem 4
+
+For an existing edge, deletion preserves chordality exactly when
+the edge appears in a **unique maximal clique**.
+
+```math
+G-\{u,v\}\text{ chordal}\iff
+|\{K\in\mathcal{K}_G: u,v\in K\}|=1
+```
+
+The implementation scans the at-most-n clique nodes, testing the two
+vertex-membership bits in constant time per node. The query changes
+neither the graph nor the tree: **O(n) worst case**.
+
+#### Delete(u,v) — Ibarra Section 3.2
+
+If the query fails, reject without changing the representation.
+Otherwise, find the unique clique `K_x` containing `u,v`, form
+`K_x\setminus\{v\}` and `K_x\setminus\{u\}`, and replace `x`
+by two new clique nodes joined by a weight-`|K_x|-2` edge.
+Reattach each former neighbor to the appropriate new node depending
+on whether its clique contains `u`, `v`, or neither.
+The former neighbors with weight `|K_x|-1` determine whether
+either new candidate is contained in an existing maximal clique.
+Contract the corresponding tree edge(s) when such containment holds.
+
+Tree edges are stored in linked adjacency lists with bidirectional
+iterators for **constant-time individual link/cut**. Node membership
+tests are constant-time characteristic-vector accesses. At most
+`O(n)` adjacency edges and `O(n)` membership entries change.
+Accepted deletion: **O(n) worst case** (excluding optional
+snapshot/verification output).
+
+#### Insert-Query(u,v) — Ibarra Theorems 5–6
+
+For a nonedge, find the closest nodes `x` in the clique subtree
+containing `u` and `y` in the subtree containing `v`.
+If `x,y` are adjacent, insertion is allowed. Otherwise the
+necessary and sufficient criterion compares the minimum edge
+weight on the `x-y` tree path with `|K_x\cap K_y|`.
+
+```math
+\min_{e\in P_T(x,y)}w(e)=|K_x\cap K_y|
+```
+
+The first implementation finds the two subtrees' closest
+boundary pair by tree traversal, inspects their connecting
+path, and computes the endpoint intersection by scanning
+characteristic vectors: **O(n) worst case**. It is nonmutating.
+
+#### Insert(u,v) — Ibarra Section 3.4
+
+If necessary, replace a minimum-weight tree edge on the
+`x-y` path with `x-y` (Theorem 6); then replace that edge
+with a new node `z` whose clique is:
+
+```math
+K_z=(K_x\cap K_y)\cup\{u,v\}
+```
+
+Connect `z` to `x` and `y`, each with weight
+`|K_x\cap K_y|+1`. Contract the old `x` and/or `y`
+if their clique size equals `|K_x\cap K_y|+1`.
+This is exactly the subsumption test in Section 3.4.
+Accepted insertion: **O(n) worst case**, excluding debug output.
+
+**Validation:** `tests/test_ibarra_dynamic.cpp` checks
+each query against independently changing a copy of the graph and
+running MCS/PEO validation. For every accepted edge update, it
+reextracts maximal cliques independently, checks separator weights,
+counts nodes/edges, and checks the induced-subtree property.
+It tests all initial chordal graphs of size at most five and
+random longer sequences on 200 chordal graphs of up to twelve vertices.
+Testing is evidence, not proof; the referenced theorems justify the
+algorithmic transformation.
+
+**Important preprocessing limitation:** Construction of the initial
+Blair–Peyton clique tree is linear, but the first dynamic class also
+allocates a length-n characteristic vector for **each** maximal clique.
+For k maximal cliques, its concrete initialization and storage cost
+contains `Theta(nk)`. On sparse stars, `k=Theta(n)` and this costs
+quadratic time/space. This is a real difference between the current
+C++ implementation's concrete initialization and the paper's
+`O(n+m)` preprocessing entry in Section 7. It **must not** be
+reported as linear end-to-end preprocessing without resolving
+the representation discrepancy.
+
+### 13.3 Ibarra Section 8: dynamic split graphs
+
+**Primary reference:** Ibarra (2008), Section **8**, Theorem **8**
+(Hammer–Simeone characterization).
+**Code:** `include/mtp/dynamic_split_ibarra.hpp`,
+`src/dynamic_split_ibarra.cpp`.
+
+Let the sorted degree sequence be `d_1>=...>=d_n`.
+Define `j` as the largest index with `d_j>=j-1`.
+Ibarra's split characterization is:
+
+```math
+\sum_{i=1}^{j}d_i=j(j-1)+\sum_{i=j+1}^{n}d_i
+```
+
+The implementation maintains a doubly linked list of degree entries
+in descending order, pointer ranges for each degree value, the
+partition boundary `j`, and the two partition sums.
+On a valid insertion it increments the **first** element(s) of
+the two affected degree classes. On a valid deletion it decrements
+the **last** element(s). The sorted order is preserved.
+At most one degree entry crosses the partition boundary per update,
+so the degree sequence and both sums are maintained in **O(1)**.
+`is_split()` compares the two maintained sums in **O(1)**.
+Counting-sort initialization and graph-degree scans are **O(n+m)**.
+
+**Precondition:** The caller must insert only an absent edge and
+delete only an existing edge. The degree-only data structure does
+not store the full graph and cannot independently reject an
+invalid sequence without an additional edge dictionary.
+This is stated in the interface and follows the paper's valid-update
+model. The independent test oracle stores the graph separately
+and checks randomized valid sequences. Theorem 8 and Section 8
+are the source of the algorithm and complexity bounds.
+
+### 13.4 Outstanding required variants — not misrepresented as complete
+
+| Version in Ibarra Section 7 | Current status | Published requirement |
+| --- | --- | --- |
+| A1: first chordal dynamic implementation | Implemented, update tests passing | O(n) for each of four operations |
+| A2: second chordal implementation | NOT IMPLEMENTED | O(log² n) insertion query; O(n log n) deletion; O(n) insertion |
+| A1+: modified-Yellin accelerated deletion query | NOT IMPLEMENTED | O(sqrt(m)) query; O(m+n) updates |
+| A2+: both optimizations | NOT IMPLEMENTED | Both requirements above |
+| Section 8 split-graph degree sequence | Implemented, random tests passing | O(1) query and valid edge update |
+
+A2 requires the **worst-case logarithmic dynamic tree** from
+Sleator and Tarjan (1983), plus Ibarra's maintained intersection
+matrix `W` and vertex-to-clique pointers, all subject to
+Sections 5–5.1. A splay-only link-cut tree has **amortized**, not
+worst-case, bounds and must not be substituted silently.
+A1+/A2+ require the exact member/overflow/common-count structure and
+maintenance invariants in Ibarra Sections 6.2–6.3, including the
+`O(m)` update bound.
+
+**Acceptance condition:** Finish each optimized implementation, add
+independent update-sequence tests, prove the source-to-code mapping and
+its time bounds, and measure empirical scaling before marking it
+complete. Do not claim complete paper reproduction until then.
 
 ### Implementation evidence
 
