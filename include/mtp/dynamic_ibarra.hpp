@@ -3,6 +3,7 @@
 #include "mtp/clique_tree.hpp"
 #include "mtp/fast_delete_ibarra.hpp"
 #include <memory>
+#include <functional>
 #include <list>
 #include <vector>
 
@@ -12,6 +13,7 @@ namespace mtp {
 // updates. All four operations O(n) worst-case with O(1) linked-list link/cut.
 class DynamicChordalGraph {
     friend class IndexedDynamicChordalGraph;
+    friend class SleatorTarjanChordalGraphA2;
 public:
     explicit DynamicChordalGraph(Graph graph);
     // Optional Ibarra Sections 6.2-6.3 accelerated deletion-query index.
@@ -46,6 +48,10 @@ private:
     std::vector<Edge> edges_;
     std::vector<int> free_nodes_, free_edges_;
     int active_count_ = 0;
+    // Representation adapter: mirrors each published Section 3 tree
+    // mutation into the Sleator–Tarjan (1983) dynamic forest.
+    std::function<void(int,int,int)> tree_link_hook_;
+    std::function<void(int,int)> tree_cut_hook_;
     int allocate_node(std::vector<unsigned char> bits);
     int link(int a, int b, int weight);
     void cut(int id);
