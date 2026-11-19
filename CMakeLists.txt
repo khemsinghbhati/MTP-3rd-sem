@@ -11,6 +11,7 @@ add_library(mtp_graphs
     src/maximal_cliques.cpp
     src/clique_tree_blair_peyton.cpp
     src/dynamic_ibarra.cpp
+    src/indexed_dynamic_ibarra.cpp
     src/fast_delete_ibarra.cpp
     src/dynamic_split_ibarra.cpp
 )
@@ -65,6 +66,11 @@ if(BUILD_TESTING)
     target_link_libraries(mtp_ibarra_split_stats_tests PRIVATE mtp_graphs)
     target_compile_options(mtp_ibarra_split_stats_tests PRIVATE -Wall -Wextra -Wpedantic)
     add_test(NAME ibarra_split_four_numbers COMMAND mtp_ibarra_split_stats_tests)
+
+    add_executable(mtp_ibarra_indexed_tests tests/test_ibarra_indexed.cpp)
+    target_link_libraries(mtp_ibarra_indexed_tests PRIVATE mtp_graphs)
+    target_compile_options(mtp_ibarra_indexed_tests PRIVATE -Wall -Wextra -Wpedantic)
+    add_test(NAME ibarra_indexed_path_variant COMMAND mtp_ibarra_indexed_tests)
 
     add_executable(mtp_ibarra_fast_tests tests/test_ibarra_fast.cpp)
     target_link_libraries(mtp_ibarra_fast_tests PRIVATE mtp_graphs)
