@@ -1605,8 +1605,9 @@ Bent, Sleator and Tarjan (1985), globally biased-tree procedures
 The findings below distinguish the paper's claims from the
 properties established for our code.
 
-**Audit verdict: FUNCTIONALLY PROMISING, ASYMPTOTICALLY
-NONCOMPLIANT/NOT PROVED.** A2 and A2+ must not be called
+**Audit verdict: FUNCTIONALLY PROMISING; INSERT STILL ASYMPTOTICALLY
+UNPROVED AND PREPROCESSING TABLE INCONSISTENT WITH STORAGE.**
+A2 and A2+ must not be called
 fully reproduced or merged into `main`.
 The working A1, A1+, Blair–Peyton preprocessing and split-graph
 components remain separate.
@@ -1618,8 +1619,8 @@ components remain separate.
 | ST globally biased weighted join/split | `globally_biased_binary_tree.cpp` | Rank, ordering, weighted-path and global-bias unit tests pass; formal worst-case validation remains a proof obligation |
 | ST Section 5 expose/conceal/splice/slice | `worst_case_dynamic_tree.cpp` | Differential forest link/cut/evert/path queries pass; size-path and rank invariants are tested but worst-case operation proof must be checked line-by-line |
 | Ibarra Section 5 nearest cliques on a path | `dynamic_ibarra_a2.cpp::closest` | Binary searches using ST kth-path queries; correct on tested chordal graphs |
-| Ibarra Theorem 6 insertion condition | `insert_query`, `W_`, ST path minimum | Differential agreement with A1 on tested graphs; deterministic Graph membership bound unresolved |
-| Ibarra Sections 3.2/3.4 clique-tree updates | `data_.delete_edge` / `data_.insert_edge`, linked through hooks | Maintains the same clique-tree decisions on tests; A1 contract can invoke a linear number of ST operations on **Insert** |
+| Ibarra Theorem 6 insertion condition | `insert_query`, `W_`, ST path minimum | Differential agreement with A1 on tested graphs; balanced-set lookup now has worst-case O(log n) bound |
+| Ibarra Sections 3.2/3.4 clique-tree updates | `data_.delete_edge` / `data_.insert_edge`, linked through hooks | Section 4 direct-vector replacement now used in A2; correct on tests; two high-degree cliques can still induce linearly many ST operations on **Insert** |
 | Ibarra Section 5.1 matrix W | `W_` with O(n) row formulas | Functional tests pass; initial W is an n-by-n matrix |
 | Ibarra Section 6 accelerated deletion | `enable_fast_delete_queries` | A2+ CLI smoke and differential checks pass; inherits the A2 blockers |
 | Ibarra Section 7 preprocessing | `data_(Graph(n))` and reverse-PEO insertions | Actual cost differs from the A2 table; see Section 14.5 |
@@ -1841,36 +1842,39 @@ split/join rank updates, and dynamic path-set maintenance
 need explicit published invariant preservation arguments.
 The tested small and random cases are evidence, not proof.
 
-### 14.7 Remaining acceptance gates (no substitutes)
+### 14.7 Acceptance gates and disposition — November 19, 2026
 
-1. **A2 Insert:** Eliminate or source-prove the linear number
-   of log-time ST modifications on a single insertion,
-   and establish the required O(n) bound in worst case.
-2. **Worst-case ST:** Supply a line-by-line mapping from
-   the published size-partition and globally biased
-   operations to the compiled code; verify worst-case
-   operation counts and that every invariant is preserved.
-3. **Insert-Query:** Provide a worst-case adjacency
-   membership bound consistent with O(log² n) total.
-4. **Preprocessing:** Reconcile code's characteristic
-   vectors and W matrix with the paper's table, including
-   the Section 5.1 / 7 discrepancy; report only supported
-   bounds.
-5. **Regression:** Continue independent exhaustive/random
-   differential tests, adversarial star/path/clique
-   cases, address/UB sanitizers, and operation-count
-   instrumentation after each relevant change.
-6. **Source policy:** No alternate heavy-path, amortized
-   splay, or undocumented batch-update substitute is
-   acceptable as a completed Ibarra A2.
-7. **Merge gate:** Keep the research implementation
-   isolated until ALL of these proof obligations are
-   satisfied. Update the existing single report rather
-   than creating another report.
+| Acceptance item | Result | Evidence |
+| --- | --- | --- |
+| Functionally source-faithful A2/A2+ on tested inputs | **PASS** | Published Section 4 direct clique-vector replacement; independent A1 differential tests including repeated two-high-degree insertion/deletion cycles |
+| Deterministic adjacency lookup in Insert-Query | **PASS** | `Graph::has_edge` now `std::set`, O(log n) worst-case |
+| Reproducible A2 insertion-operation experiment | **PASS, BUT BOUND BLOCKED** | Star single-cut improvement; two-hub case at n=51 still requires 49 ST calls |
+| Explicit initialization/storage accounting | **VERIFIED SOURCE DISCREPANCY** | Even m=0 allocates Omega(n²) characteristic-vector and W entries, whereas Section 7 lists O(n log n) A2 preprocessing |
+| Published ST worst-case invariant proof for this translation | **NOT FULLY CERTIFIED** | Functional + rank checks pass; formal worst-case helper/aggregate proof remains |
+| Ibarra A2 insertion O(n) worst-case | **NOT VERIFIED** | Source and implementation do not supply a proved aggregate O(n) bound for linearly many ST operations |
+| Complete paper-faithful reproduction A2/A2+ | **BLOCKED** | Two missing worst-case proof/representation requirements |
 
-**Audit outcome (2026-11-19): BLOCKED for full paper-faithful A2/A2+.
-The independent tests have passed, but the required time bounds
-have NOT been verified.**
+**No substitutes rule:** No HLD alternative, amortized
+splay replacement, alternate top tree, or newly invented
+batched contraction is accepted as the final A2.
+
+**Merge gate:** The source-fidelity requirement applies
+to *both functional output and worst-case complexity*.
+Do not merge the A2 research branch into production
+`main` until insertion and preprocessing claims
+are reconciled by a verified published method.
+The A1/A1+/split-graph implementations on `main`
+remain intact.
+
+**Overall audit outcome:** The specified implementation,
+lookup correction, regression suite and empirical
+analysis are recorded, but the **O(n) Insert claim is
+still not proved**, and the explicitly prescribed
+dense W/characteristic representation has a
+demonstrable initialization lower bound contradicting
+the paper's A2 preprocessing summary. These are
+research acceptance blockers, not merely testing
+or compiler errors.
 
 ### Implementation evidence
 
