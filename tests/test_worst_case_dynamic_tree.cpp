@@ -112,6 +112,8 @@ int main() {
                     const int u=static_cast<int>(rng()%n);
                     int v=static_cast<int>(rng()%n);
                     if(v==u) v=(v+1)%n;
+                    if(n==8 && trial==0 && step==60)
+                        std::cerr<<"BEFORE E2:\n"<<forest.debug_state();
                     const auto p=oracle.path(u,v);
                     std::string action;
                     if(p.empty()) {
@@ -127,6 +129,8 @@ int main() {
                         action="E "+std::to_string(u);
                         forest.evert(u);
                     }
+                    if(n==8 && trial==0 && step==60)
+                        std::cerr<<"AFTER E2:\n"<<forest.debug_state();
                     history.push_back(action);
                     stage="n="+std::to_string(n)+" trial="+std::to_string(trial)+" step="+std::to_string(step)+" endpoints="+std::to_string(u)+","+std::to_string(v)+" action "+action;
                     if(step>=55) {
