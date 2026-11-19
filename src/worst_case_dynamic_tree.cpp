@@ -110,7 +110,17 @@ void SleatorTarjanWorstCaseForest::delete_path_set(Node* p,int v) {
 SleatorTarjanWorstCaseForest::Node*
 SleatorTarjanWorstCaseForest::max_path(int v) const {
     Node* r=path_set_root_[v];
-    return r?path_root_[r->first->item]:nullptr;
+    if(!r)return nullptr;
+    const int t=r->first->item;
+    Node* cached=path_root_[t];
+#ifndef NDEBUG
+    // Debug validation only: may traverse O(log n), not part of maxwt.
+    if(cached!=path(t) || !cached || !cached->last ||
+       cached->last->item!=t || dashed_parent_[t]!=v)
+        throw std::logic_error("ST maxwt cached path invalid: owner="+
+            std::to_string(v)+" tail="+std::to_string(t));
+#endif
+    return cached;
 }
 
 // ST83 Section 5, published splice procedure, with its path-set changes.
