@@ -1,7 +1,7 @@
 name: Published BST85 linear construction research
 on:
   push:
-    branches: [research/a2-linear-st-construction]
+    branches: [main, research/a2-linear-st-construction]
   workflow_dispatch:
 jobs:
   validate-linear-construction:
