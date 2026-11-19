@@ -15,6 +15,19 @@ namespace mtp {
 class SleatorTarjanWorstCaseForest {
 public:
     explicit SleatorTarjanWorstCaseForest(int vertex_count);
+    struct Edge {
+        int u=0,v=0,cost=0;
+    };
+    // Published-source static construction: ST 1983 §§4–5 size-based
+    // partition, BST 1985 §4 Figure 15 linear biased tree build.
+    // Takes O(n) worst-case for a verified n-vertex input FOREST
+    // with <=n-1 edges; the represented structure remains precisely
+    // the ST worst-case dynamic forest.
+    static SleatorTarjanWorstCaseForest build_linear_forest(
+        int vertex_count,const std::vector<Edge>& edges);
+    [[nodiscard]] long long static_build_steps() const noexcept {
+        return static_steps_;
+    }
     void link(int u,int v,int weight);
     void cut(int u,int v);
     void evert(int u);
@@ -30,6 +43,8 @@ private:
     using BST=GloballyBiasedBinaryTree;
     using Node=BST::Node;
     BST paths_,sets_;
+    long long static_steps_=0;
+    void initialize_linear_forest(const std::vector<Edge>& edges);
     std::vector<Node*> vertex_,path_set_root_,path_entry_,path_root_;
     // Path-root pointer indexed by its tail: ST1983 Section 5 maxwt O(1).
     std::vector<int> dashed_parent_,dashed_cost_,entry_owner_;
