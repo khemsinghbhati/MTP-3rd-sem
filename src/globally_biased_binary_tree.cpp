@@ -18,13 +18,35 @@ int GloballyBiasedBinaryTree::floor_log2(int weight) {
 GloballyBiasedBinaryTree::Node* GloballyBiasedBinaryTree::leaf(
     int item,int weight) {
     if(item<0||weight<=0)throw std::invalid_argument("invalid leaf");
-    storage_.emplace_back(std::make_unique<Node>());
-    auto* x=storage_.back().get();
+    Node* x;
+    if(!leaf_pool_.empty()) {
+        x=leaf_pool_.back();leaf_pool_.pop_back();
+        *x=Node();
+    } else {
+        storage_.emplace_back(std::make_unique<Node>());
+        x=storage_.back().get();
+    }
     x->rank=floor_log2(weight);
     x->item=item;
     x->weight=weight;
     refresh(x);
     return x;
+}
+
+void GloballyBiasedBinaryTree::set_detached_leaf_weight(
+    Node* x,int new_weight) {
+    if(!x||!x->live||!x->is_leaf()||x->parent||new_weight<=0)
+        throw std::invalid_argument("reweight requires a detached live leaf");
+    x->weight=new_weight;
+    x->rank=floor_log2(new_weight);
+    refresh(x);
+}
+void GloballyBiasedBinaryTree::release_detached_leaf(Node* x) {
+    if(!x||!x->live||!x->is_leaf()||x->parent)
+        throw std::invalid_argument("release requires a detached live leaf");
+    *x=Node();
+    x->live=false;
+    leaf_pool_.push_back(x);
 }
 
 GloballyBiasedBinaryTree::Node* GloballyBiasedBinaryTree::internal(
