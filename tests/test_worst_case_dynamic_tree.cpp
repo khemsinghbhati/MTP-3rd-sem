@@ -102,22 +102,34 @@ int main() {
             for(int trial=0;trial<30;++trial) {
                 Forest forest(n);
                 Oracle oracle(n);
+                std::vector<std::string> history;
                 for(int step=0;step<120;++step) {
                     const int u=static_cast<int>(rng()%n);
                     int v=static_cast<int>(rng()%n);
                     if(v==u) v=(v+1)%n;
                     const auto p=oracle.path(u,v);
+                    std::string action;
                     if(p.empty()) {
                         const int weight=1+static_cast<int>(rng()%200);
+                        action="L "+std::to_string(u)+" "+std::to_string(v)+" "+std::to_string(weight);
                         forest.link(u,v,weight);
                         oracle.link(u,v,weight);
                     } else if(p.size()==2) {
+                        action="C "+std::to_string(u)+" "+std::to_string(v);
                         forest.cut(u,v);
                         oracle.cut(u,v);
                     } else {
+                        action="E "+std::to_string(u);
                         forest.evert(u);
                     }
-                    stage="n="+std::to_string(n)+" trial="+std::to_string(trial)+" step="+std::to_string(step)+" endpoints="+std::to_string(u)+","+std::to_string(v);
+                    history.push_back(action);
+                    stage="n="+std::to_string(n)+" trial="+std::to_string(trial)+" step="+std::to_string(step)+" endpoints="+std::to_string(u)+","+std::to_string(v)+" action "+action;
+                    if(step>=55) {
+                        stage+="
+Sequence:";
+                        for(const auto& item:history)stage+="
+"+item;
+                    }
                     validate(forest,oracle);
                 }
             }
