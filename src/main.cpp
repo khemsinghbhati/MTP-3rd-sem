@@ -1,5 +1,5 @@
 #include "mtp/graph.hpp"
-#include "mtp/clique_tree_linear.hpp"
+#include "mtp/clique_tree_blair_peyton.hpp"
 #include "mtp/maximal_cliques.hpp"
 #include "mtp/mcs.hpp"
 
@@ -53,7 +53,7 @@ int main(int argc, char* argv[]) {
         }
 
         // Paper-aligned O(n+m) preprocessing: do not enumerate W_G.
-        const auto clique_tree = mtp::build_clique_tree_linear(graph, peo);
+        const auto clique_tree = mtp::build_clique_tree_blair_peyton(graph, peo);
         const auto& cliques = clique_tree.cliques;
         std::cout << "Maximal cliques (" << cliques.size() << "):\n";
         for (const auto& clique : cliques) {
