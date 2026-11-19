@@ -12,9 +12,11 @@ jobs:
       - name: Configure Release
         run: cmake -S . -B build-linear -DCMAKE_BUILD_TYPE=Release
       - name: Compile focused tests
-        run: cmake --build build-linear --target mtp_bst85_linear_tests mtp_globally_biased_tests mtp_worst_case_forest_tests mtp_ibarra_a2_tests -j 4
+        run: cmake --build build-linear --target mtp_st_linear_forest_tests mtp_bst85_linear_tests mtp_globally_biased_tests mtp_worst_case_forest_tests mtp_ibarra_a2_tests -j 4
       - name: Verify BST85 Figure 15 linear builder
         run: ctest --test-dir build-linear --output-on-failure -R bst85_linear_global_bias
+      - name: Verify ST1983 size-partition linear forest build
+        run: ctest --test-dir build-linear --output-on-failure -R st1983_linear_forest_construction
       - name: Verify Sleator Tarjan dynamic forest
         run: ctest --test-dir build-linear --output-on-failure -R sleator_tarjan_1983_dynamic_forest
       - name: Verify Ibarra A2
