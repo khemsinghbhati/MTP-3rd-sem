@@ -9,38 +9,38 @@
 namespace mtp {
 
 SleatorTarjanChordalGraphA2::SleatorTarjanChordalGraphA2(Graph graph)
-    : data_(Graph(graph.vertex_count())), tree_(graph.vertex_count()+2) {
-    // Ibarra §5.1: construct W using chordality-preserving edge insertions
-    // beginning with n isolated vertices in reverse PEO order.
-    const auto peo=maximum_cardinality_search(graph);
-    if(!is_perfect_elimination_ordering(graph,peo))
-        throw std::invalid_argument("A2 initial graph must be chordal");
-
-    // Ibarra §2: the initial clique tree contains weight-zero dummy
-    // edges joining disconnected singleton cliques.
-    for(const auto& e:data_.edges_)
-        if(e.active)tree_.link(e.a,e.b,e.weight);
-    const int n=graph.vertex_count();
-    vertex_witness_.assign(n,-1);
-    for(int c=0;c<static_cast<int>(data_.nodes_.size());++c)
-        if(data_.nodes_[c].active)
+    : data_(std::move(graph)), tree_(0) {
+    // Research R1: construct the initial clique tree by Blair-Peyton
+    // through data_, then construct Ibarra's SAME Section 5.1 matrix W
+    // from clique/vertex incidence:
+    // W[x][y] = sum_v [v in K_x] * [v in K_y].
+    // This does NOT meet the published A2 preprocessing-table bound:
+    // the O(n^2) zero-fill and sum_v |T_v|^2 work are counted explicitly.
+    const int cap=static_cast<int>(data_.nodes_.size());
+    const int n=data_.graph_.vertex_count();
+    std::vector<std::vector<int>> containing_cliques(static_cast<std::size_t>(n));
+    for(int x=0;x<cap;++x)
+        if(data_.nodes_[x].active)
             for(int v=0;v<n;++v)
-                if(data_.nodes_[c].contains[v])vertex_witness_[v]=c;
-    for(int c:vertex_witness_)
-        if(c<0)throw std::logic_error("missing singleton clique witness");
-    initialize_weights();
-    attach_tree_hooks();
-
-    std::vector<int> position(n,-1);
-    for(int i=0;i<n;++i)position[peo[i]]=i;
-    for(int i=n-1;i>=0;--i) {
-        const int u=peo[i];
-        for(int v:graph.neighbors(u)) {
-            if(position[v]<=i)continue;
-            if(!insert_edge(u,v))
-                throw std::logic_error("paper-specified PEO insertion rejected");
-        }
+                if(data_.nodes_[x].contains[v])
+                    containing_cliques[v].push_back(x);
+    vertex_witness_.assign(n,-1);
+    for(int v=0;v<n;++v) {
+        if(containing_cliques[v].empty())
+            throw std::logic_error("vertex missing from clique tree");
+        vertex_witness_[v]=containing_cliques[v].front();
     }
+    W_.assign(cap,std::vector<int>(cap,0));
+    for(const auto& Tv:containing_cliques)
+        for(int x:Tv)
+            for(int y:Tv)
+                ++W_[x][y];
+    std::vector<SleatorTarjanWorstCaseForest::Edge> live;
+    live.reserve(static_cast<std::size_t>(data_.active_count_));
+    for(const auto& e:data_.edges_)
+        if(e.active)live.push_back({e.a,e.b,e.weight});
+    tree_=SleatorTarjanWorstCaseForest::build_linear_forest(cap,live);
+    attach_tree_hooks();
     link_count_last_=cut_count_last_=0;
 }
 
