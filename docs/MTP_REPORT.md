@@ -2269,5 +2269,200 @@ meet the stated method requirement.
 
 ---
 
+## 17. Four user-supplied PDFs: theorem-level compatibility audit — November 20, 2026
+
+This review checks whether any of the four supplied research documents
+gives an independently published way to meet **Ibarra A1 preprocessing
+O(n+m)** or **Ibarra A2 preprocessing O(m+n log n)** on arbitrary
+chordal graphs, preserving the A2 **O(1) clique-pair intersection
+lookup**, **O(log^2 n) Insert-Query**, and the full update bounds.
+The documents were read in their relevant algorithm sections,
+not classified by title alone. Here `k` is the *maximum clique
+size*, not the number of maximal cliques.
+
+### 17.1 Niranka Banerjee (2021), PhD thesis, Chapter 6
+
+*Dynamizing Graph Classes and Output Sensitive Fault Tolerant
+Subgraph Problems*, Homi Bhabha National Institute, Chennai.
+This thesis incorporates Banerjee, Raman and Satti (CSR 2018),
+*Maintaining Chordal Graphs Dynamically: Improved Upper and
+Lower Bounds*, DOI
+https://doi.org/10.1007/978-3-319-90530-3_4.
+
+Relevant exact results (uploaded PDF physical page / thesis page):
+
+- **Theorem 6.1.3** (143 / 117):
+  `O(n k^2)` preprocessing; `O(1)` deletion feasibility query,
+  `O(n+k^2)` deletion update. The structure keeps
+  edge-to-clique incidence counts and two-way pointers.
+  **Its updates are deletion-only**; it does not give an
+  A2 insertion-query or its `W(x,y)` lookup.
+- **Theorem 6.1.4** (147 / 121):
+  `O(n^2/t + k^2)` amortized cost for a sequence of
+  `t` deletions. This is neither the desired
+  worst-case fully dynamic bound nor an A2 preprocessing fix.
+- **Theorem 6.2.2** (150 / 124):
+  from an *already given adjacency list and adjacency matrix*,
+  construct a PEO in `O(n+m)`; test deletion in
+  `O(min(deg(u),deg(v)))`, update in
+  `O(deg(u)+deg(v))`. Its claim is conditional
+  on the supplied matrix; creating a dense n by n matrix
+  from a sparse edge list is itself Omega(n^2) work.
+- **Lemma 6.2.4 and Theorem 6.2.5** (154–156 / 128–130):
+  augment each clique-tree edge between bags A,B with
+  `A\\B` and `B\\A` in `O(nk log k)` preprocessing;
+  maintain them through permitted edge insertions/deletions
+  and obtain a PEO in `O(n)` per successful update.
+  **Useful published extension** if the project adds
+  maintained PEO output, but its preprocessing is not
+  `O(m+n log n)` uniformly and its separator differences
+  are only for *adjacent* clique nodes, not all pairs.
+
+**Source-method conclusion:** The neighboring-clique
+intersection data can be initialized alongside Blair–Peyton,
+but Ibarra A2 calls `W(x,y)` for **arbitrary closest clique
+nodes** in an Insert-Query; storing only adjacent edge
+separators is not an O(1) replacement. Banerjee provides no
+published theorem transforming that restricted representation
+into A2's required general `W` interface and bounds.
+No A1/A2 preprocessing fix is established by this thesis.
+
+### 17.2 Robert Scheffler (2023), doctoral dissertation
+
+*Ready to Order? On Vertex and Edge Orderings of Graphs*,
+Brandenburg University of Technology Cottbus–Senftenberg,
+DOI https://doi.org/10.26127/BTUOpen-6301.
+
+- **Lemma 3.3.12** (PDF pages 161–162, printed 145–146):
+  with n objects already sorted by integer keys in [1,k],
+  a block/array structure can be built in `O(n)`
+  and then supports **increment/decrement of one key
+  by one** and deletion of the minimum/maximum-key
+  object in `O(1)). It notes a similar structure
+  used by Ibarra. This is a sortable degree/weight
+  **bucket-list primitive**, NOT a constant-time lookup
+  of `|K_x intersect K_y|` over arbitrary clique pairs.
+- **Theorem 3.3.13** (PDF pages 163–166):
+  `O(n+m)` degree-minimal weighted-edge elimination
+  orderings under the paper's specified setup;
+  not a dynamic chordal clique-intersection representation.
+- **Chapter 4**, especially Theorem 4.4.7 (PDF
+  page 187): fully dynamic recognition and compact
+  certificates for **chain graphs**, with `O(n+m)`
+  initialization and `O(1)` single-edge updates;
+  the same chapter develops **threshold graphs**.
+  These are different graph classes, not fully
+  dynamic chordal A2.
+
+**Conclusion:** A credible reference for an ordered-bucket
+auxiliary structure, useful only if a matching subroutine
+is identified. It is *not* a source-backed general W
+replacement; none is identified.
+
+### 17.3 Desuo Neto et al. (2026), Entropy 28(3), 293
+
+*Learning Continuous Decomposable Models Using Mutual
+Information and Statistical Copulas*, DOI
+https://doi.org/10.3390/e28030293.
+
+- **Theorem 1, Eq. (6)** (PDF page 9): represents
+  mutual information using clique and separator
+  copula-entropy contributions. This is a statistical
+  scoring/factorization identity, not the number of
+  vertices shared by two maximal cliques.
+- **Section 3.4** (PDF pages 16–17):
+  uses Ibarra-style chordality-preserving insert/delete
+  criteria on a junction tree. The implementation
+  describes **splay-tree** link/cut and path queries in
+  **amortized** `O(log d)`, with candidate-edge
+  enumeration in amortized `O(d^2 log d)`.
+  This *changes* Ibarra A2's required worst-case
+  ST83 mechanics and does not give an initial `W`
+  construction with the target complexity.
+- The symbol `W` used for an experimental adjacency
+  matrix in this statistical article is **not**
+  Ibarra's clique-pair intersection matrix.
+
+**Conclusion:** Confirms the practical relevance of
+dynamic chordality-preserving junction-tree moves,
+but supplies neither the demanded preprocessing
+algorithm nor a compatible worst-case representation.
+
+### 17.4 Louis Ibarra (2001), doctoral dissertation
+
+*Dynamic Algorithms for Chordal and Interval Graphs*,
+University of Victoria, Section 2.4 and 2.5.1
+(uploaded PDF pages 36–39, printed 26–29).
+Author's archival copy:
+https://dspace.library.uvic.ca/bitstreams/174b0bfe-c154-4896-b114-a88441d79e29/download.
+
+- **Section 2.4** (PDF page 36) explicitly says the
+  first implementation uses an **n-bit characteristic
+  vector for each maximal clique**, and labels clique
+  tree preprocessing `O(m+n)`. That statement
+  does not separately analyze filling all k vectors.
+- **Section 2.5.1** (PDF page 38, printed 28)
+  explicitly states that the second implementation
+  keeps an **n by n matrix W** for
+  `W(x,y)=|K_x intersect K_y|`, giving `O(1)`
+  query access, and that preprocessing is
+  **dominated by O(n^3) construction of W**.
+  This passage was inspected visually to check the
+  superscript (the scanned text OCR is noisy).
+- Subsequent paragraphs derive `O(n)`
+  maintenance of the new/modified W row under
+  accepted clique-tree updates.
+
+**Conclusion:** The original author himself
+acknowledged the cubic direct-W construction in
+2001. The 2008 article Section 5.1 describes
+`O(n^3)` direct or `O(mn)` reverse-PEO construction,
+whereas Section 7 lists `O(m+n log n)` for A2.
+The uploaded thesis **corroborates**, rather than
+repairs, this inconsistency.
+
+### 17.5 Overall compatibility / acceptance decision
+
+| Uploaded source | Applicable published result | Meets A2 preprocessing? | Meets A2 exact query and update method? |
+| --- | --- | --- | --- |
+| Banerjee 2021 | Adjacent separator differences; PEO maintenance; deletion-only chordality methods | **No**: O(nk log k) augment or O(nk^2) separate index | **No** O(1) arbitrary-pair W supplied |
+| Scheffler 2023 | O(n) bucket construction, O(1) unit-key changes | **No** | **No**, different maintained object |
+| Desuo Neto et al. 2026 | Local copula scores with junction trees | **No** | **No**, amortized splay implementation |
+| Ibarra 2001 | Exact original dynamic clique-tree approach; dense W | **No**: explicitly O(n^3) W construction | **Yes** original operation framework, but no desired preprocessing |
+
+**Final audit status:** None of these four documents
+furnishes the missing published `O(m+n log n)`
+general-input A2 initializer with `O(1)`
+general clique-pair intersection lookup and all
+worst-case dynamic operation guarantees. It would
+violate the user's source-fidelity rule to implement
+one of these methods and advertise that stronger
+preprocessing result. Existing production code
+remains untouched.
+
+**Additional accounting caveat:** The current input
+`Graph` uses `std::set` adjacency membership,
+which has deterministic `O(log n)` per-edge
+insertion. On a raw m-edge input list, this can
+add `O(m log n)` to preprocessing separately
+from the characteristic-vector and W concerns.
+Any claimed end-to-end A1 `O(m+n)` repair must
+also reconcile that graph-input model (for example
+by stating an already-built adjacency-list input
+assumption, only if that assumption is explicitly
+adopted and proved).
+
+**Next source-specific proof obligation:** Find a
+published data structure that supplies general
+`|K_x intersect K_y|` **in worst-case O(1)**
+after initial preprocessing `O(m+n log n)`
+on arbitrary chordal graphs, and allows Ibarra's
+`O(n)` row updates without secretly materializing
+quadratic initialization or paying per-query
+intersection scans. No such theorem appears in
+the four reviewed files.
+
+---
+
 *End of current report snapshot. Future work should be appended to the
 relevant sections of this same report, with explicit dates and evidence.*
