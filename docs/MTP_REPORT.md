@@ -1,5 +1,19 @@
 # M.Tech Thesis Project — End-Semester Technical Report
 
+> **FINAL SUBMISSION / FREEZE (21 November 2026).**
+> This 2,000+ line file contains dated historical research and code-audit
+> snapshots. Some older paragraphs (including "pending"/"not implemented"
+> statements) were superseded by subsequent commits and **must not be
+> treated as the current final status**. The authoritative compact
+> technical report is [MTP_FINAL_REPORT.tex](MTP_FINAL_REPORT.tex), with
+> [proof and correctness audit](FINAL_AUDIT_2026-11-21.md).
+> The core source is frozen at `2bf723c2b3b57a6b532058f21742b8125292852a`.
+> A1 achieves `O(n+m)` preprocessing and `O(n)` operations;
+> A2's Section 7 `O(m+n log n)` preprocessing guarantee is **NOT
+> achieved** (frozen end-to-end upper bound `O(n^2+mn)`). This
+> historical log is retained for research traceability.
+>
+
 > **Main-branch status (November 20, 2026):** This report covers A1,
 > A1+, the split-graph algorithm, and the source-backed A2/A2+
 > globally biased Sleator–Tarjan implementation. Section 14 preserves
