@@ -1,0 +1,55 @@
+name: Final MTP frozen-core verification and report
+
+on:
+  push:
+    paths:
+      - 'docs/MTP_FINAL_REPORT.tex'
+      - 'audit/**'
+      - '.github/workflows/final-mtp-audit.yml'
+  pull_request:
+    paths:
+      - 'docs/MTP_FINAL_REPORT.tex'
+      - 'audit/**'
+      - '.github/workflows/final-mtp-audit.yml'
+  workflow_dispatch:
+
+jobs:
+  check-source-freeze-and-identities:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify core source unchanged since frozen commit
+        run: |
+          git cat-file -e 2bf723c2b3b57a6b532058f21742b8125292852a^{commit}
+          git diff --exit-code 2bf723c2b3b57a6b532058f21742b8125292852a HEAD -- src/ include/
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install independent audit requirements
+        run: python -m pip install -r audit/requirements.txt
+      - name: Verify chordal identities, random queries, and BMM reduction
+        run: python audit/verify_chordal_identities.py 17
+      - name: Verify Ibarra Section 5.1 weight updates
+        run: python audit/verify_w_updates.py
+  compile-latex-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile final MTP report from LaTeX
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: MTP_FINAL_REPORT.tex
+          working_directory: docs
+          latexmk_use_xelatex: false
+          args: -pdf -interaction=nonstopmode -halt-on-error -file-line-error
+      - name: Publish generated report as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MTP-Final-Report-PDF
+          path: docs/MTP_FINAL_REPORT.pdf
+          if-no-files-found: error
+          retention-days: 30
