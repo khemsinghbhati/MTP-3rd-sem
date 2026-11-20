@@ -28,6 +28,7 @@
 **Project:** Chordal Graphs: Foundations, Maximal Cliques, Clique Trees, and Dynamic Algorithms  
 **Student:** Khem Singh  
 **Roll number:** 25cs06004  
+**Under the guidance of:** Dr. Manas Jyoti Kashyop  
 **Program:** M.Tech, Computer Science and Engineering, IIT Bhubaneswar  
 **Report updated:** November 19, 2026  
 **End-semester presentation:** November 30, 2026  
