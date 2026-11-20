@@ -11,6 +11,7 @@ add_library(mtp_graphs
     src/maximal_cliques.cpp
     src/clique_tree_blair_peyton.cpp
     src/dynamic_ibarra.cpp
+    src/sparse_ibarra_a1.cpp
     src/indexed_dynamic_ibarra.cpp
     src/globally_biased_binary_tree.cpp
     src/worst_case_dynamic_tree.cpp
@@ -67,6 +68,21 @@ if(BUILD_TESTING)
     target_link_libraries(mtp_ibarra_dynamic_tests PRIVATE mtp_graphs)
     target_compile_options(mtp_ibarra_dynamic_tests PRIVATE -Wall -Wextra -Wpedantic)
     add_test(NAME ibarra_first_dynamic_implementation COMMAND mtp_ibarra_dynamic_tests)
+
+    add_executable(mtp_sparse_a1_tests tests/test_sparse_ibarra_a1.cpp)
+    target_link_libraries(mtp_sparse_a1_tests PRIVATE mtp_graphs)
+    target_compile_options(mtp_sparse_a1_tests PRIVATE -Wall -Wextra -Wpedantic)
+    add_test(NAME ibarra_a1_linear_preprocessing COMMAND mtp_sparse_a1_tests)
+
+    add_executable(mtp_sparse_a1_fast_tests tests/test_sparse_ibarra_a1_fast.cpp)
+    target_link_libraries(mtp_sparse_a1_fast_tests PRIVATE mtp_graphs)
+    target_compile_options(mtp_sparse_a1_fast_tests PRIVATE -Wall -Wextra -Wpedantic)
+    add_test(NAME ibarra_a1_sparse_fast_index COMMAND mtp_sparse_a1_fast_tests)
+
+    add_executable(mtp_sparse_a1_stress_tests tests/test_sparse_a1_stress.cpp)
+    target_link_libraries(mtp_sparse_a1_stress_tests PRIVATE mtp_graphs)
+    target_compile_options(mtp_sparse_a1_stress_tests PRIVATE -Wall -Wextra -Wpedantic)
+    add_test(NAME ibarra_a1_sparse_adversarial COMMAND mtp_sparse_a1_stress_tests)
 
     add_executable(mtp_ibarra_split_tests tests/test_ibarra_split.cpp)
     target_link_libraries(mtp_ibarra_split_tests PRIVATE mtp_graphs)
