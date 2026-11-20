@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <utility>
 #include <set>
 #include <vector>
 
@@ -11,6 +12,11 @@ namespace mtp {
 class Graph {
 public:
     explicit Graph(int vertex_count);
+    // Bulk construction from an arbitrary simple undirected edge list.
+    // Bucket-sort neighbor IDs and construct std::set from sorted ranges:
+    // deterministic O(n+m) worst-case, including duplicate rejection.
+    [[nodiscard]] static Graph from_edges(
+        int vertex_count,const std::vector<std::pair<int,int>>& edges);
 
     [[nodiscard]] int vertex_count() const noexcept;
     [[nodiscard]] std::size_t edge_count() const noexcept;
