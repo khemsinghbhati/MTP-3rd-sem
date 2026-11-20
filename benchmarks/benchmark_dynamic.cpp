@@ -1,7 +1,7 @@
 // Reproducible timing harness for Ibarra (2008), Section 4.
 // This is measurement code only; not a substitute for asymptotic proofs.
 // Build with -DMTP_BUILD_BENCHMARKS=ON; run ./build/mtp_benchmarks.
-#include "mtp/dynamic_ibarra.hpp"
+#include "mtp/sparse_ibarra_a1.hpp"
 #include "mtp/graph.hpp"
 #include <chrono>
 #include <iomanip>
@@ -20,13 +20,13 @@ mtp::Graph star(int n) {
 }
 }
 int main() {
-    std::cout << "n,m,build_ms,insert_query_ms,insert_update_ms,"
+    std::cout << "n,m,memberships,build_ms,insert_query_ms,insert_update_ms,"
                  "delete_query_ms,delete_update_ms\n";
     std::cout << std::fixed << std::setprecision(5);
     for (int n : {50, 100, 200, 400, 800, 1600}) {
         auto initial = star(n);
         const auto start = Clock::now();
-        mtp::DynamicChordalGraph dynamic(std::move(initial));
+        mtp::SparseIbarraChordalGraphA1 dynamic(std::move(initial));
         const auto built = Clock::now();
         double iq=0.0, iu=0.0, dq=0.0, du=0.0;
         // Each pair of distinct leaves is a nonedge in a star.
@@ -54,7 +54,7 @@ int main() {
             dq += milliseconds(c,d);
             du += milliseconds(d,e);
         }
-        std::cout << n << ',' << n-1 << ',' << milliseconds(start,built)
+        std::cout << n << ',' << n-1 << ',' << dynamic.stored_memberships() << ',' << milliseconds(start,built)
                   << ',' << iq/trials << ',' << iu/trials
                   << ',' << dq/trials << ',' << du/trials << '\n';
     }
