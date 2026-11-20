@@ -4,7 +4,8 @@
 > `2bf723c2b3b57a6b532058f21742b8125292852a` and preserved under
 > `freeze/core-2026-11-21`. The final academic submission is
 > **[`docs/MTP_FINAL_REPORT.tex`](docs/MTP_FINAL_REPORT.tex)**, a
-> compilable LaTeX report. The short [final proof/correctness audit]
+> **37-page comprehensive LaTeX report** that includes
+> **[`docs/MTP_IMPLEMENTATION_DETAILS.tex`](docs/MTP_IMPLEMENTATION_DETAILS.tex)**. The short [final proof/correctness audit]
 > (docs/FINAL_AUDIT_2026-11-21.md) is authoritative for implementation
 > guarantees. The original A2 Section 7 `O(m+n log n)`
 > preprocessing bound is **NOT achieved**; the code takes
@@ -21,7 +22,9 @@ Private working repository implementing Louis Ibarra's *Fully Dynamic Algorithms
 - `src/` — published-source-aligned algorithms and CLIs. The quadratic clique-graph/Kruskal implementations are compiled only into the **test baseline** library.
 - `tests/` — exhaustive, randomized, and independent small-graph verification.
 - `data/` — example input graphs.
-- `docs/MTP_FINAL_REPORT.tex` — **authoritative final submission** (LaTeX), with build instructions in `docs/REPORT_BUILD.md`.
+- `docs/MTP_FINAL_REPORT.tex` — **authoritative 37-page comprehensive final submission** (LaTeX master), with a clickable GitHub link on its first page.
+- `docs/MTP_IMPLEMENTATION_DETAILS.tex` — source-grounded explanation of each published algorithm and each major C++ implementation decision, including pseudocode, worked updates, ST83 internals, invariants, complexity and tests.
+- `docs/REPORT_BUILD.md` — reproducible two-file LaTeX build instructions.
 - `docs/FINAL_AUDIT_2026-11-21.md` — frozen proof, complexity, correctness and provenance audit.
 - `docs/MTP_REPORT.md` — dated **historical development log**, not the final summary.
 - `audit/` — independently reproducible chordal-graph, matrix-update and BMM-reduction checks.
