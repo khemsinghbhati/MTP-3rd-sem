@@ -1,4 +1,4 @@
-#include "mtp/dynamic_ibarra.hpp"
+#include "mtp/sparse_ibarra_a1.hpp"
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -12,19 +12,18 @@ mtp::Graph load_graph(const std::string& path) {
     int n=-1, m=-1;
     if (!(input >> n >> m) || n<0 || m<0)
         throw std::runtime_error("invalid graph header");
-    mtp::Graph graph(n);
+    std::vector<std::pair<int,int>> edges;
+    edges.reserve(static_cast<std::size_t>(m));
     for (int i=0;i<m;++i) {
         int u,v;
         if (!(input >> u >> v))
             throw std::runtime_error("incomplete edge list");
-        if (graph.has_edge(u,v))
-            throw std::runtime_error("duplicate input edge");
-        graph.add_edge(u,v);
+        edges.emplace_back(u,v);
     }
     std::string tail;
     if (input >> tail)
         throw std::runtime_error("unexpected data after graph edges");
-    return graph;
+    return mtp::Graph::from_edges(n,edges);
 }
 void print_tree(const mtp::CliqueTree& tree) {
     std::cout << "Maximal cliques (" << tree.cliques.size() << "):\n";
@@ -49,7 +48,7 @@ int main(int argc,char** argv) {
     try {
         if (argc==4 && std::string(argv[3])!="--fast-delete")
             throw std::runtime_error("unknown command line flag");
-        mtp::DynamicChordalGraph dynamic(load_graph(argv[1]));
+        mtp::SparseIbarraChordalGraphA1 dynamic(load_graph(argv[1]));
         if (argc==4) dynamic.enable_fast_delete_queries();
         std::ifstream script(argv[2]);
         if(!script)throw std::runtime_error("cannot open operations file");
