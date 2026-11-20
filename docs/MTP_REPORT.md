@@ -2210,6 +2210,20 @@ structure with the four A2 operation bounds. Other papers
 with faster individual chordal operations must likewise not
 be represented as having repaired the specific W initialization.
 
+A distinct *published data-structure building block* was also checked:
+Hagerup and Kammer, *On-the-Fly Array Initialization in Less Space*,
+ISAAC 2017, DOI:
+https://doi.org/10.4230/LIPIcs.ISAAC.2017.44.
+It gives constant-time initialization and access to an array
+in a word-RAM model using uninitialized memory. Although it could
+address the **zero-filling** cost of an already allocated
+characteristic array or W, it does **not** calculate the
+nonzero intersection values of W, does **not** remove the
+quadratic array's storage reservation, and provides no
+published theorem establishing Ibarra's A2 end-to-end
+O(m+n log n) preprocessing with unchanged operations.
+Consequently, using it alone would not pass this acceptance gate.
+
 **Acceptance gate (NOT PASSED):** to replace current preprocessing,
 a *published, checked* method must establish all of:
 
