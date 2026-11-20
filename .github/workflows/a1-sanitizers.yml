@@ -1,0 +1,43 @@
+name: Sparse A1 memory-safety audit
+
+on:
+  push:
+    paths:
+      - 'src/sparse_ibarra_a1.cpp'
+      - 'include/mtp/sparse_ibarra_a1.hpp'
+      - 'src/graph.cpp'
+      - 'include/mtp/graph.hpp'
+      - 'tests/test_sparse*'
+      - '.github/workflows/a1-sanitizers.yml'
+  pull_request:
+    paths:
+      - 'src/sparse_ibarra_a1.cpp'
+      - 'include/mtp/sparse_ibarra_a1.hpp'
+      - 'src/graph.cpp'
+      - 'include/mtp/graph.hpp'
+      - 'tests/test_sparse*'
+      - '.github/workflows/a1-sanitizers.yml'
+
+jobs:
+  a1-sanitize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure ASan + UBSan
+        run: |
+          cmake -S . -B build-a1-asan -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -O1" \
+            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+      - name: Build sparse A1 regression targets
+        run: |
+          cmake --build build-a1-asan --target \
+            mtp_sparse_a1_tests mtp_sparse_a1_fast_tests \
+            mtp_sparse_a1_stress_tests -j 2
+      - name: Execute A1 sanitizer tests
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: |
+          ctest --test-dir build-a1-asan --output-on-failure \
+            -R 'ibarra_a1_(linear_preprocessing|sparse_fast_index|sparse_adversarial)'
