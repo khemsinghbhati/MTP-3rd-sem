@@ -1,0 +1,270 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=22mm,headheight=15pt]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs,longtable,array,tabularx,multirow}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{graphicx}
+\hypersetup{colorlinks=true,linkcolor=blue!55!black,urlcolor=blue!55!black,citecolor=blue!55!black,pdftitle={Final MTP Technical Report: Fully Dynamic Chordal and Split Graphs}}
+\setlist{itemsep=2pt,topsep=4pt}
+\emergencystretch=2em
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{remark}[theorem]{Remark}
+\newcommand{\bigO}{\mathcal O}
+\newcommand{\Tset}{\mathcal T}
+\newcommand{\Kset}{\mathcal K}
+\newcommand{\Vset}{V}
+\newcommand{\Wmat}{W}
+\newcommand{\yes}{\textsf{yes}}
+\newcommand{\no}{\textsf{no}}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{M.Tech CSE \textbar\ IIT Bhubaneswar}
+\rhead{Final MTP Technical Report}
+\cfoot{\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+\lstset{basicstyle=\ttfamily\footnotesize,breaklines=true,frame=single,rulecolor=\color{black!25},columns=fullflexible,showstringspaces=false}
+\begin{document}
+\begin{titlepage}
+\centering
+\vspace*{24mm}
+{\Large \textbf{M.Tech Thesis Project (MTP)}}\\[8mm]
+{\huge\bfseries Implementation and Verification of\\[2mm]
+Fully Dynamic Algorithms for\\[2mm]
+Chordal and Split Graphs\par}
+\vspace{14mm}
+{\large Final Technical Report and Reproducibility Audit\par}
+\vspace{11mm}
+{\large Department of Computer Science and Engineering\\
+Indian Institute of Technology Bhubaneswar\par}
+\vspace{13mm}
+\begin{tabular}{rl}
+Source paper: & Louis Ibarra, \emph{ACM Transactions on Algorithms} (2008)\\
+Implementation: & C++17, deterministic graph representation\\
+Audit date: & 21 November 2026\\
+Presentation: & 30 November 2026\\
+Frozen core: & \texttt{2bf723c2b3b57a6b532058f21742b8125292852a}
+\end{tabular}
+\vfill
+\begin{minipage}{0.88\textwidth}
+\small\noindent\textbf{Integrity statement.} This report differentiates (i) claims appearing in the published paper, (ii) bounds established for the concrete implementation, (iii) passing functional tests, and (iv) proof obligations that still depend on published data-structure invariants. In particular, the paper's \(O(m+n\log n)\) A2 preprocessing claim is \emph{not achieved} by the frozen implementation. No new chordal graph algorithm is attributed to Ibarra or to other authors without source support.
+\end{minipage}
+\end{titlepage}
+\tableofcontents
+\newpage
+
+\section{Abstract}
+This project implements and tests fully dynamic recognition and maintenance procedures for chordal graphs and split graphs described by Ibarra~\cite{ibarra2008}. Its core is a clique-tree representation: a chordality-preserving edge update is accepted only when a published clique-tree criterion permits it, and the maximal cliques, weighted clique tree, and auxiliary structures are then maintained incrementally. A linear-time Maximum Cardinality Search (MCS) and the Blair--Peyton clique-tree construction establish the static foundation. A sparse-incidence refinement completes the first dynamic chordal algorithm (A1), with worst-case \(O(n+m)\) initialization and \(O(n)\) per query or update, replacing a quadratic dense representation. The second algorithm (A2) retains a Sleator--Tarjan globally biased dynamic forest and Ibarra's explicit clique-intersection matrix. Its insertion-query bound is \(O(\log^2 n)\); its \(O(n)\) insertion argument uses published linear biased-tree construction for a complete forest rebuild in the double-subsumption case. Tests include exhaustive small chordal graphs, randomized legal update sequences, differential checks, adversarial graph families, CI, and memory sanitizers. An explicit audit finds that the frozen A2 constructor takes \(O(n^2+mn)\), not the paper's Section~7 \(O(m+n\log n)\) target; this limitation is proved and reported rather than hidden. The result is a reproducible implementation accompanied by separate correctness, complexity, and provenance evidence.
+
+\section{Scope, notation and frozen implementation}
+Let \(G=(V,E)\) be a finite simple undirected graph with \(n=|V|\) and \(m=|E|\). A graph is \emph{chordal} if every induced cycle of length at least four has a chord. A \emph{perfect elimination ordering} (PEO) \(v_1,\ldots,v_n\) makes the later neighbors of each \(v_i\) a clique. A clique tree \(T=(\Kset,F)\) has one node for each maximal clique \(K_x\), with the \emph{running-intersection property}: for every vertex \(v\), the nodes \(\Tset_v=\{x:v\in K_x\}\) induce a connected subtree. Disconnected input components are connected in the maintained tree by weight-zero dummy edges, as in Ibarra~\cite{ibarra2008}. Tree-edge weights and general clique intersections are different objects:
+\begin{equation}\label{eq:w}
+w(x,y)=|K_x\cap K_y|\quad(\{x,y\}\in F),\qquad
+\Wmat(x,y)=|K_x\cap K_y|\quad(x,y\in\Kset).
+\end{equation}
+The core algorithm freeze is the exact Git commit shown on the title page, also preserved by the branch \texttt{freeze/core-2026-11-21}. This report is an independent documentation layer: it does not change frozen \texttt{src/} or \texttt{include/} files. Source links and reproducibility instructions are in Sections~\ref{sec:evidence} and~\ref{sec:repro}.
+
+\subsection{Implemented modules}
+\begin{itemize}
+\item \texttt{mcs.cpp}, \texttt{maximal\_cliques.cpp}, \texttt{clique\_tree\_blair\_peyton.cpp}: MCS, PEO checking, clique enumeration and tree construction.
+\item \texttt{sparse\_ibarra\_a1.cpp}: the preferred A1 interface with sparse maximal-clique incidence and inverse lists; the A1 CLI uses this implementation.
+\item \texttt{dynamic\_ibarra.cpp}: the earlier dense clique-node adapter, retained internally for A2 and the indexed comparison baseline.
+\item A2 in \path{dynamic_ibarra_a2.cpp}, using \path{worst_case_dynamic_tree.cpp} and \path{globally_biased_binary_tree.cpp} for the Sleator--Tarjan forest.\item Optional modified-Yellin fast deletion-query index: \path{fast_delete_ibarra.cpp}.
+\item \texttt{dynamic\_split\_ibarra.cpp}: the degree-sequence-based split-graph algorithm and associated optimization numbers.
+\end{itemize}
+The separate heavy-path indexed module is a benchmark/control implementation and is \emph{not} the exact published A2 dynamic-tree representation.
+
+\section{Literature and algorithmic foundation}
+Ibarra~\cite{ibarra2008} gives two fully dynamic chordal-graph implementations (A1 and A2), their fast deletion-query extensions (A1+ and A2+), and a constant-time dynamic split-graph statistic. Tarjan--Yannakakis~\cite{tarjanyannakakis1984} provides linear-time chordality testing via maximum cardinality search; Blair--Peyton~\cite{blairpeyton1993}, especially Figure~4.2, yields a clique tree in \(O(n+m)\) for chordal input. The A2 forest follows the worst-case globally biased construction of Sleator--Tarjan~\cite{sleatortarjan1983}, not an amortized splay-tree replacement. The linear forest reconstruction for a particular insertion case is an implementation-specific composition using Bent--Sleator--Tarjan's biased-tree building method~\cite{bentsleatortarjan1985}; it is not presented as a routine described verbatim in Ibarra. The optional fast intersection index follows the modified-Yellin approach explained by Ibarra, with Yellin~\cite{yellin1994} as background. The split characterization is the Hammer--Simeone degree-sequence identity~\cite{hammersimeone1981}.
+
+\section{Static preprocessing and clique-tree invariants}
+\subsection{MCS and maximal cliques}
+For chordal \(G\), MCS obtains a PEO in \(O(n+m)\) using degree-weight buckets. The verifier uses the standard later-neighbor test; every adjacency list is scanned only a constant number of times. Blair--Peyton's expanded MCS builds the maximal cliques and weighted clique-tree edges in \(O(n+m)\). The constructor checks that the input ordering is a valid PEO and rejects nonchordal input. Its output must satisfy: (i) every node is a maximal clique, (ii) exactly \(c-1\) tree edges exist for \(c>0\), (iii) all edge weights equal actual intersection cardinalities, and (iv) every \(\Tset_v\) is connected.
+
+\begin{lemma}[Clique-incidence bound]\label{lem:incidence}
+If \(G\) is chordal and \(K_1,\ldots,K_c\) are its maximal cliques, then \(c\le n\) and
+\begin{equation}\label{eq:incidence}
+\sum_{i=1}^c |K_i|\le n+m.
+\end{equation}
+\end{lemma}
+\begin{proof}
+Fix a PEO. For each maximal clique \(K\), let \(v_K\) be its earliest vertex. The later neighbors of \(v_K\) form a clique, so maximality forces \(K=\{v_K\}\cup N^+(v_K)\). Thus the map \(K\mapsto v_K\) is injective: two maximal cliques cannot have the same earliest vertex. Summing over this subset of vertices gives \(\sum_K |K|\le\sum_{v\in V}(1+|N^+(v)|)=n+m\). The injection also implies \(c\le n\).
+\end{proof}
+
+\subsection{Graph input and worst-case accounting}
+The public \texttt{Graph::from\_edges} constructor creates both adjacency vectors and balanced search sets from an arbitrarily ordered simple edge list. Bucket grouping by neighbor ID produces sorted adjacency vectors in \(O(n+m)\); C++17's sorted-range \texttt{std::set} constructor then builds a deterministic membership structure in linear total time under the standard comparison/allocator model. Subsequent \texttt{has\_edge} operations cost worst-case \(O(\log n)\). This \emph{bulk input path} is necessary for the end-to-end A1 initialization claim: inserting \(m\) edges separately through \texttt{Graph::add\_edge} may cost \(O(m\log n)\).
+
+\section{Ibarra A1: exact correctness criterion and sparse optimal implementation}
+\label{sec:a1}
+For edge deletion, Ibarra's criterion is that \(G-uv\) is chordal precisely if the existing edge \(uv\) occurs in exactly one maximal clique. For a nonedge \(uv\), let \(x\in\Tset_u\) and \(y\in\Tset_v\) be a closest pair of clique-tree nodes. If the pair is adjacent, insertion is allowed; otherwise let \(\lambda(x,y)\) be the minimum separator weight on their unique tree path. Ibarra's criterion is
+\begin{equation}\label{eq:insert}
+G+uv\text{ is chordal}\quad\Longleftrightarrow\quad
+\lambda(x,y)=\Wmat(x,y)=|K_x\cap K_y|.
+\end{equation}
+In the adjacent case \(\lambda(x,y)=|K_x\cap K_y|\) automatically. The code preserves Ibarra's clique-tree transformations after a valid query: split the unique clique on deletion, or replace/exchange a tree edge, create \((K_x\cap K_y)\cup\{u,v\}\), and absorb nonmaximal old cliques on insertion.
+
+\begin{theorem}[A1 representation and operation bounds]\label{thm:a1}
+For a chordal graph supplied through the bulk graph loader, the frozen \texttt{SparseIbarraChordalGraphA1} initializes in worst-case \(O(n+m)\) time and space and performs each of \textsf{Delete-Query}, \textsf{Insert-Query}, \textsf{Delete}, and \textsf{Insert} in worst-case \(O(n)\) time.
+\end{theorem}
+\begin{proof}
+Instead of allocating a length-\(n\) characteristic vector for every clique, each clique stores only its member IDs, and each original vertex stores a doubly linked list of clique nodes containing it. Cross-iterators permit \(O(1)\) removal of a known incidence. Lemma~\ref{lem:incidence} bounds the initial number of incidence records by \(n+m\); all tree adjacency and spare node arrays have \(O(n)\) size. Together with Section~4, construction is \(O(n+m)\).
+
+For deletion queries, mark all nodes in \(\Tset_u\) and count marks in \(\Tset_v\), taking \(O(n)\). For insertion queries, multi-source BFS from \(\Tset_u\) stops at the nearest member of \(\Tset_v\), visiting at most \(c\le n\) tree nodes; an \(O(n)\) marked intersection and an \(O(n)\) path-weight scan evaluate~\eqref{eq:insert}. A valid deletion reclassifies at most \(n-1\) adjacent clique-tree edges, replaces at most two member lists of length at most \(n\), and performs at most \(O(n)\) constant-time list link/cut operations and inverse-incidence changes. The analogous insertion creates at most one new clique, reroutes at most \(O(n)\) tree edges, and may absorb only the two distinguished endpoint cliques. Graph edge insertion costs \(O(\log n)\) membership/tree work plus at most \(O(n)\) vector reallocation; graph removal scans adjacency arrays in \(O(n)\). Every total is worst-case \(O(n)\).
+\end{proof}
+
+\paragraph{Provenance note.} The clique-tree correctness arguments come from Ibarra; the sparse bidirectional incidence representation is a standard implementation refinement, \emph{not} claimed to be an exact storage layout prescribed by the paper. The old dense class is retained for A2 compatibility.
+
+\section{Ibarra A2: dynamic tree, intersection matrix, and insertion repair}
+\label{sec:a2}
+\subsection{Fast insertion queries}
+A2 uses one witness clique per graph vertex and a worst-case Sleator--Tarjan globally biased tree. Binary searching the witness-to-witness path finds a closest pair of cliques in \(O(\log n)\) dynamic-tree rank/path queries, each charged \(O(\log n)\). An explicit table \(\Wmat(x,y)\) gives the final exact intersection value in \(O(1)\). Assuming the maintained ST83 global-bias invariants, this yields \(O(\log^2 n)\) worst-case \textsf{Insert-Query}, while the graph adjacency test is worst-case \(O(\log n)\).
+
+\subsection{Worst-case dynamic updates}
+Ibarra's ordinary \textsf{Delete-Query} scans at most \(n\) clique nodes, so it costs \(O(n)\). Deletion can reroute \(O(n)\) clique-tree edges; with \(O(\log n)\) ST83 forest primitives the full operation is bounded by \(O(n\log n)\), including \(O(n)\) characteristic-vector and matrix-row work. A permitted insertion needs \(O(n)\) clique and matrix updates. When both endpoint maximal cliques are absorbed, the source implementation could otherwise issue \(\Theta(n)\) individually charged \(O(\log n)\) forest links/cuts. The frozen code instead applies Ibarra's exact clique-tree transformation without individual ST hooks, then reconstructs the \emph{same} ST83 globally biased forest using size partitioning, bucketed path weights, and the linear biased-tree construction of Bent--Sleator--Tarjan~\cite{bentsleatortarjan1985}. This repair is explicitly a published-building-block \emph{composition} rather than Ibarra's verbatim update schedule.
+
+\begin{proposition}[Conditional source-to-code insertion bound]
+Assume the implemented biased-tree construction maintains the ST83 globally biased-tree invariants under the supplied static and subsequent dynamic operations, and that the cited linear construction is charged on the word RAM. Under those assumptions, A2 insertion costs \(O(n)\) worst case.
+\end{proposition}
+\begin{proof}
+Without subsumption, or with one subsumed clique, there are only \(O(1)\) ST operations in addition to \(O(n)\) clique/weight work. With two subsumed cliques, a fresh forest is built from at most \(n+2\) tree node IDs and \(O(n)\) edges. DFS and subtree sizes cost \(O(n)\); the solid paths partition the vertices, so the sum of sizes passed to linear biased-tree builders is \(O(n)\). Every dashed path appears in one path-set builder; counting sort by weights in \([1,n+2]\) is also \(O(n)\). Deallocating the previous \(O(n)\)-sized forest is \(O(n)\). Ibarra's matrix-row update is \(O(n)\), yielding \(O(n)\) total.
+\end{proof}
+
+\paragraph{Audit qualification.} A source-based argument plus invariant checking and tests is a stronger basis than measured timings, but it is not a machine-checked formal verification of every C++ pointer operation. The report does \emph{not} claim such certification. The ST83 dynamic primitive guarantee is imported from the published theorem and depends on faithful maintenance of its representation invariants.
+
+\subsection{Critical A2 preprocessing discrepancy}
+\label{sec:discrepancy}
+The frozen A2 constructor begins with \(n\) singleton cliques and replays the initial \(m\) edges in reverse PEO order; it initializes both length-\(n\) clique characteristic vectors and the \((n+2)\times(n+2)\) integer matrix \(\Wmat\). Consequently the implemented constructor is bounded by
+\begin{equation}\label{eq:realA2}
+\boxed{T_{\mathrm{A2\,pre}}(n,m)=O(n^2+mn),\qquad T_{\mathrm{A2\,pre}}(n,0)=\Omega(n^2).}
+\end{equation}
+The \(\Omega(n^2)\) lower bound follows on \(m=0\), where there are \(n\) singleton cliques and the code explicitly zero-fills a quadratic table. This contradicts any end-to-end \(O(m+n\log n)\) claim for this concrete representation, since at \(m=0\) the latter is \(O(n\log n)\). In the original paper, Section~5.1 explicitly offers \(O(n^3)\) direct weight construction or \(O(mn)\) reverse-PEO insertion construction; Section~7 nevertheless lists \(O(m+n\log n)\) A2 preprocessing~\cite{ibarra2008}. These statements are recorded as a \emph{published accounting discrepancy}, not rewritten as an achieved result. The alternative R1 constructor exists only on draft research PR~\#3 and is not part of this frozen core.
+
+\begin{remark}[Do not replace intersection with path bottleneck]
+For maximal cliques \(K_1=\{a,b,x\}\), \(K_2=\{a,b,c\}\), \(K_3=\{b,c,y\}\) arranged along a clique-tree path, both tree edges have intersection weight \(2\), but \(|K_1\cap K_3|=1\). Therefore the path-minimum weight is \emph{not} the general clique intersection. An LCA/bottleneck structure cannot replace \(\Wmat\) in A2.
+\end{remark}
+
+\section{Fast deletion-query extensions A1+ and A2+}
+\label{sec:plus}
+The optional index follows Ibarra's modification of Yellin's dynamic-set representation. Its \(\texttt{COMMON}[u][v]\) counts clique co-memberships from small member partitions; for large partitions, a bounded number of overflow sets is scanned. With the appropriate threshold near \(\sqrt m\), \textsf{Delete-Query} costs \(O(\sqrt m+1)\) worst case; updates to the auxiliary index are charged separately at \(O(m+n)\). The implementation uses an explicit \(n\times n\) \texttt{COMMON} matrix, so activating the index never counts as A1's linear preprocessing. Ibarra's Section~7 reports \(O(mn+n^2)\) preprocessing for A1+/A2+; the implementation's eager arrays are consistent with a quadratic additive term. Adding the index to A2 yields its usual \(O(m+n\log n)\) deletion and \(O(m+n)\) insertion update envelopes, with the A2 constructor discrepancy still disclosed.
+
+\section{Dynamic split graphs}
+The split-graph module maintains a degree-ordered list, degree-class endpoints, the boundary index \(j=\max\{i:d_i\ge i-1\}\), and sums of degrees to the left and right of the boundary. By Hammer--Simeone~\cite{hammersimeone1981}, a graph is split precisely when
+\begin{equation}
+\sum_{i\le j}d_i=j(j-1)+\sum_{i>j}d_i.
+\end{equation}
+Valid insert/delete notifications move only a constant number of degree-list items and update the two sums and \(j\) locally, giving \(O(1)\) state updates and split-recognition queries after linear degree initialization. For split graphs, the module also exposes clique, independence, chromatic and vertex-cover numbers via the degree identity and graph complementation. \textbf{Interface limitation:} the degree-only object does not itself track every graph edge; callers must supply semantically valid insertions (on nonedges) and deletions (on existing edges). This precondition is stated rather than hidden.
+
+\section{Final complexity and claim audit}\label{sec:matrix}
+\renewcommand{\arraystretch}{1.16}
+\begin{table}[htbp]\centering\small
+\begin{tabular}{@{}p{22mm}p{28mm}p{28mm}p{28mm}p{28mm}@{}}\toprule
+Variant & Delete-Query & Delete & Insert-Query & Insert \\ \midrule
+A1 & \(O(n)\) & \(O(n)\) & \(O(n)\) & \(O(n)\) \\
+A2 & \(O(n)\) & \(O(n\log n)\) & \(O(\log^2n)\) & \(O(n)^{\dagger}\) \\
+A1+ & \(O(\sqrt m+1)\) & \(O(m+n)\) & \(O(n)\) & \(O(m+n)\) \\
+A2+ & \(O(\sqrt m+1)\) & \(O(m+n\log n)\) & \(O(\log^2n)\) & \(O(m+n)^{\dagger}\) \\ \bottomrule
+\end{tabular}
+\caption{Per-operation worst-case bounds of the source-based implementations; \(\dagger\) uses the Section~6 reconstruction composition and its cited invariants. Bounds are for accepted edits and include query prechecks.}\label{tab:ops}\end{table}
+\begin{table}[htbp]\centering\small
+\begin{tabular}{@{}p{24mm}p{41mm}p{51mm}p{25mm}@{}}\toprule
+Variant & Ibarra Section~7 preprocessing & Frozen concrete preprocessing & Finding\\ \midrule
+A1 & \(O(n+m)\) & \(O(n+m)\), bulk loader and sparse incidence & Achieved \\
+A2 & \(O(m+n\log n)\) & \(O(n^2+mn)\) & \textbf{Not achieved} \\
+A1+ & \(O(mn+n^2)\) & Added dense auxiliary index; separate charge & Consistent envelope \\
+A2+ & \(O(mn+n^2)\) & A2 constructor plus auxiliary index & Consistent envelope\\ \bottomrule
+\end{tabular}
+\caption{Preprocessing and space accounting must not be inferred from the operation bounds.}\label{tab:pre}
+\end{table}
+
+\section{Independent reduction: a conditional barrier for A2 preprocessing}
+\label{sec:reduction}
+The following reduction was supplied as part of a November 2026 independent research audit; it is \emph{not} attributed to a peer-reviewed paper and is \emph{not} an unconditional impossibility result.
+
+\begin{proposition}[Boolean matrix multiplication consequence]
+If every \(n\)-vertex \(m\)-edge chordal graph admitted \(O(m+n\log n)\) preprocessing and worst-case \(O(\log^2n)\) chordality-preserving insertion queries, then two \(u\times u\) Boolean matrices could be multiplied in \(O(u^2\log^2u)\) time.
+\end{proposition}
+\begin{proof}
+Let \(A,B\in\{0,1\}^{u\times u}\). Form a central \(3u\)-vertex clique partitioned into \(E=\{e_k\}\), \(D=\{d_k\}\), and \(F=\{f_k\}\), each of size \(u\). Add independent vertices \(p_1,\ldots,p_u\) and \(q_1,\ldots,q_u\). The neighborhood of \(p_i\) in the central clique is \(R_i=\{e_k:A_{ik}=1\}\cup D_{\le u-|\{k:A_{ik}=1\}|}\), of size \(u\). The neighborhood of \(q_j\) is \(Q_j=\{e_k:B_{kj}=0\}\cup D\cup F_{\le u-|\{k:B_{kj}=0\}|}\), of size \(2u\). The graph is split, hence chordal, and has \(5u\) vertices and \(\Theta(u^2)\) edges. Adding \(p_iq_j\) preserves chordality exactly when \(R_i\subseteq Q_j\): when included, \(p_i\) remains simplicial after the insertion; when not, choose \(r\in R_i\setminus Q_j\) and \(s\in Q_j\setminus R_i\), producing an induced \(p_i-r-s-q_j-p_i\) 4-cycle. The reverse difference exists because \(|Q_j|>|R_i|\). By the definitions, \(R_i\subseteq Q_j\) iff there is no \(k\) with \(A_{ik}=B_{kj}=1\), i.e., iff \((A\cdot B)_{ij}=0\) over the Boolean semiring. Building the graph requires \(O(u^2)\) work; preprocessing and \(u^2\) queries cost \(O(u^2+u\log u+u^2\log^2u)\). Negating each answer produces the Boolean product.
+\end{proof}
+The conditional conclusion is that matching both of Ibarra's published A2 bounds for arbitrary chordal starting graphs would imply a major advance in Boolean matrix multiplication. This does \emph{not} prove such a representation impossible. The discrepancy in Section~\ref{sec:discrepancy} is an unconditional failure of the \emph{currently materialized dense representation}.
+
+\section{Correctness evidence and reproducibility}\label{sec:evidence}
+\subsection{Independent oracles and tested graph families}
+The frozen project has a 23-target CTest suite. Existing tests cover static MCS/PEO, Blair--Peyton clique trees against a separate quadratic clique-graph baseline, exhaustive small chordal graphs, randomized legal edit sequences, A1/A2 query differentials, dynamic-tree invariants, split-graph identities, and adversarial high-degree contractions. The linear clique-tree test documents 19,048 nonempty chordal graphs on up to six vertices, plus seeded larger cases. The sparse A1 suite uses independent PEO, maximal-clique and running-intersection oracles and also tests the optional fast deletion index. The memory-safety workflow runs AddressSanitizer and UndefinedBehaviorSanitizer on these A1 paths.
+
+On the frozen core branch, the pre-merge CI log recorded \emph{23/23 CTest targets passing}. On the final A1 merge, separate post-merge CI, A1 sanitizer, and published biased-tree research workflows passed; the exact run links are listed below. These are regression and safety results; they are not substitutes for the worst-case proofs in Sections~\ref{sec:a1}--\ref{sec:plus}.
+
+A separately rerun Python audit (random seed 17) checked 406 chordal-graph instances, 4,466 insertion decisions, 150 independent BMM instances containing 1,776 matrix reduction queries, and 1,171 insertion plus 5,895 deletion weight-update checks. All assertions passed. These scripts are independent \emph{small-instance checks}; the formal reduction proof appears in Section~\ref{sec:reduction}.
+
+\subsection{Measured A1 star-graph benchmark}
+\begin{table}[htbp]\centering\small
+\begin{tabular}{@{}rrrrrr@{}}\toprule
+\(n\)&\(m\)& Stored memberships & Build (ms)& Insert-Query (ms)& Insert (ms)\\ \midrule
+50&49&98&0.02563&0.00051&0.00128\\
+100&99&198&0.03746&0.00093&0.00213\\
+200&199&398&0.07714&0.00153&0.00331\\
+400&399&798&0.15977&0.00247&0.00515\\
+800&799&1598&0.30171&0.00485&0.00986\\
+1600&1599&3198&0.52330&0.00767&0.01570\\ \bottomrule
+\end{tabular}
+\caption{Recorded CI-run A1 star benchmark on the pre-merge source, 20 November 2026. Values are hardware-dependent illustrative measurements, \emph{not} proofs.}\label{tab:bench}
+\end{table}
+
+\subsection{Frozen source, tests and provenance links}
+\begin{itemize}[leftmargin=*]
+\item \href{https://github.com/khemsinghbhati/MTP-3rd-sem}{Repository (GitHub)}.
+\item \href{https://github.com/khemsinghbhati/MTP-3rd-sem/pull/4}{Completed A1 optimization, PR \#4}.
+\item \href{https://github.com/khemsinghbhati/MTP-3rd-sem/blob/main/docs/A1_LINEAR_PREPROCESSING.md}{Detailed A1 proof notes and implementation mapping}.
+\item \href{https://github.com/khemsinghbhati/MTP-3rd-sem/pull/1}{A2 insertion repair, PR \#1}.
+\item Frozen core source SHA: \texttt{2bf723c2b3b57a6b532058f21742b8125292852a}.
+\item \href{https://github.com/khemsinghbhati/MTP-3rd-sem/actions/runs/44811326753}{Final A1 CI run 44811326753}.
+\item \href{https://github.com/khemsinghbhati/MTP-3rd-sem/actions/runs/44811326840}{Post-merge sanitizer run 44811326840}.
+\item \href{https://github.com/khemsinghbhati/MTP-3rd-sem/actions/runs/44811326833}{ST83/BST85 validation run 44811326833}.
+\item \href{https://github.com/khemsinghbhati/MTP-3rd-sem/pull/3}{Unmerged R1 research constructor, PR \#3}.
+\end{itemize}
+
+\section{Final audit outcome and remaining limitations}\label{sec:repro}
+\begin{enumerate}
+\item \textbf{Achieved:} A1's sparse incarnation meets its published worst-case \(O(n+m)\) preprocessing and \(O(n)\) operation bounds; the preconditions and graph-loading model are explicit. The clique-tree, MCS and PEO procedures match published static techniques.
+\item \textbf{Implemented and tested, source-argument dependent:} A2 queries and operations use the ST83 globally biased forest. The double-subsumption insertion uses a later published linear biased-tree builder to reconstruct that \emph{same} representation. This is a documented implementation refinement and is not claimed as verbatim Ibarra pseudocode.
+\item \textbf{Not achieved:} The frozen A2 end-to-end constructor does not meet Ibarra's Section~7 \(O(m+n\log n)\) preprocessing claim. Actual accounting is given in Equation~\eqref{eq:realA2}; no hidden zero-on-demand representation was integrated.
+\item \textbf{Optional costs:} A1+/A2+ fast deletion queries require a separately constructed quadratic auxiliary structure. Split-graph updates assume valid edge notifications.
+\item \textbf{Evidence limits:} The project has extensive independent finite-state and randomized verification, plus sanitizer workflows, but no mechanically verified C++ proof of the global-bias invariants for all possible pointer states. Claims of mathematically complete formal verification would be inappropriate.
+\end{enumerate}
+The work is frozen so that final documentation and presentation preparation cannot silently change the verified core. Any subsequent change to algorithm source requires a new audit and a new identified baseline.
+
+\subsection{Reproducibility commands (Ubuntu)}
+\begin{lstlisting}[language=bash]
+git clone https://github.com/khemsinghbhati/MTP-3rd-sem.git
+cd MTP-3rd-sem
+git checkout 2bf723c2b3b57a6b532058f21742b8125292852a
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j
+ctest --test-dir build --output-on-failure
+./build/mtp_dynamic_cli data/example_7_vertices.txt data/dynamic_example_ops.txt
+./build/mtp_a2_cli data/example_7_vertices.txt data/dynamic_example_ops.txt
+\end{lstlisting}
+The private repository requires the user's GitHub authentication. The static source freeze is separate from later documentation-only commits.
+
+\section{Conclusion}
+The project delivers an independently tested implementation of Ibarra's fully dynamic chordal and split graph methods and a concrete improvement to A1's initialization representation. Its principal strengths are explicit source-to-code provenance, worst-case operation accounting, adversarial testing, and a reproducible frozen baseline. The principal academic limitation is A2 preprocessing: the original paper's own Section~5.1 construction discussion and Section~7 summary cannot both describe the end-to-end cost of the explicit dense matrix initialized by this program. The report preserves that discrepancy honestly. The resulting thesis contribution is not a claimed solution to an open matrix-multiplication problem; it is a faithful implementation and rigorous comparison of what is achieved, what is assumed from published data-structure results, and what remains unproved.
+
+\begin{thebibliography}{99}
+\bibitem{ibarra2008} L. Ibarra, ``Fully dynamic algorithms for chordal graphs and split graphs,'' \emph{ACM Transactions on Algorithms}, vol. 4, no. 4, Article 40, 2008. DOI: \href{https://doi.org/10.1145/1383369.1383371}{10.1145/1383369.1383371}.
+\bibitem{tarjanyannakakis1984} R. E. Tarjan and M. Yannakakis, ``Simple linear-time algorithms to test chordality of graphs, test acyclicity of hypergraphs, and selectively reduce acyclic hypergraphs,'' \emph{SIAM Journal on Computing}, vol. 13, no. 3, pp. 566--579, 1984.
+\bibitem{blairpeyton1993} J. R. S. Blair and B. W. Peyton, ``An introduction to chordal graphs and clique trees,'' \emph{Graph Theory and Sparse Matrix Computation}, IMA Volumes in Mathematics and its Applications, vol. 56, pp. 1--29, 1993.
+\bibitem{sleatortarjan1983} D. D. Sleator and R. E. Tarjan, ``A data structure for dynamic trees,'' \emph{Journal of Computer and System Sciences}, vol. 26, no. 3, pp. 362--391, 1983. \url{https://www.cs.cmu.edu/~sleator/papers/dynamic-trees.pdf}.
+\bibitem{bentsleatortarjan1985} S. W. Bent, D. D. Sleator, and R. E. Tarjan, ``Biased search trees,'' \emph{SIAM Journal on Computing}, vol. 14, no. 3, pp. 545--568, 1985. \url{https://doi.org/10.1137/0214041}.
+\bibitem{yellin1994} D. M. Yellin, ``An algorithm for dynamic subset and intersection testing,'' \emph{Theoretical Computer Science}, vol. 129, pp. 397--406, 1994.
+\bibitem{hammersimeone1981} P. L. Hammer and B. Simeone, ``The splittance of a graph,'' \emph{Combinatorica}, vol. 1, pp. 275--284, 1981.
+\end{thebibliography}
+\end{document}
