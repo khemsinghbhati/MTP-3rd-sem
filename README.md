@@ -2,7 +2,7 @@
 
 **M.Tech CSE | IIT Bhubaneswar | End-semester presentation: November 30, 2026**
 
-Private working repository implementing Louis Ibarra's *Fully Dynamic Algorithms for Chordal Graphs and Split Graphs* (2008, DOI 10.1145/1383369.1383371). **The paper's methods and asymptotic bounds are requirements.** Blair–Peyton clique-tree preprocessing, Ibarra's first four dynamic chordal operations, the optional fast deletion-query index, and his constant-time split-graph algorithm are implemented. Section 5's worst-case Sleator–Tarjan dynamic tree is implemented and tested; **the source-backed O(n) insertion repair is proved in Section 15**, while the paper's stronger preprocessing-table claim remains inconsistent with its explicitly dense W representation.
+Private working repository implementing Louis Ibarra's *Fully Dynamic Algorithms for Chordal Graphs and Split Graphs* (2008, DOI 10.1145/1383369.1383371). **The paper's methods and asymptotic bounds are requirements.** Blair–Peyton clique-tree preprocessing and a **sparse A1 implementation with O(n+m) preprocessing and O(n) worst-case dynamic operations** are implemented; the optional fast deletion-query index and split-graph algorithm are also available. Section 5's worst-case Sleator–Tarjan dynamic tree is implemented and tested; **the source-backed O(n) insertion repair is proved in Section 15**, while the paper's stronger preprocessing-table claim remains inconsistent with its explicitly dense W representation.
 
 ## Project structure
 
@@ -10,7 +10,8 @@ Private working repository implementing Louis Ibarra's *Fully Dynamic Algorithms
 - `src/` — published-source-aligned algorithms and CLIs. The quadratic clique-graph/Kruskal implementations are compiled only into the **test baseline** library.
 - `tests/` — exhaustive, randomized, and independent small-graph verification.
 - `data/` — example input graphs.
-- `docs/MTP_REPORT.md` — **one evolving detailed technical report**.
+- `docs/MTP_REPORT.md` — **evolving detailed technical report**.
+- `docs/A1_LINEAR_PREPROCESSING.md` — **sparse A1 implementation, exact operations, proof and regression evidence**.
 - `scripts/check_markdown_math.py` — structural check for GitHub's math rendering conventions.
 - `.github/workflows/ci.yml` — automated build and test workflow.
 
@@ -68,19 +69,20 @@ cache, and scheduling; they are **empirical observations, not proofs** of
 worst-case time bounds. Benchmark results must be compared against the
 published bounds and the actual data structures used.
 
-**Research limitation:** An experimental Section 5 variant now supports
-logarithmic-squared path-based insertion queries and O(n) update operations
-using a size-partitioned heavy-path index rebuilt after each update. The
-core query and intersection-weight update decisions follow Ibarra, while
-the size-partition condition follows Sleator–Tarjan (1983), Section 5.
-The rebuild policy does **not** implement the required worst-case O(log n)
-dynamic-tree link/cut primitives; therefore A2 and A2+ are not certified
-as faithfully reproduced. The exact implementation remains pending.
+**A1 research conclusion:** The default `mtp_dynamic_cli` uses
+`SparseIbarraChordalGraphA1`, which stores sparse clique/vertex
+incidence with cross-pointers and builds its graph from a bucket-ordered
+edge list. Constructor O(n+m) worst-case and all four A1
+operations O(n) worst-case, while the optional A1+ index retains
+its own additional cost. See `docs/A1_LINEAR_PREPROCESSING.md`.
 
-Previously documented limitation: Section 5's worst-case logarithmic dynamic tree
-remains absent. Source inspection also found potentially inconsistent
-A2 preprocessing accounting between Ibarra Sections 5.1 and 7,
-documented in the single report rather than silently resolved.
+**A2 limitation (unchanged):** A2's ST83 dynamic tree and
+BST85 source-backed O(n) insertion repair are retained; the
+original paper's Section 7 O(m+n log n) preprocessing claim
+is NOT achieved for the dense W representation and must
+not be claimed. The experimental indexed heavy-path
+implementation is a separate comparison, not the certified
+ST83 tree.
 
 ## Current implementation status
 
@@ -91,17 +93,17 @@ documented in the single report rather than silently resolved.
 | Blair–Peyton Fig. 4.2 initial clique-tree construction | **$O(n+m)$; implemented and independently tested** |
 | Explicit weighted clique graph + Kruskal | **Reference baseline only** (not production) |
 | Disconnected graphs and dummy clique-tree edges | **Implemented and tested** |
-| Section 3: Delete-Query / Insert-Query | Implemented, $O(n)$ each (first version) |
-| Section 3: Delete / Insert (incremental updates) | Implemented, $O(n)$ each (first version) |
-| Section 4: $O(n)$ per dynamic operation | Implemented and tested |
+| Section 3: Delete-Query / Insert-Query | **Sparse A1**, worst-case $O(n)$ each |
+| Section 3: Delete / Insert (incremental updates) | **Sparse A1**, worst-case $O(n)$ each |
+| Section 4: $O(n)$ per dynamic operation | **Implemented**, independent tests and CI passed |
 | Section 5 experimental indexed path query | Implemented; O(log² n) Insert-Query, but uses full O(n) heavy-path rebuilds instead of worst-case dynamic-tree primitives |
-| Section 5: exact worst-case Sleator–Tarjan dynamic tree | **Pending — publication-faithful requirement not yet met** | 
+| Section 5: ST83 globally biased dynamic tree | Implemented with BST85-based source-supported insertion refinement; code-to-proof audit remains | 
 | Section 6: modified-Yellin fast deletion query | Implemented; $O(\sqrt m)$ query and $O(m+n)$ updates | 
 | Section 8: dynamic split graph + clique/chromatic/independence/cover numbers | Implemented; $O(1)$ queries and valid updates |
 
 ## Verification
 
-The Blair–Peyton constructor passed **19,048 exhaustive nonempty chordal graphs** with 1–6 vertices, **800 seeded randomized chordal graphs** with 7–13 vertices, and larger sparse-star and dense-clique cases. Tests independently compare maximal cliques, tree weights, maximum spanning-tree weights, and the induced subtree property. The split-graph tests also independently check all four optimization numbers against brute-force subset enumeration on small graphs. Existing baseline tests remain. The full input parser still uses hashing for duplicate-edge validation; the $O(n+m)$ algorithmic bound assumes an already represented graph.
+The Blair–Peyton constructor passed **19,048 exhaustive nonempty chordal graphs** with 1–6 vertices, **800 seeded randomized chordal graphs** with 7–13 vertices, and larger sparse-star and dense-clique cases. Tests independently compare maximal cliques, tree weights, maximum spanning-tree weights, and the induced subtree property. The split-graph tests also independently check all four optimization numbers against brute-force subset enumeration on small graphs. Existing baseline tests remain. A1's dynamic CLI loads edges using `Graph::from_edges` with bucket-ordered sorted set construction in deterministic $O(n+m)$; legacy `Graph::add_edge` remains available for incremental updates.
 
 ## A2/A2+ published-source insertion repair — November 20, 2026
 
@@ -186,7 +188,7 @@ separate reference/archive folder.
 via `src/clique_tree_blair_peyton.cpp`; the earlier provisional
 elimination-forest contraction is not used in production. Ibarra
 Sections 3–4 and 6 and 8 are explicitly mapped to code and tests in
-`docs/MTP_REPORT.md`. The Section 5 optimized dynamic tree is **not yet implemented**.
+`docs/MTP_REPORT.md`. The Section 5 dynamic tree is implemented, with the separate final proof-level audit recorded in the report.
 
 ## Mathematical notation and report policy
 
@@ -198,4 +200,11 @@ w(i,j)=|K_i\cap K_j|
 
 All developments must update the single file `docs/MTP_REPORT.md` with: source section, definition, algorithm, correctness argument, complexity, worked example, tests, and limitations.
 
-**Scope and complexity limitation:** The published Blair–Peyton clique tree itself is built in $O(n+m)$ time. The concrete dynamic-class constructor also allocates an n-bit-like (byte-vector) characteristic vector for each maximal clique, costing $\Theta(nk)$ for k cliques; it cannot honestly claim end-to-end linear initialization on sparse stars. The first four update operations are $O(n)$ each; the Section 6 optional fast index provides $O(\sqrt m)$ deletion queries. Completing the paper's Section 5 **worst-case** dynamic-tree structure and comparing empirical scaling remain mandatory.
+**Scope and complexity limitation:** The production A1 CLI and
+`SparseIbarraChordalGraphA1` now initialize in O(n+m) from a
+bulk-loaded graph and perform all four operations in O(n) worst-case.
+The previous dense `DynamicChordalGraph` remains in the codebase as
+the internal representation supporting A2 and indexed comparison
+modules. A2's **Section 7 preprocessing bound remains unachieved**;
+its actual cost, source discrepancy and corrected R1 research
+alternative are documented in the report and draft PRs.

@@ -5,6 +5,35 @@
 
 namespace mtp {
 
+Graph Graph::from_edges(
+        int n,const std::vector<std::pair<int,int>>& edges) {
+    Graph graph(n);
+    // Bucket by neighbor ID, not by source. Iterating buckets
+    // in increasing order supplies each source's sorted neighbors
+    // without an O(m log n) comparison sort.
+    std::vector<std::vector<int>> by_neighbor(static_cast<std::size_t>(n));
+    for(const auto& [u,v]:edges) {
+        graph.validate_vertex(u);
+        graph.validate_vertex(v);
+        if(u==v)throw std::invalid_argument("self-loops are not allowed");
+        by_neighbor[v].push_back(u);
+        by_neighbor[u].push_back(v);
+    }
+    for(int v=0;v<n;++v) {
+        for(int u:by_neighbor[v]) {
+            auto& adj=graph.adjacency_[u];
+            if(!adj.empty() && adj.back()==v)
+                throw std::invalid_argument("duplicate input edge");
+            adj.push_back(v);
+        }
+    }
+    for(int v=0;v<n;++v)
+        graph.neighbor_sets_[v]=std::set<int>(
+            graph.adjacency_[v].begin(),graph.adjacency_[v].end());
+    graph.edge_count_=edges.size();
+    return graph;
+}
+
 Graph::Graph(int vertex_count) {
     if (vertex_count < 0) {
         throw std::invalid_argument("vertex_count must be nonnegative");

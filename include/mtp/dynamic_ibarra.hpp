@@ -8,9 +8,12 @@
 #include <vector>
 
 namespace mtp {
-// Ibarra (2008), Sections 3-4, first fully dynamic chordal-graph algorithm.
-// Maintains clique characteristic vectors and a clique tree under permitted
-// updates. All four operations O(n) worst-case with O(1) linked-list link/cut.
+// LEGACY DENSE clique-node representation retained to support the internal
+// A2 Section 5.1 W matrix and its indexed comparison implementation.
+// It implements Ibarra (2008), Sections 3-4 updates in O(n) worst case,
+// but its constructor takes Omega(n^2) on empty graphs due to n-length
+// characteristic vectors. For the certified O(n+m) A1 preprocessing path,
+// use SparseIbarraChordalGraphA1 in mtp/sparse_ibarra_a1.hpp.
 class DynamicChordalGraph {
     friend class IndexedDynamicChordalGraph;
     friend class SleatorTarjanChordalGraphA2;
