@@ -2322,7 +2322,21 @@ Relevant exact results (uploaded PDF physical page / thesis page):
 intersection data can be initialized alongside Blair–Peyton,
 but Ibarra A2 calls `W(x,y)` for **arbitrary closest clique
 nodes** in an Insert-Query; storing only adjacent edge
-separators is not an O(1) replacement. Banerjee provides no
+separators is not an O(1) replacement.
+
+**Concrete insufficiency of neighboring edge *weights*:**
+consider a three-clique path. In example A its cliques are
+`{a,b,x}`, `{a,b,c}`, `{a,b,y}`, and in example B they
+are `{a,b,x}`, `{a,b,c}`, `{b,c,y}`. Both have
+intersection weights 2 and 2 on the two clique-tree
+edges, but the two endpoint cliques have intersection
+size 2 in A and size 1 in B. All listed cliques are
+maximal and satisfy the connected-subtree property.
+Thus the adjacent separator **cardinalities** do not
+determine a general `W(x,y)`; using full adjacent set
+differences to reconstruct it may require path work,
+for which Banerjee gives no worst-case O(1) A2 query
+theorem. Banerjee provides no
 published theorem transforming that restricted representation
 into A2's required general `W` interface and bounds.
 No A1/A2 preprocessing fix is established by this thesis.
