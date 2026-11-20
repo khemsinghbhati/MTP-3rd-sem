@@ -12,6 +12,7 @@
 \usepackage{enumitem}
 \usepackage{listings}
 \usepackage{graphicx}
+\usepackage{tikz}
 \hypersetup{colorlinks=true,linkcolor=blue!55!black,urlcolor=blue!55!black,citecolor=blue!55!black,pdftitle={Final MTP Technical Report: Fully Dynamic Chordal and Split Graphs},pdfauthor={Khem Singh}}
 \setlist{itemsep=2pt,topsep=4pt}
 \emergencystretch=2em
@@ -33,21 +34,23 @@
 \cfoot{\thepage}
 \renewcommand{\headrulewidth}{0.3pt}
 \lstset{basicstyle=\ttfamily\footnotesize,breaklines=true,frame=single,rulecolor=\color{black!25},columns=fullflexible,showstringspaces=false}
+% This is the main compilation target, with the full walkthrough in
+% MTP_IMPLEMENTATION_DETAILS.tex. Compile from the docs directory.
 \begin{document}
 \begin{titlepage}
 \centering
-\vspace*{24mm}
+\vspace*{17mm}
 {\Large \textbf{M.Tech Thesis Project (MTP)}}\\[8mm]
 {\huge\bfseries Implementation and Verification of\\[2mm]
 Fully Dynamic Algorithms for\\[2mm]
 Chordal and Split Graphs\par}
 \vspace{14mm}
-{\large Final Technical Report and Reproducibility Audit\par}
+{\large Comprehensive Implementation, Proof and Reproducibility Report\par}
 \vspace{11mm}
 {\large Department of Computer Science and Engineering\\
 Indian Institute of Technology Bhubaneswar\par}
-\vspace{13mm}
-\begin{tabular}{rl}
+\vspace{9mm}
+{\small\begin{tabular}{rl}
 Student name: & \textbf{Khem Singh}\\
 Roll number: & \textbf{25cs06004}\\
 Under the guidance of: & \textbf{Dr. Manas Jyoti Kashyop}\\
@@ -56,7 +59,11 @@ Implementation: & C++17, deterministic graph representation\\
 Audit date: & 21 November 2026\\
 Presentation: & 30 November 2026\\
 Frozen core: & \texttt{2bf723c2b3b57a6b532058f21742b8125292852a}
-\end{tabular}
+\end{tabular}}\par
+\vspace{10mm}
+{\normalsize\bfseries Complete C++ source code, tests and documentation}\par
+\vspace{2mm}
+{\small\href{https://github.com/khemsinghbhati/MTP-3rd-sem}{\nolinkurl{https://github.com/khemsinghbhati/MTP-3rd-sem}}}\par
 \vfill
 \begin{minipage}{0.88\textwidth}
 \small\noindent\textbf{Integrity statement.} This report differentiates (i) claims appearing in the published paper, (ii) bounds established for the concrete implementation, (iii) passing functional tests, and (iv) proof obligations that still depend on published data-structure invariants. In particular, the paper's \(O(m+n\log n)\) A2 preprocessing claim is \emph{not achieved} by the frozen implementation. No new chordal graph algorithm is attributed to Ibarra or to other authors without source support.
@@ -234,6 +241,8 @@ A separately rerun Python audit (random seed 17) checked 406 chordal-graph insta
 \item \href{https://github.com/khemsinghbhati/MTP-3rd-sem/actions/runs/44811326833}{ST83/BST85 validation run 44811326833}.
 \item \href{https://github.com/khemsinghbhati/MTP-3rd-sem/pull/3}{Unmerged R1 research constructor, PR \#3}.
 \end{itemize}
+
+\input{MTP_IMPLEMENTATION_DETAILS.tex}
 
 \section{Final audit outcome and remaining limitations}\label{sec:repro}
 \begin{enumerate}
