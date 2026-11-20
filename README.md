@@ -68,19 +68,20 @@ cache, and scheduling; they are **empirical observations, not proofs** of
 worst-case time bounds. Benchmark results must be compared against the
 published bounds and the actual data structures used.
 
-**Research limitation:** An experimental Section 5 variant now supports
-logarithmic-squared path-based insertion queries and O(n) update operations
-using a size-partitioned heavy-path index rebuilt after each update. The
-core query and intersection-weight update decisions follow Ibarra, while
-the size-partition condition follows Sleator–Tarjan (1983), Section 5.
-The rebuild policy does **not** implement the required worst-case O(log n)
-dynamic-tree link/cut primitives; therefore A2 and A2+ are not certified
-as faithfully reproduced. The exact implementation remains pending.
+**Current research status:** Production A2/A2+ uses the published ST83
+globally biased dynamic-tree representation; its double-clique absorption
+insertion uses BST85 linear construction of that same forest (report
+Section 15). The older heavy-path approach remains a separate experimental
+comparison, **not** the accepted A2 algorithm. Formal invariant review
+remains appropriate.
 
-Previously documented limitation: Section 5's worst-case logarithmic dynamic tree
-remains absent. Source inspection also found potentially inconsistent
-A2 preprocessing accounting between Ibarra Sections 5.1 and 7,
-documented in the single report rather than silently resolved.
+**Unresolved published-bound discrepancy:** Ibarra Section 5.1 explicitly
+requires a dense n-by-n weight matrix and describes initial construction
+in O(n^3), or O(mn) via edge insertions. Section 7 nevertheless lists
+A2 preprocessing O(m+n log n), incompatible with the literal matrix
+on an empty graph. The A1 characteristic vectors similarly require
+Theta(nk) initialization for k maximal cliques. See Section 16
+for the source-by-source audit and strict acceptance requirements.
 
 ## Current implementation status
 
@@ -94,8 +95,8 @@ documented in the single report rather than silently resolved.
 | Section 3: Delete-Query / Insert-Query | Implemented, $O(n)$ each (first version) |
 | Section 3: Delete / Insert (incremental updates) | Implemented, $O(n)$ each (first version) |
 | Section 4: $O(n)$ per dynamic operation | Implemented and tested |
-| Section 5 experimental indexed path query | Implemented; O(log² n) Insert-Query, but uses full O(n) heavy-path rebuilds instead of worst-case dynamic-tree primitives |
-| Section 5: exact worst-case Sleator–Tarjan dynamic tree | **Pending — publication-faithful requirement not yet met** | 
+| Experimental heavy-path index (non-A2 baseline) | Retained for comparison; not the published A2 dynamic tree |
+| Section 5: ST83 worst-case globally biased dynamic tree | Implemented; source-backed O(n) insertion repair in Section 15; final independent code-to-proof audit remains | 
 | Section 6: modified-Yellin fast deletion query | Implemented; $O(\sqrt m)$ query and $O(m+n)$ updates | 
 | Section 8: dynamic split graph + clique/chromatic/independence/cover numbers | Implemented; $O(1)$ queries and valid updates |
 
@@ -186,7 +187,7 @@ separate reference/archive folder.
 via `src/clique_tree_blair_peyton.cpp`; the earlier provisional
 elimination-forest contraction is not used in production. Ibarra
 Sections 3–4 and 6 and 8 are explicitly mapped to code and tests in
-`docs/MTP_REPORT.md`. The Section 5 optimized dynamic tree is **not yet implemented**.
+`docs/MTP_REPORT.md`. The Section 5 ST83-based dynamic tree is implemented, with formal certification and initialization complexity separately documented.
 
 ## Mathematical notation and report policy
 
@@ -198,4 +199,4 @@ w(i,j)=|K_i\cap K_j|
 
 All developments must update the single file `docs/MTP_REPORT.md` with: source section, definition, algorithm, correctness argument, complexity, worked example, tests, and limitations.
 
-**Scope and complexity limitation:** The published Blair–Peyton clique tree itself is built in $O(n+m)$ time. The concrete dynamic-class constructor also allocates an n-bit-like (byte-vector) characteristic vector for each maximal clique, costing $\Theta(nk)$ for k cliques; it cannot honestly claim end-to-end linear initialization on sparse stars. The first four update operations are $O(n)$ each; the Section 6 optional fast index provides $O(\sqrt m)$ deletion queries. Completing the paper's Section 5 **worst-case** dynamic-tree structure and comparing empirical scaling remain mandatory.
+**Scope and complexity limitation:** The published Blair–Peyton clique tree itself is built in $O(n+m)$ time. The concrete dynamic-class constructor also allocates an n-bit-like (byte-vector) characteristic vector for each maximal clique, costing $\Theta(nk)$ for k cliques; it cannot honestly claim end-to-end linear initialization on sparse stars. The first four update operations are $O(n)$ each; the Section 6 optional fast index provides $O(\sqrt m)$ deletion queries. The remaining tasks are independent proof-level verification, preprocessing reconciliation under Section 16's acceptance gate, and empirical scaling.
