@@ -8,13 +8,16 @@
 > of the SAME ST83 forest**. Ibarra did not explicitly prescribe
 > the full-forest rebuild schedule, so that source-supported refinement
 > is disclosed rather than presented as literal pseudocode.
-> **Important:** the Section 7 preprocessing-table discrepancy for dense
-> W and characteristic vectors remains independently documented.
+> **Important:** Sections 1–14 contain dated historical audit snapshots and
+> must not be interpreted as overriding Section 15. Section 16 (the newest
+> source audit) proves that the literal dense representation cannot meet the
+> Section 7 preprocessing-table bounds and documents the published methods
+> checked. No source-faithful faster preprocessing implementation is certified.
 
 **Project:** Chordal Graphs: Foundations, Maximal Cliques, Clique Trees, and Dynamic Algorithms  
 **Student:** Khem Singh  
 **Program:** M.Tech, Computer Science and Engineering, IIT Bhubaneswar  
-**Report updated:** November 19, 2026  
+**Report updated:** November 20, 2026  
 **End-semester presentation:** November 30, 2026  
 **Primary target literature:** Louis Ibarra (2008), *Fully Dynamic Algorithms for Chordal Graphs and Split Graphs*, ACM Transactions on Algorithms, 4(4), 40:1–40:20, DOI 10.1145/1383369.1383371.
 
@@ -2108,6 +2111,147 @@ solve that separate source/preprocessing discrepancy.
   `tests/test_clique_tree.cpp`.
 - **Reproducible build and CI:** `CMakeLists.txt` and
   `.github/workflows/ci.yml`.
+
+---
+
+## 16. Primary-source reconciliation of preprocessing — November 20, 2026
+
+### 16.1 Scope and exact published claims
+
+This audit distinguishes **an original paper's claimed bound** from
+**a proved bound for the actual representation**. It is not an alternative
+algorithm implementation. The user's no-substitutes rule is binding.
+
+Ibarra (2008), *Fully Dynamic Algorithms for Chordal Graphs and Split
+Graphs*, ACM Transactions on Algorithms 4(4), Article 40:
+
+- **Section 7**, printed page 40:17: A1 preprocessing
+  `O(m+n)`, A2 preprocessing `O(m+n log n)`, and A1+/A2+
+  preprocessing `O(mn+n^2)`.
+- **Section 5.1**, printed page 40:13: for A2 the paper explicitly
+  maintains an **n by n matrix** `W(x,y)=|K_x intersect K_y|`.
+  It states that computing the initial matrix by comparing every
+  pair of maximal cliques costs `O(n^3)`. The offered alternate
+  initialization starts from an empty graph and performs all m
+  reverse-PEO edge insertions, costing `O(mn)`.
+- **Sections 3–4** explicitly represent each maximal clique using
+  a length-n characteristic vector, with constant-time membership.
+- Ibarra's 2001 PhD thesis, *Dynamic Algorithms for Chordal and
+  Interval Graphs*, University of Victoria, Section 2.5.1 (printed
+  page 28–29), also explicitly states that computing the dense W
+  dominates preprocessing by `O(n^3)`. The earlier author source
+  confirms the dense-matrix cost rather than providing a faster
+  replacement.
+
+Primary source links:
+
+- Published article DOI: https://doi.org/10.1145/1383369.1383371
+- 2001 author thesis: https://dspace.library.uvic.ca/bitstreams/174b0bfe-c154-4896-b114-a88441d79e29/download
+
+### 16.2 Concrete worst-case witness: empty graph
+
+Let `G` be the empty graph with n vertices and m=0. Its n
+maximal cliques are singleton sets, so `k=n`. The literal
+current C++ representation initializes:
+
+1. n characteristic vectors of length n, i.e. **n squared byte
+   entries** in `DynamicChordalGraph::DynamicChordalGraph`.
+2. `W_` with `(n+2)^2` integer entries in
+   `SleatorTarjanChordalGraphA2::initialize_weights`.
+
+Thus actual initialization has a lower bound of:
+
+```math
+T_{A1}(n,0)=\Omega(n^2),\qquad
+T_{A2}(n,0)=\Omega(n^2).
+```
+
+For this same graph, the Section 7 numbers would be
+`O(n)` for A1 and `O(n log n)` for A2. These are incompatible
+as n grows. This is an **asymptotic counterexample for a
+literal initialized dense representation**, not a timing estimate.
+
+A faster MCS or Blair–Peyton constructor does not remove these
+costs: it builds the clique tree itself in `O(m+n)`, not all
+the dense characteristic-vector and W entries.
+
+The precise limitation is conditional: this does **not** prove that
+no other representation or algorithm could achieve the table's
+bounds. It proves the table's bounds are unattainable by initializing
+the full, explicitly dense structures currently implemented.
+
+### 16.3 Why the paper's reverse-PEO alternative does not fix it
+
+The reverse-PEO route in Section 5.1 makes every intermediate
+graph chordal, but it performs m individual `Insert` operations.
+Charging each by the paper's worst-case `O(n)` yields
+`O(mn)` construction, not `O(m+n log n)` on general graphs.
+The paper itself states `O(mn)` for this alternative.
+
+For the current C++ A2 constructor, the actual work includes
+the dense initial representations, dynamic-tree initialization,
+then m published reverse-PEO updates. The previous Section 14.5
+conservative `O(n^2 + mn log n)` upper-bound accounting remains
+valid as an implementation-oriented upper bound, but is not
+claimed tight. There is **no** verified `O(m+n log n)`
+end-to-end constructor in the repository.
+
+### 16.4 Later publication search and source-fidelity gate
+
+A relevant later source, Banerjee, Raman and Satti,
+*Maintaining Chordal Graphs Dynamically: Improved Upper and Lower
+Bounds*, CSR 2018, DOI:
+https://doi.org/10.1007/978-3-319-90530-3_4,
+provides different chordal-maintenance results focused on
+decremental edge updates. Its published talk explicitly labels
+the results as decremental. This does not give a drop-in
+initialization of Ibarra's exact fully dynamic Section 5.1 W
+structure with the four A2 operation bounds. Other papers
+with faster individual chordal operations must likewise not
+be represented as having repaired the specific W initialization.
+
+**Acceptance gate (NOT PASSED):** to replace current preprocessing,
+a *published, checked* method must establish all of:
+
+1. Construct the intended maintained structure on an **arbitrary
+   chordal input graph** in worst-case `O(m+n log n)` (and A1
+   in `O(m+n)` where claimed), accounting for graph loading
+   and every allocated/initialized member.
+2. Preserve Ibarra A2's **worst-case `O(1)` weight lookup** used in
+   the `O(log^2 n)` insertion query and **`O(n)` weight-update**
+   work (and its remaining published operation bounds).
+3. Preserve constant-time clique-membership tests used inside
+   the original query bound, plus the actual Sleator–Tarjan
+   worst-case dynamic forest.
+4. State the precise source, theorem and computational model,
+   map it to production code, test it independently, and audit
+   memory plus total preprocessing work across sparse and
+   dense chordal inputs.
+
+No verified source satisfying these conditions was identified
+in this audit. Consequently **no substitute representation has
+been merged**, and the Section 7 preprocessing-table bound
+is **not certified**. Claiming it after simply removing the W
+matrix, caching values lazily, or deferring initialization would
+silently change the `O(1)` lookup obligation and would not
+meet the stated method requirement.
+
+### 16.5 Auditable conclusion
+
+- **A1 clique-tree preprocessing only:** Blair–Peyton
+  `O(m+n)` as previously tested.
+- **Complete A1 dynamic object:** the literal k length-n
+  characteristic vectors cost `\Theta(nk)` to initialize.
+- **Complete A2 dynamic object:** the literal W matrix
+  incurs at least `\Omega(n^2)` initialization even on m=0,
+  with additional reverse-PEO inserts.
+- **A2 insertion operations:** Section 15's separate
+  source-backed `O(n)` repair remains in place; this source
+  discrepancy concerns **initialization**, not that repair.
+- **Publication fidelity:** without a published replacement
+  meeting all above requirements, the correct outcome is
+  a documented source-vs-representation conflict, not an
+  unverified complexity claim.
 
 ---
 
