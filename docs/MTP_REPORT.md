@@ -2618,9 +2618,14 @@ published A2 with unchanged operation bounds.
 
 ### 18.5 Pending proof and CI gates
 
-1. Independently check C++ branch PR #3 against
-   exhaustive and random tests and adverse
-   initialization cases at its accepted commit.
+1. **Initial C++ CI gate PASSED** for R1 branch
+   commit 5eeef2bad800c5022669aa8f77f5f5d4e6e89604:
+   two GitHub Actions C++ verification runs passed
+   (runs 44806001144 and 44806107732).
+   This verifies existing repository regression tests,
+   not a final independent complexity certification.
+   Continue dedicated adversarial initialization
+   and proof-level auditing before merge.
 2. Implement and prove A1 incidence maintenance
    under repeated Delete/Insert, including node
    recycling and optional fast delete index.
