@@ -2111,5 +2111,119 @@ solve that separate source/preprocessing discrepancy.
 
 ---
 
+## Appendix A. Verified sparse A1 implementation — November 21, 2026
+
+### A.1 Source fidelity and public class
+
+The first Ibarra (2008), Sections 3–4, algorithm is now implemented in
+`SparseIbarraChordalGraphA1` (`include/mtp/sparse_ibarra_a1.hpp`,
+`src/sparse_ibarra_a1.cpp`), and used by the default
+`mtp_dynamic_cli` and the A1 benchmarking harness.
+
+The underlying chordality criteria, Blair–Peyton clique-tree
+construction, clique-tree edge exchange, split and contraction
+are identical to Ibarra's A1 method. Only the *incidence
+representation* changes: active clique x has a list of
+its member vertices; each vertex v has a doubly linked
+inverse list T_v of containing clique nodes with
+cross-pointers. Temporary O(n) mark arrays perform
+batched membership tests. This uses the familiar
+published sparse-set/linked-incidence technique rather
+than the eager n-vector-per-clique storage.
+The old dense `DynamicChordalGraph` is intentionally
+retained as the A2 and experimental indexed module's
+internal adapter, so A2's implementation is unaffected.
+
+### A.2 End-to-end preprocessing and space bound
+
+For an n-vertex chordal graph with m edges and maximal
+cliques K_1,...,K_c, c<=n, each maximal clique has a
+distinct earliest PEO vertex; all its other vertices
+are later neighbors of that vertex. Therefore:
+
+```math
+\sum_{i=1}^c |K_i|\le n+m.
+```
+
+MCS, PEO validation, Blair–Peyton weighted clique
+tree, and creation of clique membership lists,
+inverse lists, tree adjacency lists, and node IDs
+therefore require O(n+m) **total worst-case
+preprocessing and space**, for already represented
+graph input.
+
+To include loading an *arbitrary edge list* in this
+bound, `Graph::from_edges` (in `src/graph.cpp`)
+bucket-orders directed adjacency records by neighbor
+vertex ID, giving every adjacency list in sorted order.
+C++17 `std::set` range construction from sorted values
+then takes linear time; the loader rejects duplicates.
+The dynamic A1 CLI uses this bulk route. The legacy
+individual `Graph::add_edge` path can cost
+O(m log n) during ingestion, and is not used by
+the O(n+m) bulk-loading guarantee.
+
+### A.3 Worst-case dynamic operations
+
+- Delete-Query(u,v): O(n) inverse-incidence scan,
+  no matrix or hashing.
+- Insert-Query(u,v): O(n) multi-source BFS between
+  the connected clique subtrees T_u and T_v,
+  path-minimum scan and O(n) marked clique
+  intersection; exactly Ibarra's acceptance criterion.
+- Delete(u,v): O(n) maximum-clique split and
+  absorption, with O(n) inverse-list fixes
+  and O(n) constant-time tree link/cut operations.
+- Insert(u,v): O(n) tree-edge exchange,
+  generation of I=(K_x intersect K_y),
+  and at most O(n) rerouting during absorption.
+
+These are **worst-case per operation**, with
+deterministic O(log n) graph adjacency membership
+and O(n) worst-case graph edge removal.
+The optional Ibarra A1+ fast deletion-query index
+retains its separately charged initialization
+and update costs; it is not part of A1's base
+preprocessing bound.
+
+### A.4 Evidence and certification limits
+
+`tests/test_sparse_ibarra_a1.cpp` and
+`tests/test_sparse_ibarra_a1_fast.cpp` repeat
+the exhaustive small-chordal oracle and 200 seeded
+random valid update-sequence tests.
+`tests/test_sparse_a1_stress.cpp` independently
+compares sparse versus the previous dense A1 on
+stars and complete graphs, verifies O(n+m)
+stored incidence on every update, checks empty
+graphs up to n=3000, and tests Graph::from_edges
+against incremental adjacency. The full CI
+regression suite passed on the research branch.
+See `docs/A1_LINEAR_PREPROCESSING.md` for
+reproducible source-to-code and detailed proofs.
+
+This is a **source-backed representation refinement
+of Ibarra A1**, not a claim that Ibarra supplied
+the particular sparse implementation.
+
+### A.5 Explicit A2 exception
+
+The paper's Section 7 A2 preprocessing
+O(m+n log n) has **NOT been achieved as claimed**,
+because Ibarra's Section 5.1 full W matrix has
+quadratic initialization and additional weight
+construction costs. A2's source-based ST83/BST85
+O(n) insertion repair is separate from, and does
+not resolve, the preprocessing discrepancy.
+
+The R1 direct initial-W constructor is a separate
+tested research prototype (draft PR #3), with
+corrected upper bound
+O(n+m+n^2+sum_v |T_v|^2),
+not the Section 7 target. It must not be mistaken
+for an achieved O(m+n log n) constructor.
+
+---
+
 *End of current report snapshot. Future work should be appended to the
 relevant sections of this same report, with explicit dates and evidence.*
