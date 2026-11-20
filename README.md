@@ -1,5 +1,16 @@
 # MTP End-Semester — Chordal Graphs and Dynamic Clique Trees
 
+> **CORE FROZEN (21 November 2026).** Algorithm source is fixed at
+> `2bf723c2b3b57a6b532058f21742b8125292852a` and preserved under
+> `freeze/core-2026-11-21`. The final academic submission is
+> **[`docs/MTP_FINAL_REPORT.tex`](docs/MTP_FINAL_REPORT.tex)**, a
+> compilable LaTeX report. The short [final proof/correctness audit]
+> (docs/FINAL_AUDIT_2026-11-21.md) is authoritative for implementation
+> guarantees. The original A2 Section 7 `O(m+n log n)`
+> preprocessing bound is **NOT achieved**; the code takes
+> `O(n^2+mn)` preprocessing. The long development log is historical.
+
+
 **M.Tech CSE | IIT Bhubaneswar | End-semester presentation: November 30, 2026**
 
 Private working repository implementing Louis Ibarra's *Fully Dynamic Algorithms for Chordal Graphs and Split Graphs* (2008, DOI 10.1145/1383369.1383371). **The paper's methods and asymptotic bounds are requirements.** Blair–Peyton clique-tree preprocessing and a **sparse A1 implementation with O(n+m) preprocessing and O(n) worst-case dynamic operations** are implemented; the optional fast deletion-query index and split-graph algorithm are also available. Section 5's worst-case Sleator–Tarjan dynamic tree is implemented and tested; **the source-backed O(n) insertion repair is proved in Section 15**, while the paper's stronger preprocessing-table claim remains inconsistent with its explicitly dense W representation.
@@ -10,7 +21,10 @@ Private working repository implementing Louis Ibarra's *Fully Dynamic Algorithms
 - `src/` — published-source-aligned algorithms and CLIs. The quadratic clique-graph/Kruskal implementations are compiled only into the **test baseline** library.
 - `tests/` — exhaustive, randomized, and independent small-graph verification.
 - `data/` — example input graphs.
-- `docs/MTP_REPORT.md` — **evolving detailed technical report**.
+- `docs/MTP_FINAL_REPORT.tex` — **authoritative final submission** (LaTeX), with build instructions in `docs/REPORT_BUILD.md`.
+- `docs/FINAL_AUDIT_2026-11-21.md` — frozen proof, complexity, correctness and provenance audit.
+- `docs/MTP_REPORT.md` — dated **historical development log**, not the final summary.
+- `audit/` — independently reproducible chordal-graph, matrix-update and BMM-reduction checks.
 - `docs/A1_LINEAR_PREPROCESSING.md` — **sparse A1 implementation, exact operations, proof and regression evidence**.
 - `scripts/check_markdown_math.py` — structural check for GitHub's math rendering conventions.
 - `.github/workflows/ci.yml` — automated build and test workflow.
