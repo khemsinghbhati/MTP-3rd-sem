@@ -2478,5 +2478,161 @@ the four reviewed files.
 
 ---
 
+## 18. Independent audit of uploaded Claude report — November 21, 2026
+
+**Status:** independently checked research argument, NOT an original published
+chordal-graph theorem and NOT a certified resolution of Ibarra Section 7.
+This section incorporates the user-supplied 30-page report
+*Preprocessing Complexity of Ibarra's Fully Dynamic Chordal Graph
+Algorithms*, its Python verification scripts and R1 patch.
+It is separate from published sources in Sections 15–17.
+
+### 18.1 Boolean matrix multiplication (BMM) reduction: conditional barrier
+
+Given Boolean u by u matrices A,B, form a chordal graph as follows.
+
+1. The central clique U contains sets E={e_1,...,e_u},
+   D={d_1,...,d_u}, F={f_1,...,f_u}, hence |U|=3u.
+2. For each row i, attach a simplicial leaf p_i adjacent to
+   R_i={e_k:A_ik=1} together with the first
+   u-|{k:A_ik=1}| vertices of D. Hence |R_i|=u.
+3. For each column j, attach a simplicial leaf q_j
+   adjacent to Q_j={e_k:B_kj=0} union D together with
+   the first u-|{k:B_kj=0}| vertices of F.
+   Hence |Q_j|=2u.
+4. There are 5u vertices and Theta(u^2) edges, constructed
+   in O(u^2) time. Eliminating all p_i,q_j and then
+   the central clique is a PEO, so the graph is chordal.
+
+An insertion (p_i,q_j) preserves chordality iff R_i is
+a subset of Q_j:
+
+- If inclusion holds, the new neighborhood
+  R_i union {q_j} is a clique; p_i is still simplicial,
+  and removing it leaves a chordal graph.
+- If inclusion fails, choose r in R_i\\Q_j and
+  s in Q_j\\R_i (possible because |Q_j|>|R_i|).
+  Then p_i-r-s-q_j-p_i is an induced chordless 4-cycle.
+
+By construction, R_i is contained in Q_j iff no
+k satisfies A_ik=B_kj=1. Thus Insert-Query(p_i,q_j)
+returns YES iff (Boolean AB)_ij=0.
+
+For any hypothetical preprocess P(n,m) and
+Insert-Query Q(n), this yields:
+
+```math
+T_{BMM}(u)=O(u^2+P(5u,\\Theta(u^2))+u^2 Q(5u)).
+```
+
+In particular, the A2 Section 7 preprocessing
+O(m+n log n) and Section 5 worst-case Insert-Query
+O(log^2 n) would together imply O(u^2 log^2 u)
+Boolean matrix multiplication. This is a **valid
+conditional reduction**, not an unconditional lower
+bound: a near-quadratic BMM algorithm is not known
+to be impossible. The reduction and its test code
+are independent audit work, not a theorem sourced
+from Ibarra or another published paper. It must
+not be attributed to those authors.
+
+A sparse-graph corollary can be obtained by adding
+u^2 isolated vertices, producing n'=Theta(u^2),
+m=Theta(u^2)=Theta(n'). The padded instance no longer
+has 5u vertices, but leads to the same u^2-polylog(u)
+conclusion if the hypothetical guarantees are
+uniform for arbitrary chordal graphs.
+
+### 18.2 Independently executed Python checks
+
+From the user-supplied `verify(2).py`,
+`w_updates(3).py`, without modifying their logical
+tests, Python/networkx 3.6.1 passed:
+
+- 406 chordal-graph cases, 4,054 insertion queries,
+  150 randomized BMM reductions (1,768 queries).
+- Ibarra W-insert formulas on 1,171 insertion cases
+  and deletion formulas on 5,895 cases.
+- Additionally, an independently executed exhaustive
+  u=2 BMM check examined all 256 ordered pairs of
+  Boolean 2 by 2 matrices and 1,024 insertion queries.
+
+These are evidence of functional correctness of
+the tested reduction/formulas, **not** worst-case
+proofs or independent C++ validation.
+
+### 18.3 A1 repair status and source standards
+
+The uploaded report proposes replacing each length-n
+clique characteristic vector with:
+
+- a member list for each maximal clique;
+- inverse per-vertex lists of containing clique IDs;
+- O(n) scratch mark arrays.
+
+The incidence bound `sum_K |K| <= m+n`
+follows from distinct earliest vertices in a PEO.
+Therefore the proposed **data representation** has
+linear initial size. A1 operations can use batched
+marking and O(n)-time scans. However no production
+implementation or independent invariant audit for
+the A1 conversion exists yet. The proposed repair is
+**theoretical**, not marked code-complete. Its relation
+to standard published clique-incidence and sparse-set
+techniques must be documented before final acceptance.
+
+The existing input Graph is still built through
+per-edge std::set insertions, so O(m+n) end-to-end
+input construction must be accounted for separately
+or replaced by a verified sorted-range constructor.
+
+### 18.4 R1 A2 research constructor (strictly a corrected bound)
+
+A separate draft PR #3 proposes an isolated
+replacement of the **initial A2 constructor**:
+
+https://github.com/khemsinghbhati/MTP-3rd-sem/pull/3
+
+It uses Blair–Peyton's initial clique tree and
+the elementary identity
+
+```math
+W(x,y)=\\sum_{v\\in V}[v\\in K_x][v\\in K_y].
+```
+
+For each vertex v let T_v be the list of cliques
+containing it; increment W[x][y] for every ordered
+pair (x,y) in T_v by one. This computes the same
+Ibarra Section 5.1 matrix, with initialization
+`O(n^2 + sum_v |T_v|^2 + n+m)` (excluding
+input edge ingestion). The ST forest is built
+with the already implemented ST83/BST85 linear
+constructor. **The original O(m+n log n)
+preprocessing claim is NOT achieved.**
+
+The alternative R2 drops W, computes the desired
+intersection on demand, and retains fast
+preprocessing at the cost of worst-case O(n)
+Insert-Query; it therefore cannot be called
+published A2 with unchanged operation bounds.
+
+### 18.5 Pending proof and CI gates
+
+1. Independently check C++ branch PR #3 against
+   exhaustive and random tests and adverse
+   initialization cases at its accepted commit.
+2. Implement and prove A1 incidence maintenance
+   under repeated Delete/Insert, including node
+   recycling and optional fast delete index.
+3. Keep the independently derived BMM reduction
+   explicitly labeled **unpublished and conditional**;
+   verify novelty/precedence before making a
+   research novelty claim.
+4. Do NOT merge a claimed A2 O(m+n log n)
+   constructor or call R2 source-faithful without
+   a published, full complexity proof.
+
+---
+
 *End of current report snapshot. Future work should be appended to the
 relevant sections of this same report, with explicit dates and evidence.*
