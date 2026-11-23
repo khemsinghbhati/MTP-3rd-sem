@@ -1,32 +1,33 @@
-# Final LaTeX report build
+# Build the final MTP report (105-page revised Claude edition)
 
-The **authoritative submission** is the now **37-page comprehensive technical report**, built from the main file
-[`MTP_FINAL_REPORT.tex`](MTP_FINAL_REPORT.tex) **and** its included detailed implementation chapter
-[`MTP_IMPLEMENTATION_DETAILS.tex`](MTP_IMPLEMENTATION_DETAILS.tex).
-The report includes a clickable GitHub repository link on its cover. Both LaTeX files must be present in the same `docs/` directory.
-The PDF is generated from this LaTeX source. The report freezes
-all `src/` and `include/` code at
-`2bf723c2b3b57a6b532058f21742b8125292852a` and explicitly
-marks A2's Section 7 preprocessing target as **not achieved**.
+The authoritative final source is **`docs/MTP_FINAL_REPORT.tex`**. It is a standalone LaTeX document with no external figures or required `\input{}` files. The old `docs/MTP_IMPLEMENTATION_DETAILS.tex` remains in Git history and in the repository only as a companion for the previous 37-page edition; **do not include it in this new report**.
+
+The first page contains the public GitHub repository link, student details, and the preserved frozen-code commit. The two signature-page dates are intentionally blank for student/supervisor review. The original A2 `O(m+n log n)` preprocessing target remains explicitly marked **not achieved**.
 
 On Ubuntu:
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y texlive-latex-base texlive-latex-recommended texlive-fonts-recommended texlive-pictures
+sudo apt-get install -y texlive-latex-base texlive-latex-recommended \
+  texlive-latex-extra texlive-pictures texlive-science \
+  texlive-fonts-recommended
 cd docs
+pdflatex -interaction=nonstopmode -halt-on-error MTP_FINAL_REPORT.tex
 pdflatex -interaction=nonstopmode -halt-on-error MTP_FINAL_REPORT.tex
 pdflatex -interaction=nonstopmode -halt-on-error MTP_FINAL_REPORT.tex
 ```
 
-Expected file: `docs/MTP_FINAL_REPORT.pdf`. The expanded two-file report was compiled twice with `pdflatex` locally during final report preparation on 21 November 2026 (37 A4 pages; cross-references resolved, representative pages visually checked). GitHub Actions also builds and
-uploads the PDF as a workflow artifact.
+Output: `docs/MTP_FINAL_REPORT.pdf` (A4, approximately 105 pages).
 
-The longer `MTP_REPORT.md` is the historical detailed
-development record. The final audit summary is
-[`FINAL_AUDIT_2026-11-21.md`](FINAL_AUDIT_2026-11-21.md).
+## Raw performance evidence
 
-Independent research checks are reproducible using:
+`benchmarks/results/2026-11-23/` contains the original seven CSVs used in Chapter 12, a second benchmark run, the experimental-machine description (`ENVIRONMENT.md`), a reproducible `run_benchmarks.sh` and a byte-preserved copy of the user-supplied archive. Timing values are single-run measurements or within-run per-operation means. The second-run values are useful for assessing variability but **not** a formal complexity proof. See `README_AUDIT.md`.
+
+## Verification
+
+The GitHub Actions `final-mtp-audit.yml` recompiles this LaTeX source, uploads a PDF artifact and verifies that `src/` and `include/` are byte-for-byte unchanged since commit `2bf723c2b3b57a6b532058f21742b8125292852a`. The separate C++ workflow runs the regression suite.
+
+For independent mathematical audit scripts:
 
 ```bash
 python -m pip install -r audit/requirements.txt
@@ -34,6 +35,4 @@ python audit/verify_chordal_identities.py 17
 python audit/verify_w_updates.py
 ```
 
-The core algorithms remain frozen; changes to them require
-a new audit baseline and fresh verification, not an edit to the
-existing report's claims.
+A signed certificate is not present; the provided certificate is a draft awaiting the supervisor's review.
