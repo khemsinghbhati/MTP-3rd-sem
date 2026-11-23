@@ -18,7 +18,7 @@ Public GitHub repository implementing Louis Ibarra's *Fully Dynamic Algorithms f
 
 ## AI Assistance Declaration
 
-AI assistance was used to identify relevant resources and research papers, better understand their methods, and support implementation, testing, and documentation. The resulting work was reviewed by a human reviewer against the research paper's requirements. Any departures from its published guarantees, including the A2 preprocessing bound, are explicitly documented.
+AI assistance was used to identify relevant resources and research papers, better understand their methods, and support implementation, testing, and documentation. The project work was verified by a human reviewer against the research paper's requirements. Any deviations from the paper's published guarantees, including the A2 preprocessing bound, are explicitly documented.
 
 ## Project structure
 
