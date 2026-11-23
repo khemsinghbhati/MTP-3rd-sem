@@ -4,8 +4,7 @@
 > `2bf723c2b3b57a6b532058f21742b8125292852a` and preserved under
 > `freeze/core-2026-11-21`. The final academic submission is
 > **[`docs/MTP_FINAL_REPORT.tex`](docs/MTP_FINAL_REPORT.tex)**, a
-> **37-page comprehensive LaTeX report** that includes
-> **[`docs/MTP_IMPLEMENTATION_DETAILS.tex`](docs/MTP_IMPLEMENTATION_DETAILS.tex)**. The short [final proof/correctness audit]
+> **105-page standalone LaTeX report** (revised 23 November 2026). The short [final proof/correctness audit]
 > (docs/FINAL_AUDIT_2026-11-21.md) is authoritative for implementation
 > guarantees. The original A2 Section 7 `O(m+n log n)`
 > preprocessing bound is **NOT achieved**; the code takes
