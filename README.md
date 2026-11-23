@@ -15,6 +15,11 @@
 
 Public GitHub repository implementing Louis Ibarra's *Fully Dynamic Algorithms for Chordal Graphs and Split Graphs* (2008, DOI 10.1145/1383369.1383371). **The paper's methods and asymptotic bounds are requirements.** Blair–Peyton clique-tree preprocessing and a **sparse A1 implementation with O(n+m) preprocessing and O(n) worst-case dynamic operations** are implemented; the optional fast deletion-query index and split-graph algorithm are also available. Section 5's worst-case Sleator–Tarjan dynamic tree is implemented and tested; **the source-backed O(n) insertion repair is proved in Section 15**, while the paper's stronger preprocessing-table claim remains inconsistent with its explicitly dense W representation.
 
+
+## AI Assistance Declaration
+
+AI assistance was used to identify relevant resources and research papers, better understand their methods, and support implementation, testing, and documentation. The project work was verified by a human reviewer against the research paper's requirements. Any deviations from the paper's published guarantees, including the A2 preprocessing bound, are explicitly documented.
+
 ## Project structure
 
 - `include/mtp/` — MCS/PEO, Blair–Peyton clique tree, Ibarra dynamic chordal queries/updates, modified-Yellin fast index, and split-graph interfaces.

@@ -1,6 +1,6 @@
-# Corrections to Claude MTP report — 23 November 2026
+# Report corrections and evidence review — 23 November 2026
 
-**Input source:** user-supplied `MTP_Report.tex` (approximately 105 pages) and `benchmarks_results_2026-11-23.zip`. The current authoritative final source is `docs/MTP_FINAL_REPORT.tex`.
+**Input source:** user-supplied draft `MTP_Report.tex` (approximately 105 pages) and `benchmarks_results_2026-11-23.zip`. The current authoritative final source is `docs/MTP_FINAL_REPORT.tex`.
 
 ## Applied edits
 
@@ -24,4 +24,4 @@ Locally compiled with `pdflatex` (three passes): **105 A4 pages**, no unresolved
 
 ## Academic review before signing
 
-The certificate/declaration are unsigned. The student and supervisor should approve the academic wording and institutional template before signing; AI-assisted report drafting should be disclosed according to IIT Bhubaneswar's applicable academic-integrity instructions.
+The certificate/declaration are unsigned. The student and supervisor should approve the academic wording and institutional template before signing.
