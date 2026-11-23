@@ -1,0 +1,13 @@
+case,n,maximum_clique_tree_degree,central_u_degree,central_v_degree,st_links,st_cuts,st_total_calls
+star,12,10,0,0,0,0,0
+star,24,22,0,0,0,0,0
+star,48,46,0,0,0,0,0
+star,96,94,0,0,0,0,0
+star,192,190,0,0,0,0,0
+star,384,382,0,0,0,0,0
+double_star,13,6,6,2,0,0,0
+double_star,23,11,11,2,0,0,0
+double_star,43,21,21,2,0,0,0
+double_star,83,41,41,2,0,0,0
+double_star,163,81,81,2,0,0,0
+double_star,323,161,161,2,0,0,0

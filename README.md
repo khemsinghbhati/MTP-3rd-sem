@@ -4,27 +4,27 @@
 > `2bf723c2b3b57a6b532058f21742b8125292852a` and preserved under
 > `freeze/core-2026-11-21`. The final academic submission is
 > **[`docs/MTP_FINAL_REPORT.tex`](docs/MTP_FINAL_REPORT.tex)**, a
-> **37-page comprehensive LaTeX report** that includes
-> **[`docs/MTP_IMPLEMENTATION_DETAILS.tex`](docs/MTP_IMPLEMENTATION_DETAILS.tex)**. The short [final proof/correctness audit]
+> **105-page standalone LaTeX report** (revised 23 November 2026). The short [final proof/correctness audit]
 > (docs/FINAL_AUDIT_2026-11-21.md) is authoritative for implementation
 > guarantees. The original A2 Section 7 `O(m+n log n)`
 > preprocessing bound is **NOT achieved**; the code takes
 > `O(n^2+mn)` preprocessing. The long development log is historical.
 
 
-**M.Tech CSE | IIT Bhubaneswar | End-semester presentation: November 30, 2026**
+**M.Tech CSE | IIT Bhubaneswar | Third-semester MTP**
 
-Private working repository implementing Louis Ibarra's *Fully Dynamic Algorithms for Chordal Graphs and Split Graphs* (2008, DOI 10.1145/1383369.1383371). **The paper's methods and asymptotic bounds are requirements.** Blair–Peyton clique-tree preprocessing and a **sparse A1 implementation with O(n+m) preprocessing and O(n) worst-case dynamic operations** are implemented; the optional fast deletion-query index and split-graph algorithm are also available. Section 5's worst-case Sleator–Tarjan dynamic tree is implemented and tested; **the source-backed O(n) insertion repair is proved in Section 15**, while the paper's stronger preprocessing-table claim remains inconsistent with its explicitly dense W representation.
+Public GitHub repository implementing Louis Ibarra's *Fully Dynamic Algorithms for Chordal Graphs and Split Graphs* (2008, DOI 10.1145/1383369.1383371). **The paper's methods and asymptotic bounds are requirements.** Blair–Peyton clique-tree preprocessing and a **sparse A1 implementation with O(n+m) preprocessing and O(n) worst-case dynamic operations** are implemented; the optional fast deletion-query index and split-graph algorithm are also available. Section 5's worst-case Sleator–Tarjan dynamic tree is implemented and tested; **the source-backed O(n) insertion repair is proved in Section 15**, while the paper's stronger preprocessing-table claim remains inconsistent with its explicitly dense W representation.
 
 ## Project structure
 
 - `include/mtp/` — MCS/PEO, Blair–Peyton clique tree, Ibarra dynamic chordal queries/updates, modified-Yellin fast index, and split-graph interfaces.
 - `src/` — published-source-aligned algorithms and CLIs. The quadratic clique-graph/Kruskal implementations are compiled only into the **test baseline** library.
 - `tests/` — exhaustive, randomized, and independent small-graph verification.
+- `benchmarks/results/2026-11-23/` — two archived benchmark runs, compiler/environment record, reproducible commands, and original uploaded ZIP.
 - `data/` — example input graphs.
-- `docs/MTP_FINAL_REPORT.tex` — **authoritative 37-page comprehensive final submission** (LaTeX master), with a clickable GitHub link on its first page.
-- `docs/MTP_IMPLEMENTATION_DETAILS.tex` — source-grounded explanation of each published algorithm and each major C++ implementation decision, including pseudocode, worked updates, ST83 internals, invariants, complexity and tests.
-- `docs/REPORT_BUILD.md` — reproducible two-file LaTeX build instructions.
+- `docs/MTP_FINAL_REPORT.tex` — **authoritative 105-page comprehensive report** (single-file LaTeX master), with a clickable GitHub link on its first page.
+- `docs/MTP_IMPLEMENTATION_DETAILS.tex` — archived companion to the previous 37-page edition (no longer required for the current report); source-grounded explanation of each published algorithm and each major C++ implementation decision, including pseudocode, worked updates, ST83 internals, invariants, complexity and tests.
+- `docs/REPORT_BUILD.md` — reproducible standalone LaTeX build instructions.
 - `docs/FINAL_AUDIT_2026-11-21.md` — frozen proof, complexity, correctness and provenance audit.
 - `docs/MTP_REPORT.md` — dated **historical development log**, not the final summary.
 - `audit/` — independently reproducible chordal-graph, matrix-update and BMM-reduction checks.
@@ -51,7 +51,7 @@ ctest --test-dir build --output-on-failure
 python3 scripts/check_markdown_math.py
 ~~~
 
-Private repository cloning requires GitHub authentication.
+The GitHub repository is public and can be cloned without authentication.
 
 **Expected example output:**
 
