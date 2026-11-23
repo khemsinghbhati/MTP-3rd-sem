@@ -1,4 +1,4 @@
-# Build the final MTP report (105-page revised Claude edition)
+# Build the final MTP report (revised 105-page edition)
 
 The authoritative final source is **`docs/MTP_FINAL_REPORT.tex`**. It is a standalone LaTeX document with no external figures or required `\input{}` files. The old `docs/MTP_IMPLEMENTATION_DETAILS.tex` remains in Git history and in the repository only as a companion for the previous 37-page edition; **do not include it in this new report**.
 
