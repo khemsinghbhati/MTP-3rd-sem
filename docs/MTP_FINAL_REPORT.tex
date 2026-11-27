@@ -45,6 +45,7 @@
   pdftitle={MTP Report: Fully Dynamic Algorithms for Chordal Graphs},
   pdfauthor={Khem Singh (25cs06004)},
   pdfsubject={Implementation of Ibarra (2008), ACM Transactions on Algorithms}]{hyperref}
+\usepackage{aliascnt}
 \usepackage[nameinlink,capitalise,noabbrev]{cleveref}
 
 %% ---------------------------------------------------------------------
@@ -94,15 +95,18 @@
 %% ---------------------------------------------------------------------
 \theoremstyle{plain}
 \newtheorem{theorem}{Theorem}[chapter]
-\newtheorem{lemma}[theorem]{Lemma}
-\newtheorem{proposition}[theorem]{Proposition}
-\newtheorem{corollary}[theorem]{Corollary}
-\newtheorem{claim}[theorem]{Claim}
+\newaliascnt{lemma}{theorem}\newtheorem{lemma}[lemma]{Lemma}\aliascntresetthe{lemma}
+\newaliascnt{proposition}{theorem}\newtheorem{proposition}[proposition]{Proposition}\aliascntresetthe{proposition}
+\newaliascnt{corollary}{theorem}\newtheorem{corollary}[corollary]{Corollary}\aliascntresetthe{corollary}
+\newaliascnt{claim}{theorem}\newtheorem{claim}[claim]{Claim}\aliascntresetthe{claim}
 \theoremstyle{definition}
-\newtheorem{definition}[theorem]{Definition}
-\newtheorem{example}[theorem]{Example}
+\newaliascnt{definition}{theorem}\newtheorem{definition}[definition]{Definition}\aliascntresetthe{definition}
+\newaliascnt{example}{theorem}\newtheorem{example}[example]{Example}\aliascntresetthe{example}
 \theoremstyle{remark}
-\newtheorem{remark}[theorem]{Remark}
+\newaliascnt{remark}{theorem}\newtheorem{remark}[remark]{Remark}\aliascntresetthe{remark}
+\crefname{lemma}{Lemma}{Lemmas}\crefname{proposition}{Proposition}{Propositions}
+\crefname{corollary}{Corollary}{Corollaries}\crefname{definition}{Definition}{Definitions}
+\crefname{example}{Example}{Examples}\crefname{remark}{Remark}{Remarks}
 \crefname{claim}{Claim}{Claims}
 
 %% ---------------------------------------------------------------------
@@ -3052,13 +3056,12 @@ children \(c\) and grandchildren \(g\):
 \item \(\mathrm{rank}(c)\le\mathrm{rank}(x)\), with strict inequality if \(c\) is a leaf
   (ST83 \S4, property~(ii));
 \item \(\mathrm{rank}(g)<\mathrm{rank}(x)\) (ST83 \S4, property~(ii));
-\item (\emph{global bias}, from BST85 as cited in the code) if
+\item (\emph{global bias}, from BST85, Section~4) if
   \(\mathrm{rank}(x)-\mathrm{rank}(c)\ge 2\), then the leaves immediately to the left and right
   of \(c\)'s subtree (in symmetric order) have rank at least \(\mathrm{rank}(x)-1\).
 \end{enumerate}
 Properties (B1)--(B3) give the depth bound of ST83 Lemma~2; (B4) is the additional condition
-that, according to the code's citation of BST85, makes worst-case concatenation and splitting
-possible.
+used by globally biased binary trees for worst-case concatenation and splitting (BST85 Section~4; ST83 Lemmas~6 and~7).
 
 \paragraph{Operations.}
 \begin{itemize}
@@ -3487,7 +3490,7 @@ worst-case structure, and a linear-time construction of globally biased trees th
 attributes to BST85 (\S4, Figure~15, Theorem~12) --- and the represented data structure is
 exactly the ST83 structure, not a different kind of dynamic tree. What changes is only the
 \emph{schedule} of maintenance in case 3. The \(O(n)\) bound for case 3 rests on the linear-time
-bound of that construction and on the C++ builder correctly realizing it; the measured step
+bound of that construction and on the C++ builder correctly realising it; the measured step
 counts (\cref{tab:two-hub}, \cref{fig:rebuild}) grow linearly, as it predicts. The means of
 meeting the paper's \(O(n)\) bound in case 3 is ours.
 \end{caution}
@@ -4455,7 +4458,7 @@ Computer Algorithms}. Addison-Wesley, 1974.
 asymmetry yields faster matrix multiplication. In \emph{Proc.\ ACM--SIAM Symposium on Discrete
 Algorithms (SODA)}, 2025. arXiv:2404.16349 (\(\omega<2.371339\)).
 
-\bibitem{openai2026} OpenAI. \emph{An Upper Bound of $9/4$ for the Matrix Multiplication Exponent}. Preprint, 2 October 2026. \url{https://github.com/openai/math/blob/main/preprints/Matrix-Multiplication-Nine-Fourths-October-2-2026/paper.pdf}. The result concerns exact arithmetic over $\mathbb{C}$.
+\bibitem{openai2026} OpenAI. \emph{An Upper Bound of $9/4$ for the Matrix Multiplication Exponent}. Preprint, 2 October 2026; the result concerns exact arithmetic over $\mathbb{C}$.\newline\url{https://github.com/openai/math/blob/main/preprints/Matrix-Multiplication-Nine-Fourths-October-2-2026/paper.pdf}.
 
 \bibitem{shpilka2026} A.~Shpilka. \emph{Exposition of OpenAI's Matrix Multiplication in Exponent $9/4$ (and an explicit algorithm)}. Electronic Colloquium on Computational Complexity, TR26-281, 2026. \url{https://eccc.weizmann.ac.il/report/2026/281/}.
 
@@ -4523,6 +4526,8 @@ hypergraphs. \emph{SIAM Journal on Computing}, 13(3):566--579, 1984.
 %% ---- begin expanded/15_appendix.tex ----
 %% =====================================================================
 \appendix
+\crefalias{chapter}{appendix}
+\crefname{appendix}{Appendix}{Appendices}
 \chapter{Build and Run Guide}\label{app:build}
 %% =====================================================================
 The implementation needs a C++17 compiler (tested with g++~13.3) and CMake~3.16 or newer; it has
