@@ -4,7 +4,7 @@
 > `2bf723c2b3b57a6b532058f21742b8125292852a` and preserved under
 > `freeze/core-2026-11-21`. The final academic submission is
 > **[`docs/MTP_FINAL_REPORT.tex`](docs/MTP_FINAL_REPORT.tex)**, a
-> **105-page standalone LaTeX report** (revised 23 November 2026). The short [final proof/correctness audit]
+> **100-page chordal-graph-only LaTeX report** (revised 27 November 2026). The short [final proof/correctness audit]
 > (docs/FINAL_AUDIT_2026-11-21.md) is authoritative for implementation
 > guarantees. The original A2 Section 7 `O(m+n log n)`
 > preprocessing bound is **NOT achieved**; the code takes
@@ -13,7 +13,7 @@
 
 **M.Tech CSE | IIT Bhubaneswar | Third-semester MTP**
 
-Public GitHub repository implementing Louis Ibarra's *Fully Dynamic Algorithms for Chordal Graphs and Split Graphs* (2008, DOI 10.1145/1383369.1383371). **The paper's methods and asymptotic bounds are requirements.** Blair–Peyton clique-tree preprocessing and a **sparse A1 implementation with O(n+m) preprocessing and O(n) worst-case dynamic operations** are implemented; the optional fast deletion-query index and split-graph algorithm are also available. Section 5's worst-case Sleator–Tarjan dynamic tree is implemented and tested; **the source-backed O(n) insertion repair is proved in Section 15**, while the paper's stronger preprocessing-table claim remains inconsistent with its explicitly dense W representation.
+Public GitHub repository implementing Louis Ibarra's *Fully Dynamic Algorithms for Chordal Graphs and Split Graphs* (2008, DOI 10.1145/1383369.1383371). **The paper's methods and asymptotic bounds are requirements.** Blair–Peyton clique-tree preprocessing and a **sparse A1 implementation with O(n+m) preprocessing and O(n) worst-case dynamic operations** are implemented; the optional fast deletion-query index is also available. The final report covers chordal graphs only (A1, A2, A1+ and A2+); other frozen modules and historical development records remain in the repository but are outside the final report's scope. Section 5's worst-case Sleator–Tarjan dynamic tree is implemented and tested; **the source-backed O(n) insertion repair is proved in Section 15**, while the paper's stronger preprocessing-table claim remains inconsistent with its explicitly dense W representation.
 
 
 ## AI Assistance Declaration
@@ -22,12 +22,12 @@ AI assistance was used to identify relevant resources and research papers, bette
 
 ## Project structure
 
-- `include/mtp/` — MCS/PEO, Blair–Peyton clique tree, Ibarra dynamic chordal queries/updates, modified-Yellin fast index, and split-graph interfaces.
+- `include/mtp/` — MCS/PEO, Blair–Peyton clique tree, Ibarra dynamic chordal queries/updates, and modified-Yellin fast index (plus historical modules outside the report's scope).
 - `src/` — published-source-aligned algorithms and CLIs. The quadratic clique-graph/Kruskal implementations are compiled only into the **test baseline** library.
 - `tests/` — exhaustive, randomized, and independent small-graph verification.
 - `benchmarks/results/2026-11-23/` — two archived benchmark runs, compiler/environment record, reproducible commands, and original uploaded ZIP.
 - `data/` — example input graphs.
-- `docs/MTP_FINAL_REPORT.tex` — **authoritative 105-page comprehensive report** (single-file LaTeX master), with a clickable GitHub link on its first page.
+- `docs/MTP_FINAL_REPORT.tex` — **authoritative 100-page chordal-graph-only comprehensive report** (single-file LaTeX master), with a clickable GitHub link on its first page.
 - `docs/MTP_IMPLEMENTATION_DETAILS.tex` — archived companion to the previous 37-page edition (no longer required for the current report); source-grounded explanation of each published algorithm and each major C++ implementation decision, including pseudocode, worked updates, ST83 internals, invariants, complexity and tests.
 - `docs/REPORT_BUILD.md` — reproducible standalone LaTeX build instructions.
 - `docs/FINAL_AUDIT_2026-11-21.md` — frozen proof, complexity, correctness and provenance audit.
@@ -121,11 +121,10 @@ ST83 tree.
 | Section 5 experimental indexed path query | Implemented; O(log² n) Insert-Query, but uses full O(n) heavy-path rebuilds instead of worst-case dynamic-tree primitives |
 | Section 5: ST83 globally biased dynamic tree | Implemented with BST85-based source-supported insertion refinement; code-to-proof audit remains | 
 | Section 6: modified-Yellin fast deletion query | Implemented; $O(\sqrt m)$ query and $O(m+n)$ updates | 
-| Section 8: dynamic split graph + clique/chromatic/independence/cover numbers | Implemented; $O(1)$ queries and valid updates |
 
 ## Verification
 
-The Blair–Peyton constructor passed **19,048 exhaustive nonempty chordal graphs** with 1–6 vertices, **800 seeded randomized chordal graphs** with 7–13 vertices, and larger sparse-star and dense-clique cases. Tests independently compare maximal cliques, tree weights, maximum spanning-tree weights, and the induced subtree property. The split-graph tests also independently check all four optimization numbers against brute-force subset enumeration on small graphs. Existing baseline tests remain. A1's dynamic CLI loads edges using `Graph::from_edges` with bucket-ordered sorted set construction in deterministic $O(n+m)$; legacy `Graph::add_edge` remains available for incremental updates.
+The Blair–Peyton constructor passed **19,048 exhaustive nonempty chordal graphs** with 1–6 vertices, **800 seeded randomized chordal graphs** with 7–13 vertices, and larger sparse-star and dense-clique cases. Tests independently compare maximal cliques, tree weights, maximum spanning-tree weights, and the induced subtree property. The report covers 21 chordal-graph CTest entries; the full repository still registers 23 entries. All existing code and tests remain unchanged. A1's dynamic CLI loads edges using `Graph::from_edges` with bucket-ordered sorted set construction in deterministic $O(n+m)$; legacy `Graph::add_edge` remains available for incremental updates.
 
 ## A2/A2+ published-source insertion repair — November 20, 2026
 
@@ -209,7 +208,7 @@ separate reference/archive folder.
 **Source correction completed:** Production uses Blair–Peyton Figure 4.2
 via `src/clique_tree_blair_peyton.cpp`; the earlier provisional
 elimination-forest contraction is not used in production. Ibarra
-Sections 3–4 and 6 and 8 are explicitly mapped to code and tests in
+Sections 3–4 and 6 are explicitly mapped to code and tests in
 `docs/MTP_REPORT.md`. The Section 5 dynamic tree is implemented, with the separate final proof-level audit recorded in the report.
 
 ## Mathematical notation and report policy
