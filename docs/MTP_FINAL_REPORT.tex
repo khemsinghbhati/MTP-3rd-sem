@@ -1,7 +1,7 @@
 %% ---- begin expanded/00_preamble.tex ----
 %% =====================================================================
 %%  MTP Report -- Khem Singh (25cs06004), IIT Bhubaneswar
-%%  Fully Dynamic Algorithms for Chordal Graphs and Split Graphs:
+%%  Fully Dynamic Algorithms for Chordal Graphs:
 %%  implementation of L. Ibarra, ACM TALG 4(4), Article 40, 2008.
 %%  Source code: https://github.com/khemsinghbhati/MTP-3rd-sem
 %%
@@ -42,9 +42,10 @@
 \usepackage{url}
 \usepackage[colorlinks=true,linkcolor=accent,citecolor=accent!70!black,
   urlcolor=accent!80!black,bookmarksnumbered=true,
-  pdftitle={MTP Report: Fully Dynamic Algorithms for Chordal Graphs and Split Graphs},
+  pdftitle={MTP Report: Fully Dynamic Algorithms for Chordal Graphs},
   pdfauthor={Khem Singh (25cs06004)},
   pdfsubject={Implementation of Ibarra (2008), ACM Transactions on Algorithms}]{hyperref}
+\usepackage{aliascnt}
 \usepackage[nameinlink,capitalise,noabbrev]{cleveref}
 
 %% ---------------------------------------------------------------------
@@ -94,15 +95,18 @@
 %% ---------------------------------------------------------------------
 \theoremstyle{plain}
 \newtheorem{theorem}{Theorem}[chapter]
-\newtheorem{lemma}[theorem]{Lemma}
-\newtheorem{proposition}[theorem]{Proposition}
-\newtheorem{corollary}[theorem]{Corollary}
-\newtheorem{claim}[theorem]{Claim}
+\newaliascnt{lemma}{theorem}\newtheorem{lemma}[lemma]{Lemma}\aliascntresetthe{lemma}
+\newaliascnt{proposition}{theorem}\newtheorem{proposition}[proposition]{Proposition}\aliascntresetthe{proposition}
+\newaliascnt{corollary}{theorem}\newtheorem{corollary}[corollary]{Corollary}\aliascntresetthe{corollary}
+\newaliascnt{claim}{theorem}\newtheorem{claim}[claim]{Claim}\aliascntresetthe{claim}
 \theoremstyle{definition}
-\newtheorem{definition}[theorem]{Definition}
-\newtheorem{example}[theorem]{Example}
+\newaliascnt{definition}{theorem}\newtheorem{definition}[definition]{Definition}\aliascntresetthe{definition}
+\newaliascnt{example}{theorem}\newtheorem{example}[example]{Example}\aliascntresetthe{example}
 \theoremstyle{remark}
-\newtheorem{remark}[theorem]{Remark}
+\newaliascnt{remark}{theorem}\newtheorem{remark}[remark]{Remark}\aliascntresetthe{remark}
+\crefname{lemma}{Lemma}{Lemmas}\crefname{proposition}{Proposition}{Propositions}
+\crefname{corollary}{Corollary}{Corollaries}\crefname{definition}{Definition}{Definitions}
+\crefname{example}{Example}{Examples}\crefname{remark}{Remark}{Remarks}
 \crefname{claim}{Claim}{Claims}
 
 %% ---------------------------------------------------------------------
@@ -243,8 +247,8 @@ Department of Computer Science and Engineering\par}
 \vspace{6mm}
 {\large M.Tech Project (MTP) Report --- Third Semester\par}
 \vspace{7mm}
-{\color{accent}\fontsize{25}{31}\selectfont\bfseries Fully Dynamic Algorithms for\\[1mm]
-Chordal Graphs and Split Graphs\par}
+{\color{accent}\fontsize{25}{31}\selectfont\bfseries Fully Dynamic Algorithms\\[1mm]
+for Chordal Graphs\par}
 \vspace{5mm}
 {\Large\itshape A detailed, tested C++ implementation of the core algorithms in\\ Louis Ibarra,
 \emph{ACM Transactions on Algorithms} 4(4), Article 40 (2008)\par}
@@ -285,10 +289,8 @@ benchmarks run against \texttt{main} at commit \texttt{651b236}.}
 \chapter*{Certificate}
 \addcontentsline{toc}{chapter}{Certificate}
 \thispagestyle{plain}
-\noindent\textit{Draft for supervisor review; not signed or certified.}\par
-\vspace{4mm}
 \noindent This is to certify that the project report entitled
-\textbf{``Fully Dynamic Algorithms for Chordal Graphs and Split Graphs: a detailed C++
+\textbf{``Fully Dynamic Algorithms for Chordal Graphs: a detailed C++
 implementation and verification of the core algorithms in Ibarra (2008)''}, submitted by \textbf{Khem Singh} (Roll No.\ \texttt{25cs06004})
 to the Indian Institute of Technology Bhubaneswar in partial fulfilment of the requirements for
 the degree of Master of Technology in Computer Science and Engineering, is a record of the
@@ -314,8 +316,6 @@ Date: \rule{34mm}{0.4pt}
 \chapter*{Declaration}
 \addcontentsline{toc}{chapter}{Declaration}
 \thispagestyle{plain}
-\noindent\textit{Student declaration --- signature and date pending.}\par
-\vspace{4mm}
 \noindent I declare that the work presented in this report was carried out by me under the
 guidance of Dr.\ Manas Jyoti Kashyop, and that every published algorithm, data structure,
 theorem and result used in it is attributed to its original source and cited. Statements that
@@ -363,8 +363,8 @@ keeps the graph chordal. Louis Ibarra (ACM Transactions on Algorithms, 2008) gav
 such algorithm. It keeps a \emph{clique tree} of the graph --- a tree whose nodes are the
 maximal cliques --- and decides each update by a purely local test on that tree.
 
-This project implements the four principal dynamic chordal-graph variants and the
-dynamic split-graph procedures of Ibarra (2008) in C++17. This report explains their
+This project implements the four principal dynamic chordal-graph variants of
+Ibarra (2008) in C++17. This report explains their
 implementation from definitions and algorithmic invariants to the corresponding code.
 The optional ET-tree connectivity extension discussed in the paper is not implemented,
 and the published A2 preprocessing target is not achieved, as detailed in
@@ -377,14 +377,11 @@ update;
 (iii) the second implementation \textbf{A2}, built on a from-scratch implementation of the
 \emph{worst-case} Sleator--Tarjan dynamic tree (solid paths and path sets stored as
 Bent--Sleator--Tarjan globally biased binary trees), giving \(O(\log^2 n)\) insertion queries,
-\(O(n)\) insertions and \(O(n\log n)\) deletions;
+\(O(n)\) insertions and \(O(n\log n)\) deletions; and
 (iv) the faster deletion query of Section~6 (\textbf{A1\(^+\)}, \textbf{A2\(^+\)}), based on a
-modified version of Yellin's dynamic set-intersection structure, with \(O(\sqrt m)\) queries; and
-(v) Ibarra's constant-time dynamic recognition of \emph{split graphs} via the Hammer--Simeone
-degree-sequence theorem, together with the clique, chromatic, independence and clique-cover
-numbers.
+modified version of Yellin's dynamic set-intersection structure, with \(O(\sqrt m)\) queries.
 
-Correctness is supported by a suite of 23 automated tests, including exhaustive checking on all
+Correctness is supported by 21 chordal-graph CTest entries (within the repository-wide test suite), including exhaustive checking on all
 19{,}048 labelled chordal graphs with at most six vertices, randomised legal update sequences
 checked against independent oracles, differential testing of A2 against A1, structural
 invariant checks of the dynamic trees, sanitizer builds and independent Python/NetworkX audits.
@@ -401,7 +398,7 @@ rather than hidden.
 
 \vspace{3mm}
 \noindent\textbf{Keywords:} chordal graphs, clique trees, fully dynamic graph algorithms,
-dynamic trees, biased search trees, split graphs, perfect elimination ordering.
+dynamic trees, biased search trees, perfect elimination ordering.
 
 %% ---------------------------------------------------------------------
 \cleardoublepage
@@ -440,9 +437,9 @@ the reader can open the file and follow along).
   \cref{ch:ibarra} (Ibarra's method, with small worked examples), then
   \cref{ch:a1} (the simplest complete implementation, A1, with traces of real program runs).
 \item \textbf{To review the code:} \cref{ch:architecture} (repository and module map), then
-  \cref{ch:static,ch:a1,ch:a2,ch:fastdelete,ch:split}; \cref{app:files} lists every file.
+  \cref{ch:static,ch:a1,ch:a2,ch:fastdelete}; \cref{app:files} lists the source, test and benchmark files.
 \item \textbf{To check the complexity claims:} the ``Complexity'' sections at the end of
-  \cref{ch:static,ch:a1,ch:a2,ch:fastdelete,ch:split}, then \cref{ch:preprocessing} (the one
+  \cref{ch:static,ch:a1,ch:a2,ch:fastdelete}, then \cref{ch:preprocessing} (the one
   claim of the paper that is not achieved) and the summary in \cref{tab:final-status}.
 \item \textbf{To reproduce the results:} \cref{app:build} (build and run guide),
   \cref{ch:verification} (tests) and \cref{ch:experiments} (measurements).
@@ -537,9 +534,9 @@ A natural dynamic question is whether a graph \emph{stays inside a graph class}.
 application relies on a structural property --- for example, that its graph is chordal, so that
 a sparse matrix can be factorised without fill-in, or so that a probabilistic model is
 decomposable --- then before applying a change it must know whether the change destroys that
-property. Ibarra's paper~\cite{ibarra2008} solves this question for two important classes,
-\emph{chordal graphs} and \emph{split graphs}. For chordal graphs it supports the four
-operations in \cref{tab:ops}.
+property. Ibarra's paper~\cite{ibarra2008} solves this question for \emph{chordal graphs}: it supports
+the four operations in \cref{tab:ops}. This report covers the paper's algorithms for chordal
+graphs.
 
 \begin{table}[ht]
 \centering
@@ -560,9 +557,9 @@ operations in \cref{tab:ops}.
 Recomputing chordality from scratch after every change costs \(\Theta(n+m)\) time (with the
 classic linear-time recognition algorithms of Rose, Tarjan and Lueker~\cite{rose1976} and
 Tarjan and Yannakakis~\cite{tarjan1984}). Since a chordal graph can have \(\Theta(n^2)\) edges,
-this is \(\Theta(n^2)\) in the worst case. Ibarra's algorithm answers every query and performs
-every update in \(O(n)\) worst-case time, and its second implementation answers insertion
-queries in \(O(\log^2 n)\) time.
+this is \(\Theta(n^2)\) in the worst case. Ibarra's first implementation (A1) answers every query and performs
+every update in \(O(n)\) worst-case time; its second implementation (A2) answers insertion
+queries in \(O(\log^2 n)\) time and has an \(O(n\log n)\) deletion bound.
 
 \section{Why chordal graphs?}
 A chordal graph is one in which every cycle of length at least four has a \emph{chord} (an edge
@@ -640,17 +637,12 @@ A2\(^+\) & \(O(\sqrt m)\) & \(O(m+n\log n)\) & \(O(\log^2 n)\) & \(O(m+n)\) & \(
 \end{tabular}
 \end{table}
 
-For split graphs (\S8 of the paper), Ibarra shows how to maintain, on an arbitrary graph, in
-\(O(1)\) time per edge insertion or deletion, whether the graph is split, and --- when it is ---
-its clique number, chromatic number, independence number and clique cover number, after
-\(O(m+n)\) preprocessing.
-
 \section{Objectives of the project}
-The objectives, fixed at the start of the project and recorded in the repository
-\file{README.md}, were:
+The objectives for the chordal-graph algorithms, fixed at the start of the project and
+recorded in the repository \file{README.md}, were:
 \begin{enumerate}
-\item Implement \emph{every} algorithm of the paper --- A1, A2, A1\(^+\), A2\(^+\) and the split
-  graph algorithm --- using the methods the paper describes, and the published data structures
+\item Implement \emph{every} chordal-graph algorithm of the paper --- A1, A2, A1\(^+\) and
+  A2\(^+\) --- using the methods the paper describes, and the published data structures
   it cites (in particular the worst-case Sleator--Tarjan dynamic tree~\cite{sleator1983}, not an
   amortised or randomised substitute).
 \item Achieve the paper's \emph{worst-case} time bounds in the implementation, and argue each
@@ -679,15 +671,14 @@ A1 (\S3--4) & \(O(n+m)\) preprocessing; all four operations \(O(n)\) & \ok\\
 A2 operations (\S5) & \op{Insert-Query} \(O(\log^2 n)\), \op{Insert} \(O(n)\), \op{Delete} \(O(n\log n)\), \op{Delete-Query} \(O(n)\) & \ok\\
 A2 preprocessing (\S5.1, \S7) & \(O(n^2+mn)\) instead of the claimed \(O(m+n\log n)\) & \notok\\
 A1\(^+\)/A2\(^+\) (\S6) & \op{Delete-Query} \(O(\sqrt m)\); updates \(O(m+n)\) extra; \(O(mn+n^2)\) preprocessing & \ok\\
-Split graphs (\S8) & \(O(1)\) per update and query; \(O(n+m)\) preprocessing & \ok\\
 \bottomrule
 \end{tabularx}
 \end{table}
 
 \section{Contributions of this project}
 The algorithms are Ibarra's; the contribution of the project is a complete and carefully
-verified implementation, together with the following implementation-level results, each of
-which is stated and proved in this report.
+verified implementation, together with the following implementation-level results, each of which is
+described and analysed in this report, with proof assumptions made explicit.
 \begin{enumerate}
 \item A \textbf{sparse representation for A1} (\cref{ch:a1}). The paper stores every maximal
   clique as a characteristic vector of length \(n\). Allocating these vectors costs
@@ -700,7 +691,7 @@ which is stated and proved in this report.
   BST85.
 \item An \textbf{\(O(n)\) worst-case A2 insertion} even when an insertion merges two
   high-degree cliques (\cref{sec:a2-insert-on}). A literal implementation would perform
-  \(\Theta(n)\) dynamic-tree operations, i.e.\ \(\Theta(n\log n)\) time; the implementation
+  \(\Theta(n)\) dynamic-tree operations, giving an \(O(n\log n)\) upper bound; the implementation
   rebuilds the same Sleator--Tarjan structure in \(O(n)\) using a linear-time construction of
   globally biased trees (attributed in the code to BST85; see \cref{sec:bst85}).
 \item An \textbf{analysis of the A2 preprocessing claim} (\cref{ch:preprocessing}): an
@@ -711,12 +702,11 @@ which is stated and proved in this report.
 \end{enumerate}
 
 \section{Organisation of the report}
-\Cref{ch:background} introduces chordal graphs, perfect elimination orderings, clique trees,
-split graphs and dynamic trees. \Cref{ch:ibarra} presents Ibarra's algorithm mathematically.
+\Cref{ch:background} introduces chordal graphs, perfect elimination orderings, clique trees
+and dynamic trees. \Cref{ch:ibarra} presents Ibarra's algorithm mathematically.
 \Cref{ch:architecture} describes the repository and its modules. \Cref{ch:static} covers the
 static preprocessing, \cref{ch:a1} the A1 implementation, \cref{ch:a2} the A2 implementation
-with the Sleator--Tarjan dynamic tree, \cref{ch:fastdelete} the faster deletion query, and
-\cref{ch:split} the split graph algorithm. \Cref{ch:preprocessing} analyses the A2
+with the Sleator--Tarjan dynamic tree, and \cref{ch:fastdelete} the faster deletion query. \Cref{ch:preprocessing} analyses the A2
 preprocessing claim. \Cref{ch:verification,ch:experiments} present testing and experiments, and
 \cref{ch:conclusion} concludes. The appendices contain a build guide, a file-by-file reference,
 complete program traces and a glossary.
@@ -1048,28 +1038,6 @@ and the clique tree computed by the program. The singleton clique \(\{5\}\) is a
 weight-0 dummy edge.}
 \label{fig:dummy}
 \end{figure}
-
-\section{Split graphs}\label{sec:split-background}
-\begin{definition}[Split graph]
-\(G\) is a \emph{split graph} if \(V\) can be partitioned into a clique \(K\) and an
-independent set \(I\) (edges between \(K\) and \(I\) are allowed).
-\end{definition}
-The \emph{complement} \(\bar G\) has the same vertices and exactly the edges that \(G\) lacks.
-Földes and Hammer showed that \(G\) is split if and only if both \(G\) and \(\bar G\) are
-chordal~\cite{foldes1977}. Hence a dynamic chordal algorithm run on \(G\) and \(\bar G\) gives a
-dynamic split algorithm with \(O(n)\) operations; Ibarra (\S8) does much better using a degree
-characterisation.
-
-\begin{theorem}[Hammer and Simeone~\cite{hammer1981}; Ibarra Theorem~8, p.\,40:17]\label{thm:hs}
-Let \(d_1\ge d_2\ge\dots\ge d_n\) be the degree sequence of \(G\) and
-\(j=\max\{i : d_i\ge i-1\}\). Then \(G\) is split if and only if
-\begin{equation}\label{eq:hs}
-\sum_{i=1}^{j} d_i \;=\; j(j-1)+\sum_{i=j+1}^{n} d_i .
-\end{equation}
-Moreover, if \eqref{eq:hs} holds, the clique number of \(G\) is \(j\).
-\end{theorem}
-Since \eqref{eq:hs} depends only on the degree sequence, an edge update changes two degrees by
-one, and \cref{ch:split} shows that \(j\) and both sums can then be updated in \(O(1)\) time.
 
 \section{Dynamic trees}\label{sec:dynamic-trees-background}
 A \emph{dynamic tree} (or link--cut tree) data structure maintains a forest of rooted trees
@@ -1440,7 +1408,7 @@ it is not implemented in this project.
 
 \paragraph{From the paper to the code.} The rest of the report follows the paper's structure:
 \cref{ch:static} builds the initial clique tree, \cref{ch:a1} implements A1, \cref{ch:a2}
-implements A2, \cref{ch:fastdelete} implements \S6 and \cref{ch:split} implements \S8.
+implements A2 and \cref{ch:fastdelete} implements \S6.
 %% ---- end expanded/04_ibarra.tex ----
 %% ---- begin expanded/05_arch.tex ----
 %% =====================================================================
@@ -1448,19 +1416,19 @@ implements A2, \cref{ch:fastdelete} implements \S6 and \cref{ch:split} implement
 %% =====================================================================
 This chapter gives a map of the repository \repo{} before the individual algorithms are
 discussed. The implementation is written in standard C++17 with no third-party dependencies
-and is built with CMake. The algorithmic core (\file{include/} and \file{src/}) consists of
-about 4{,}250 lines; the test programs add about 2{,}450 lines and the benchmark programs about
-360 lines.
+and is built with CMake. The algorithmic core for chordal graphs (\file{include/} and
+\file{src/}) consists of about 4{,}000 lines; its test programs add about 2{,}300 lines and the
+benchmark programs about 360 lines.
 
 \section{Repository layout}
 \begin{lstlisting}[style=shell,caption={Top-level layout of the repository (the build directory
 is not part of the repository).},label={lst:tree}]
 MTP-3rd-sem/
-|-- CMakeLists.txt          build: library mtp_graphs, 4 CLIs, 23 tests, 6 benchmarks
+|-- CMakeLists.txt          build: library mtp_graphs, 4 CLIs, CTest suite, 6 benchmarks
 |-- README.md               overview, build instructions, expected output
 |-- include/mtp/            public headers (one per module, see Table 4.1)
 |-- src/                    implementations + the four command-line programs
-|-- tests/                  19 test programs (23 CTest entries incl. 4 CLI runs)
+|-- tests/                  test programs registered with CTest (incl. 4 CLI runs)
 |-- benchmarks/             6 measurement programs + archived CSV results
 |-- data/                   example graph, example operation script, non-chordal C4
 |-- audit/                  independent Python/NetworkX verification scripts
@@ -1470,8 +1438,9 @@ MTP-3rd-sem/
 \end{lstlisting}
 
 \section{Modules}
-\Cref{tab:modules} lists the modules of the core library \code{mtp_graphs}, the paper section
-each one implements, and the published source of its method.
+\Cref{tab:modules} lists the modules of the core library \code{mtp_graphs} used by the
+chordal-graph algorithms, the paper section each one implements, and the published source of
+its method.
 
 \begin{table}[ht]
 \centering\small
@@ -1493,7 +1462,6 @@ under \file{src/}.}\label{tab:modules}
 \file{dynamic_ibarra_a2} & \code{SleatorTarjanChordalGraphA2} & \textbf{A2} (Ibarra \S5--5.1): dynamic tree + matrix \(W\)\\
 \file{indexed_dynamic_ibarra} & \code{IndexedDynamicChordalGraph} & comparison variant: heavy-path index rebuilt after each update (\emph{not} ST83)\\
 \file{fast_delete_ibarra} & \code{FastCliqueIntersectionIndex} & modified Yellin structure (Ibarra \S6) for A1\(^+\)/A2\(^+\)\\
-\file{dynamic_split_ibarra} & \code{DynamicSplitGraph}, \code{DynamicSplitStatistics} & split graphs (Ibarra \S8, Hammer--Simeone~\cite{hammer1981})\\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -1520,7 +1488,6 @@ to the modules it uses.
 \node[m] (st) at (-3.8,7.6) {Sleator--Tarjan\\forest (ST83)};
 \node[mm] (a2) at (0,7.6) {\textbf{A2}\\\code{SleatorTarjan...A2}};
 \node[mt] (idx) at (3.6,6.4) {indexed variant\\(comparison)};
-\node[mm] (split) at (3.6,0) {\textbf{split graphs}\\(\S8)};
 \draw[dep] (mcs)--(graph);
 \draw[dep] (bp)--(mcs);
 \draw[dep] (mc)--(mcs);
@@ -1532,9 +1499,8 @@ to the modules it uses.
 \draw[dep] (a2)--(st);
 \draw[dep] (a2)--(dense);
 \draw[dep] (idx)--(dense);
-\draw[dep] (split)--(graph);
 \end{tikzpicture}
-\caption[Module dependencies]{Module dependencies. Green: the three user-facing algorithms of the paper.
+\caption[Module dependencies]{Module dependencies. Green: the paper's two dynamic algorithms, A1 and A2.
 Dashed grey: modules used only for testing or comparison.}
 \label{fig:modules}
 \end{figure}
@@ -1598,7 +1564,7 @@ Delete-Query 0 2 => no
 \end{lstlisting}
 
 \section{Build system and quality gates}
-\code{CMakeLists.txt} builds the library \code{mtp_graphs} from the twelve core source files,
+\code{CMakeLists.txt} builds the library \code{mtp_graphs} from its core source files,
 the four programs, the test programs (registered with CTest) and, with the option
 \code{-DMTP_BUILD_BENCHMARKS=ON}, six benchmark programs. Every target is compiled with
 \code{-Wall -Wextra -Wpedantic}; the Release configuration uses \code{-O3 -DNDEBUG}. Five
@@ -3047,13 +3013,13 @@ static properties'' but worst-case concatenate and split bounds (ST83 Lemmas~6 a
 Bent, Sleator and Tarjan~\cite{bent1985} (BST85) for both. The implementation
 (\file{src/globally_biased_binary_tree.cpp}) provides these trees.
 
-\begin{caution}[Source availability]
-The BST85 paper itself was not available during the writing of this report. The ST83
-properties (B1)--(B3) below and ST83 Lemmas~6--7 were checked against ST83. The global-bias
-condition (B4), the case analysis of the global join and the linear-time bottom-up construction
-are described as implemented, with the BST85 figure and theorem numbers that the source-code
-comments cite (Figure~14; Figure~15 and Theorem~12); these citations could not be checked
-against BST85.
+\begin{caution}[Source verification]
+BST85 \S4 describes the globally biased binary tree, its global join (Figure~14),
+and its bottom-up construction (Figure~15). On p.\,564 it explicitly extends
+Theorem~12 to biased binary trees. The published linear construction bound is
+therefore supported by the source. The remaining implementation-level obligation
+is that the concrete C++ builder maintains the published invariants and implements
+the required construction; testing is not a formal proof of this correspondence.
 \end{caution}
 
 \paragraph{Ranks.} Every leaf of weight \(w\ge 1\) has rank \(r=\lfloor\log w\rfloor\) (ST83
@@ -3086,13 +3052,12 @@ children \(c\) and grandchildren \(g\):
 \item \(\mathrm{rank}(c)\le\mathrm{rank}(x)\), with strict inequality if \(c\) is a leaf
   (ST83 \S4, property~(ii));
 \item \(\mathrm{rank}(g)<\mathrm{rank}(x)\) (ST83 \S4, property~(ii));
-\item (\emph{global bias}, from BST85 as cited in the code) if
+\item (\emph{global bias}, from BST85, Section~4) if
   \(\mathrm{rank}(x)-\mathrm{rank}(c)\ge 2\), then the leaves immediately to the left and right
   of \(c\)'s subtree (in symmetric order) have rank at least \(\mathrm{rank}(x)-1\).
 \end{enumerate}
 Properties (B1)--(B3) give the depth bound of ST83 Lemma~2; (B4) is the additional condition
-that, according to the code's citation of BST85, makes worst-case concatenation and splitting
-possible.
+used by globally biased binary trees for worst-case concatenation and splitting (BST85 Section~4; ST83 Lemmas~6 and~7).
 
 \paragraph{Operations.}
 \begin{itemize}
@@ -3419,8 +3384,8 @@ depends on which cliques are absorbed:
   A2's hooks are installed (\file{src/dynamic_ibarra.cpp}, lines 279--311). \(O(\log n)\) time.
 \item[Case 3: both absorbed (double subsumption).] \(K_x\) and \(K_y\) merge into one node, which
   inherits the neighbours of both. If both have \(\Theta(n)\) tree neighbours, mirroring the
-  contraction edge by edge costs \(\Theta(n)\) link/cut operations, i.e.\ \(\Theta(n\log n)\)
-  time --- more than the claimed \(O(n)\).
+  contraction edge by edge can require \(\Theta(n)\) link/cut operations, giving an
+  \(O(n\log n)\) upper bound that does not establish the claimed \(O(n)\).
 \end{description}
 
 Case 3 really occurs: take a vertex \(r\) adjacent to \(u\) and \(v\), and give \(u\) and \(v\)
@@ -3521,7 +3486,7 @@ worst-case structure, and a linear-time construction of globally biased trees th
 attributes to BST85 (\S4, Figure~15, Theorem~12) --- and the represented data structure is
 exactly the ST83 structure, not a different kind of dynamic tree. What changes is only the
 \emph{schedule} of maintenance in case 3. The \(O(n)\) bound for case 3 rests on the linear-time
-bound of that construction, which could not be checked against BST85 itself; the measured step
+bound of that construction and on the C++ builder correctly realising it; the measured step
 counts (\cref{tab:two-hub}, \cref{fig:rebuild}) grow linearly, as it predicts. The means of
 meeting the paper's \(O(n)\) bound in case 3 is ours.
 \end{caution}
@@ -3601,7 +3566,7 @@ SleatorTarjanChordalGraphA2::SleatorTarjanChordalGraphA2(Graph graph)
 \end{lstlisting}
 
 \begin{proposition}\label{prop:a2-pre}
-The A2 constructor runs in \(\Theta(n^2+mn)\) worst-case time; in particular it takes
+The A2 constructor has an upper bound of \(O(n^2+mn)\) in worst-case time; in particular it takes
 \(\Theta(n^2)\) time even when \(m=0\).
 \end{proposition}
 This does \emph{not} meet the \(O(m+n\log n)\) preprocessing bound in Ibarra's summary table.
@@ -3621,7 +3586,7 @@ the implementation (all worst-case).}\label{tab:a2-summary}
 \op{Insert} & \(O(n)\) & \(O(n)\) & \cref{thm:a2-insert}\\
 \op{Delete-Query} & \(O(n)\) & \(O(n)\) & dense clique scan\\
 \op{Delete} & \(O(n\log n)\) & \(O(n\log n)\) & \(O(n)\) ST operations\\
-preprocessing & \(O(m+n\log n)\) & \(\Theta(n^2+mn)\) & \cref{prop:a2-pre}, \cref{ch:preprocessing}\\
+preprocessing & \(O(m+n\log n)\) & \(O(n^2+mn)\) & \cref{prop:a2-pre}, \cref{ch:preprocessing}\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -3791,173 +3756,6 @@ repeat the exhaustive oracle tests of A1 with the index enabled, and
 insertions that split and merge cliques. A2\(^+\) is tested by
 \file{tests/test_ibarra_a2.cpp} and by the CLI test \code{ibarra_a2_fast_delete_sample_cli}.
 %% ---- end expanded/09_fast.tex ----
-%% ---- begin expanded/10_split.tex ----
-%% =====================================================================
-\chapter{Dynamic Split Graphs}\label{ch:split}
-%% =====================================================================
-Ibarra \S8 gives a strikingly simple fully dynamic algorithm for split graphs: after
-\(O(m+n)\) preprocessing it maintains, under arbitrary edge insertions and deletions of an
-\emph{arbitrary} graph, whether the graph is split, in \(O(1)\) worst-case time per update and
-per query. This chapter explains the method and its implementation in
-\file{include/mtp/dynamic_split_ibarra.hpp} and \file{src/dynamic_split_ibarra.cpp}.
-
-\section{The degree-sequence test}
-By the Hammer--Simeone theorem (\cref{thm:hs}), whether \(G\) is split depends only on its
-degree sequence \(d_1\ge\dots\ge d_n\): with \(j=\max\{i:d_i\ge i-1\}\), \(G\) is split iff
-\(\sum_{i\le j}d_i=j(j-1)+\sum_{i>j}d_i\), and then \(\omega(G)=j\).
-Note that the condition \(d_i\ge i-1\) holds for a prefix of the sorted sequence (if it holds for
-\(d_l\) it holds for all \(d_k\), \(k<l\); Ibarra p.\,40:18). So the sequence splits into a left
-part \(L_l=(d_1,\dots,d_j)\) and a right part \(L_r=(d_{j+1},\dots,d_n)\).
-
-\begin{example}[After Ibarra Fig.~9]
-The graph of \cref{fig:split-example} has degree sequence \(4,3,3,2,1,1\) and \(j=3\);
-\(4+3+3=10=3\cdot 2+(2+1+1)\), so it is split with clique number 3. Inserting \(\{d,e\}\) gives
-\(4,3,3,3,2,1\) with \(j=4\): \(13\ne 12+3\), not split. Then inserting \(\{b,d\}\) gives
-\(4,4,4,3,2,1\) with \(j=4\): \(15=12+3\), split again with clique number 4 (clique
-\(\{a,b,c,d\}\)). These are exactly the three degree sequences of Ibarra's Figure~9 example; we
-checked all three cases independently with NetworkX (split \(\iff\) \(G\) and \(\bar G\) chordal).
-\end{example}
-
-\begin{figure}[ht]
-\centering
-\begin{tikzpicture}
-\begin{scope}
-\node[vtxh] (a) at (0,1.2) {a};
-\node[vtxh] (b) at (1.4,1.2) {b};
-\node[vtxh] (c) at (0.7,0.1) {c};
-\node[vtx] (d) at (-1.2,-1.0) {d};
-\node[vtx] (e) at (-1.4,1.9) {e};
-\node[vtx] (f) at (2.7,0.4) {f};
-\draw[gedge] (a)--(b) (a)--(c) (b)--(c) (a)--(d) (a)--(e) (b)--(f) (c)--(d);
-\node[font=\small,align=center] at (0.6,-2.0) {degrees \(4,3,3,2,1,1\)\\\(j=3\); split};
-\end{scope}
-\begin{scope}[xshift=6.6cm]
-\node[vtxh] (a) at (0,1.2) {a};
-\node[vtxh] (b) at (1.4,1.2) {b};
-\node[vtxh] (c) at (0.7,0.1) {c};
-\node[vtxh] (d) at (-1.2,-1.0) {d};
-\node[vtx] (e) at (-1.4,1.9) {e};
-\node[vtx] (f) at (2.7,0.4) {f};
-\draw[gedge] (a)--(b) (a)--(c) (b)--(c) (a)--(d) (a)--(e) (b)--(f) (c)--(d) (d)--(e);
-\draw[newedge] (b)--(d);
-\node[font=\small,align=center] at (0.6,-2.0) {after \(+de\), \(+bd\):\\degrees \(4,4,4,3,2,1\); \(j=4\); split};
-\end{scope}
-\end{tikzpicture}
-\caption[A split graph and an update sequence]{Left: a split graph (clique \(\{a,b,c\}\) in
-orange, independent set \(\{d,e,f\}\)). Right: after inserting \(\{d,e\}\) (not split) and then
-\(\{b,d\}\) (split again, clique \(\{a,b,c,d\}\)).}
-\label{fig:split-example}
-\end{figure}
-
-\section{Data structure}
-The algorithm never needs to know \emph{which} vertex has which entry of the sorted degree
-sequence: when \(u\)'s degree grows from \(d\) to \(d+1\), any entry equal to \(d\) may be
-taken to represent \(u\). The structure (Ibarra p.\,40:18) is:
-\begin{itemize}
-\item a doubly linked list \(L\) of the degrees in non-increasing order (\code{sequence_}, a
-  \code{std::list<Entry>} with \code{Entry\{degree, left\}});
-\item for every degree value \(d\), pointers to the \emph{first} and \emph{last} list entries
-  equal to \(d\) (\code{first_[d]}, \code{last_[d]}, \code{present_[d]});
-\item the boundary \(j\), an iterator to the entry \(d_j\) (\code{boundary_}), and the sums
-  \(\mathit{sum}_l=\sum_{i\le j}d_i\), \(\mathit{sum}_r=\sum_{i>j}d_i\);
-\item the actual degree of every vertex (\code{degree_}), to know which degree classes to touch.
-\end{itemize}
-\op{Is-Split} is then the \(O(1)\) comparison \(\mathit{sum}_l=j(j-1)+\mathit{sum}_r\).
-Preprocessing computes the degrees (\(O(n+m)\)), sorts them by counting sort (\(O(n)\)), builds
-the list and the pointer arrays, and finds \(j\) and the sums in one pass.
-
-\section{Updates in constant time}
-\paragraph{Insert\((u,v)\).} Two entries must be incremented. If \(d(u)=d(v)=d\), increment the
-first two entries equal to \(d\); otherwise increment the first entry equal to \(d(u)\) and the
-first entry equal to \(d(v)\). Incrementing the \emph{first} entry of a class keeps the list
-sorted (it becomes the last entry of class \(d+1\)), and only the class pointers of \(d\) and
-\(d+1\) change. Then \(j\) can increase by at most one: before the insertion \(d_{j+1}\le j-1\),
-so only \(d_{j+1}\) can start to satisfy \(d_{j+1}\ge j\), and Ibarra shows that \(j\) is
-incremented at most once. The sums are adjusted in \(O(1)\).
-
-\paragraph{Delete\((u,v)\).} Symmetric: decrement the \emph{last} entries of the classes, and
-decrease \(j\) by one if \(d_j<j-1\).
-
-\begin{lstlisting}[style=cpp,firstnumber=68,caption={\file{src/dynamic_split_ibarra.cpp}, lines 68--79: incrementing the first entry of a degree class.},label={lst:split-inc}]
-void DynamicSplitGraph::increase(Iterator it) {
-    const int d=it->degree;
-    if(d+1>=static_cast<int>(present_.size()))
-        throw std::invalid_argument("invalid duplicate insertion");
-    const auto next=std::next(it);
-    if(next!=sequence_.end()&&next->degree==d) first_[d]=next;
-    else present_[d]=false;
-    if(!present_[d+1]) {present_[d+1]=true;first_[d+1]=it;}
-    last_[d+1]=it;
-    ++it->degree;
-    if(it->left)++sum_left_;else ++sum_right_;
-}
-\end{lstlisting}
-
-\begin{lstlisting}[style=cpp,firstnumber=91,caption={\file{src/dynamic_split_ibarra.cpp}, lines 91--126: boundary update and \op{Insert}.},label={lst:split-insert}]
-void DynamicSplitGraph::update_boundary_after_insert() {
-    if(j_==static_cast<int>(degree_.size()))return;
-    const auto next=std::next(boundary_);
-    if(next!=sequence_.end()&&next->degree>=j_) {
-        next->left=true;
-        sum_left_+=next->degree;sum_right_-=next->degree;
-        boundary_=next;++j_;
-    }
-}
-void DynamicSplitGraph::update_boundary_after_delete() {
-    if(j_<=1||boundary_->degree>=j_-1)return;
-    auto old=boundary_;
-    boundary_=std::prev(boundary_);
-    old->left=false;
-    sum_left_-=old->degree;sum_right_+=old->degree;
-    --j_;
-}
-void DynamicSplitGraph::insert_edge(int u,int v) {
-    validate(u,v);
-    const int du=degree_[u],dv=degree_[v];
-    // Ibarra Section 8: choose first one/two elements of degree classes.
-    // Incrementing those entries preserves descending degree order.
-    if(du==dv) {
-        auto first=first_[du];
-        const auto second=std::next(first);
-        if(second==sequence_.end()||second->degree!=du)
-            throw std::logic_error("invalid degree multiplicity");
-        increase(first);increase(second);
-    } else if(du>dv) {
-        increase(first_[du]);increase(first_[dv]);
-    } else {
-        increase(first_[dv]);increase(first_[du]);
-    }
-    ++degree_[u];++degree_[v];
-    update_boundary_after_insert();
-}
-\end{lstlisting}
-
-\section{The four optimisation numbers}
-Since chordal graphs are perfect, a split graph's chromatic number equals its clique number
-\(j\). Running the same structure on the complement \(\bar G\) (whose degrees are \(n-1-d(v)\),
-and where every insertion into \(G\) is a deletion from \(\bar G\) and vice versa) gives the
-clique number of \(\bar G\), which is the independence number of \(G\), and hence also the
-clique cover number. \code{DynamicSplitStatistics} maintains both structures and exposes
-\code{clique_number()}, \code{chromatic_number()}, \code{independence_number()} and
-\code{clique_cover_number()}, each \(O(1)\) (Ibarra p.\,40:18, last paragraph).
-
-\section{Precondition}
-Because only degrees are stored, the structure cannot itself detect an invalid update (inserting
-an existing edge or deleting a non-edge); some such updates are detected indirectly (e.g.\
-decrementing a zero degree), but not all. The caller must therefore pass only valid updates, as
-stated in the header. This matches the paper, whose operations are edge insertions and deletions
-on a graph whose edge set is known to the caller.
-
-\section{Complexity and testing}
-Preprocessing is \(O(n+m)\) and every update and query is \(O(1)\) worst-case: each update
-changes two list entries, \(O(1)\) class pointers and at most one boundary position. The test
-\file{tests/test_ibarra_split.cpp} performs 120{,}000 random update steps on graphs with up to
-seven vertices; after every step it checks every maintained degree and compares \op{Is-Split}
-with a from-scratch evaluation of \eqref{eq:hs} (sorting the degrees anew).
-\file{tests/test_ibarra_split_stats.cpp} compares the clique and independence numbers (and
-hence all four numbers) of every split graph reached with brute-force values obtained by
-enumerating all vertex subsets, for \(n\le 7\).
-%% ---- end expanded/10_split.tex ----
 %% ---- begin expanded/11_preproc.tex ----
 %% =====================================================================
 \chapter{The A2 Preprocessing Claim}\label{ch:preprocessing}
@@ -4002,8 +3800,8 @@ with a characteristic vector of length \(n\), which already costs \(\Theta(n^2)\
 (\(O(mn+n^2)\)), which includes the A\(^+\) structure, is consistent with that.
 
 \section{What the implementation does}
-The implementation follows \S5.1 literally (\cref{sec:a2-preprocessing}) and therefore needs
-\(\Theta(n^2+mn)\) time (\cref{prop:a2-pre}). The benchmark \code{mtp_a2_preprocessing_audit}
+The implementation follows the replay construction of \S5.1 (\cref{sec:a2-preprocessing}) and therefore has an upper bound of
+\(O(n^2+mn)\) time (\cref{prop:a2-pre}). The benchmark \code{mtp_a2_preprocessing_audit}
 measures the cost on empty graphs (\(m=0\)), where the claimed bound would be
 \(O(n\log n)\):
 
@@ -4085,9 +3883,10 @@ impossibility theorem.
 \item vertices \(q_1,\dots,q_u\), where \(q_j\) is adjacent to
   \(Q_j=\{e_k: B_{kj}=0\}\cup D\), padded with vertices of \(F\) to exactly \(2u\) neighbours.
 \end{itemize}
-\(G_{A,B}\) is a split graph (clique \(L\), independent set \(\{p_i\}\cup\{q_j\}\)), hence
-chordal, with \(m=\binom{3u}{2}+u\cdot u+u\cdot 2u=7.5u^2-1.5u\) edges, and it can be built in
-\(O(u^2)\) time.
+\(G_{A,B}\) is chordal: no two of the vertices \(p_i,q_j\) are adjacent and all their
+neighbours lie in the clique \(L\), so listing all \(p_i\) and \(q_j\) first and then the
+vertices of \(L\) gives a perfect elimination ordering. It has
+\(m=\binom{3u}{2}+u\cdot u+u\cdot 2u=7.5u^2-1.5u\) edges and can be built in \(O(u^2)\) time.
 
 \begin{figure}[ht]
 \centering
@@ -4133,8 +3932,8 @@ time. Then the Boolean product of two \(u\times u\) matrices can be computed in
 \end{theorem}
 \begin{proof}
 Build \(G_{A,B}\) (\(O(u^2)\)), build the structure (\(O(m+n\log n)=O(u^2)\)), and ask the
-\(u^2\) queries \((p_i,q_j)\) (\(O(u^2\log^2 u)\)); by \cref{lem:bmm-gadget} the answers are the
-entries of \(C\).
+\(u^2\) queries \((p_i,q_j)\) (\(O(u^2\log^2 u)\)); by \cref{lem:bmm-gadget}, complement
+each yes/no answer to obtain the corresponding entry of \(C\) (yes means zero).
 \end{proof}
 
 Since Ibarra's queries do not modify the graph, the statement applies to the \S7 claims for A2
@@ -4161,7 +3960,7 @@ frozen implementation, because neither achieves the claimed bound:
 \end{itemize}
 
 \begin{summarybox}[Conclusion of this chapter]
-The implementation achieves every A2 operation bound of the paper, and \(\Theta(n^2+mn)\)
+Subject to the ST83/BST85 implementation invariants discussed in \cref{ch:a2}, the A2 operation analysis matches the paper; the constructor has \(O(n^2+mn)\)
 preprocessing, which is what the paper's own construction in \S5.1 gives. The
 \(O(m+n\log n)\) entry of the summary table is \emph{not achieved}: it is impossible for any
 explicit-\(W\) implementation (\cref{prop:w-lower}), and achieving it together with
@@ -4219,12 +4018,12 @@ tests then run 20--25 legal updates each, again comparing every possible query w
 and validating the full clique tree after each update.
 
 \section{The test suite}
-\Cref{tab:tests} lists all 23 CTest entries of the repository. On the machine of
-\cref{sec:exp-setup} the complete suite runs in about 45 seconds in the Release configuration,
-and all 23 tests pass (last run: 23 November 2026, commit \code{651b236}).
+\Cref{tab:tests} lists the 21 CTest entries that test the chordal-graph code. On the machine of
+\cref{sec:exp-setup} the complete repository-wide suite runs in about 45 seconds in the Release configuration,
+and all 21 tests in the table pass (last run: 23 November 2026, commit \code{651b236}).
 
 \begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.33\textwidth}>{\raggedright\arraybackslash}p{0.62\textwidth}@{}}
-\caption[The CTest suite]{The 23 CTest entries (\code{ctest --test-dir build}). The numbers
+\caption[The CTest suite]{The 21 CTest entries for the chordal-graph code (\code{ctest --test-dir build}). The numbers
 are those printed by the test programs.}\label{tab:tests}\\
 \toprule
 \textbf{Test (program)} & \textbf{What is checked}\\
@@ -4243,8 +4042,6 @@ are those printed by the test programs.}\label{tab:tests}\\
 \code{ibarra_a1_linear_preprocessing} & sparse A1: the same checks\\
 \code{ibarra_a1_sparse_fast_index} & sparse A1\(^+\): the same checks with the \S6 index\\
 \code{ibarra_a1_sparse_adversarial} & sparse A1 versus dense A1: stored memberships \(\le n+m\); exactly \(2(n-1)\) on stars and \(n\) on empty graphs (not \(\Theta(n^2)\)); repeated deletions/insertions inside a large clique with node recycling; the bulk loader (adjacency, duplicate rejection)\\
-\code{ibarra_split_graph_implementation} & split graphs: 120{,}000 random update steps against a from-scratch Hammer--Simeone evaluation\\
-\code{ibarra_split_four_numbers} & clique, chromatic, independence and clique-cover numbers against brute force (\(n\le7\))\\
 \code{deterministic_graph_membership} & \code{Graph} membership under 12{,}000 random updates and queries\\
 \code{ibarra_section5_actual_ST_dynamic_tree} & A2 versus A1: all chordal graphs \(n\le5\) (with and without A2\(^+\)), 60 random sequences, tree and ST invariants after every update, repeated two-hub insert/delete cycles\\
 \code{sleator_tarjan_1983_dynamic_forest} & ST forest against the naive forest: \(n=3..12\), 30 trials \(\times\) 120 random link/cut steps, all-pairs path queries after every step\\
@@ -4311,7 +4108,7 @@ using any of the C++ code:
 Testing cannot prove the absence of errors. The evidence is strongest for small graphs, where
 it is exhaustive, and for the logical correctness of the clique-tree maintenance, which is
 checked against oracles that share no code with the implementation. The \emph{complexity}
-claims are established by the proofs in \cref{ch:static,ch:a1,ch:a2,ch:fastdelete,ch:split},
+claims are established by the proofs in \cref{ch:static,ch:a1,ch:a2,ch:fastdelete},
 not by the tests; for A2 they rely on the published theorems of ST83 and BST85 together with
 the invariant checks described above, and there is no machine-checked proof that the C++ code
 maintains every invariant on every input.
@@ -4477,7 +4274,7 @@ factor.}
 \end{figure}
 
 This comparison deliberately uses the dense \code{DynamicChordalGraph} A1 baseline, not the sparse A1 production CLI. It illustrates the dynamic-tree query complexity but does not compare the two production loading routes. A2 trades a much larger constant for a slower growth rate on this path family.
-(The A2 construction times include the \(\Theta(n^2+mn)\) preprocessing discussed in
+(The A2 construction times include the \(O(n^2+mn)\) preprocessing discussed in
 \cref{ch:preprocessing}.)
 
 \section{A2 preprocessing on empty graphs}
@@ -4568,11 +4365,10 @@ Sleator--Tarjan tree required by the paper.
 \chapter{Conclusions and Future Work}\label{ch:conclusion}
 %% =====================================================================
 \section{Summary}
-This project implemented, in about 4{,}250 lines of C++17, every algorithm of Ibarra's paper
-\emph{Fully Dynamic Algorithms for Chordal Graphs and Split Graphs}: the static clique-tree
-preprocessing, the two implementations A1 and A2 of the dynamic chordal graph algorithm, their
-faster deletion-query variants A1\(^+\) and A2\(^+\), and the constant-time dynamic split graph
-algorithm. Along the way it implemented two substantial published data structures from scratch
+This project implemented, in about 4{,}000 lines of C++17, the chordal-graph algorithms of
+Ibarra's paper~\cite{ibarra2008}: the static clique-tree preprocessing, the two implementations
+A1 and A2 of the dynamic chordal graph algorithm, and their faster deletion-query variants
+A1\(^+\) and A2\(^+\). Along the way it implemented two substantial published data structures from scratch
 --- the worst-case dynamic trees of Sleator and Tarjan and the globally biased binary trees of
 Bent, Sleator and Tarjan --- and it verified the whole system with exhaustive and randomised
 tests against independent oracles. \Cref{tab:final-status} gives the final status of every
@@ -4580,8 +4376,8 @@ claim.
 
 \begin{table}[ht]
 \centering\small
-\caption[Final status of every claim of the paper]{Final status of every claim of Ibarra's paper
-in this implementation. All bounds are worst-case.}\label{tab:final-status}
+\caption[Final status of every chordal-graph claim of the paper]{Final status of every
+chordal-graph claim of Ibarra's paper in this implementation. All bounds are worst-case.}\label{tab:final-status}
 \begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{3.3cm}lX>{\raggedright\arraybackslash}p{2.3cm}@{}}
 \toprule
 \textbf{Claim (paper)} & \textbf{Bound} & \textbf{Where in this report} & \textbf{Status}\\
@@ -4593,18 +4389,18 @@ A2 \op{Insert-Query} & \(O(\log^2 n)\) & \cref{prop:a2-iq} & \ok\\
 A2 \op{Insert} & \(O(n)\) & \cref{thm:a2-insert} (linear rebuild in case 3) & \ok\textsuperscript{*}\\
 A2 \op{Delete} & \(O(n\log n)\) & \cref{sec:a2-insert-on} and before & \ok\\
 A2 \op{Delete-Query} & \(O(n)\) & \cref{tab:a2-summary} & \ok\\
-A2 preprocessing & \(O(m+n\log n)\) & \cref{ch:preprocessing}: implemented \(\Theta(n^2+mn)\) & \notok\\
+A2 preprocessing & \(O(m+n\log n)\) & \cref{ch:preprocessing}: implemented \(O(n^2+mn)\) & \notok\\
 A1\(^+\)/A2\(^+\) \op{Delete-Query} & \(O(\sqrt m)\) & \cref{prop:yellin} & \ok\\
 A1\(^+\)/A2\(^+\) updates & \(+O(m+n)\) & \cref{prop:yellin} & \ok\\
 A1\(^+\)/A2\(^+\) preprocessing & \(O(mn+n^2)\) & \cref{prop:yellin} & \ok\\
-Split graphs (\S8) & \(O(1)\) / \(O(m+n)\) & \cref{ch:split} & \ok\\
 Connected components (\S4.1 remark) & \(O(1)\) query & not implemented (outside the four operations) & ---\\
 \bottomrule
 \end{tabularx}
 \par\smallskip\raggedright\footnotesize\textsuperscript{*}\,Case 3 (double subsumption) relies on the
 \(O(k)\) bound of the bottom-up construction of globally biased trees, which the code attributes
-to BST85 Theorem~12; it could not be checked against BST85 itself (\cref{sec:bst85}). The
-dynamic-tree bounds themselves were checked against ST83 (\cref{thm:st83}).
+to BST85 Theorem~12 and its extension in Section~4 (\cref{sec:bst85}). The
+A2 bounds rely on the implementation maintaining the published ST83/BST85 invariants;
+the code-to-proof correspondence is not machine-verified.
 \end{table}
 
 \section{Lessons learned}
@@ -4658,7 +4454,7 @@ Computer Algorithms}. Addison-Wesley, 1974.
 asymmetry yields faster matrix multiplication. In \emph{Proc.\ ACM--SIAM Symposium on Discrete
 Algorithms (SODA)}, 2025. arXiv:2404.16349 (\(\omega<2.371339\)).
 
-\bibitem{openai2026} OpenAI. \emph{An Upper Bound of $9/4$ for the Matrix Multiplication Exponent}. Preprint, 2 October 2026. \url{https://github.com/openai/math/blob/main/preprints/Matrix-Multiplication-Nine-Fourths-October-2-2026/paper.pdf}. The result concerns exact arithmetic over $\mathbb{C}$.
+\bibitem{openai2026} OpenAI. \emph{An Upper Bound of $9/4$ for the Matrix Multiplication Exponent}. Preprint, 2 October 2026; the result concerns exact arithmetic over $\mathbb{C}$.\newline\url{https://github.com/openai/math/blob/main/preprints/Matrix-Multiplication-Nine-Fourths-October-2-2026/paper.pdf}.
 
 \bibitem{shpilka2026} A.~Shpilka. \emph{Exposition of OpenAI's Matrix Multiplication in Exponent $9/4$ (and an explicit algorithm)}. Electronic Colloquium on Computational Complexity, TR26-281, 2026. \url{https://eccc.weizmann.ac.il/report/2026/281/}.
 
@@ -4679,9 +4475,6 @@ ORNL/TM-12203, 1992.)
 \bibitem{buneman1974} P.~Buneman. A characterization of rigid circuit graphs.
 \emph{Discrete Mathematics}, 9:205--212, 1974.
 
-\bibitem{foldes1977} S.~F\"oldes and P.~L.~Hammer. Split graphs. \emph{Congressus
-Numerantium}, 19:311--315, 1977.
-
 \bibitem{fulkerson1965} D.~R.~Fulkerson and O.~A.~Gross. Incidence matrices and interval
 graphs. \emph{Pacific Journal of Mathematics}, 15(3):835--855, 1965.
 
@@ -4698,9 +4491,6 @@ Academic Press, 1980.
 \bibitem{grone1984} R.~Grone, C.~R.~Johnson, E.~M.~S\'a and H.~Wolkowicz. Positive definite
 completions of partial Hermitian matrices. \emph{Linear Algebra and its Applications},
 58:109--124, 1984.
-
-\bibitem{hammer1981} P.~L.~Hammer and B.~Simeone. The splittance of a graph.
-\emph{Combinatorica}, 1:275--284, 1981.
 
 \bibitem{henzinger1999} M.~R.~Henzinger and V.~King. Randomized dynamic graph algorithms with
 polylogarithmic time per operation. \emph{Journal of the ACM}, 46(4):502--516, 1999.
@@ -4732,6 +4522,8 @@ hypergraphs. \emph{SIAM Journal on Computing}, 13(3):566--579, 1984.
 %% ---- begin expanded/15_appendix.tex ----
 %% =====================================================================
 \appendix
+\crefalias{chapter}{appendix}
+\crefname{appendix}{Appendix}{Appendices}
 \chapter{Build and Run Guide}\label{app:build}
 %% =====================================================================
 The implementation needs a C++17 compiler (tested with g++~13.3) and CMake~3.16 or newer; it has
@@ -4748,7 +4540,7 @@ cmake --build build -j
 
 \noindent\textbf{Run the tests.}\par\nobreak
 \begin{lstlisting}[style=shell]
-ctest --test-dir build --output-on-failure        # all 23 tests, about 45 s
+ctest --test-dir build --output-on-failure        # whole suite, about 45 s
 ctest --test-dir build -R ibarra_a1               # only the A1 tests
 \end{lstlisting}
 
@@ -4796,7 +4588,8 @@ Link it against the library \code{mtp_graphs} (\code{target_link_libraries(app m
 \chapter{File-by-File Reference}\label{app:files}
 %% =====================================================================
 \begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.42\textwidth}r>{\raggedright\arraybackslash}p{0.43\textwidth}@{}}
-\caption[Files of the repository]{Source, test and benchmark files (line counts at commit
+\caption[Files of the chordal-graph implementation]{Source, test and benchmark files of the
+chordal-graph implementation (line counts at commit
 \code{651b236}).}\label{tab:files}\\
 \toprule
 \textbf{File} & \textbf{Lines} & \textbf{Contents}\\
@@ -4822,7 +4615,6 @@ Link it against the library \code{mtp_graphs} (\code{target_link_libraries(app m
 \file{dynamic_ibarra_a2.hpp/.cpp} & 57 / 293 & \textbf{A2} (\cref{ch:a2})\\
 \file{indexed_dynamic_ibarra.hpp/.cpp} & 57 / 386 & indexed comparison variant (\cref{sec:indexed})\\
 \file{fast_delete_ibarra.hpp/.cpp} & 37 / 114 & modified Yellin index (\cref{ch:fastdelete})\\
-\file{dynamic_split_ibarra.hpp/.cpp} & 55 / 165 & split graphs (\cref{ch:split})\\
 \midrule
 \multicolumn{3}{@{}l}{\emph{Programs (\code{src/})}}\\
 \file{main.cpp} & 77 & \code{mtp_cli}\\
@@ -4847,8 +4639,6 @@ Link it against the library \code{mtp_graphs} (\code{target_link_libraries(app m
 \file{test_bst85_linear_builder.cpp} & 67 & linear biased-tree build\\
 \file{test_globally_biased_binary_tree.cpp} & 112 & join/split\\
 \file{test_ibarra_indexed.cpp} & 158 & indexed variant\\
-\file{test_ibarra_split.cpp} & 62 & split recognition\\
-\file{test_ibarra_split_stats.cpp} & 73 & four split numbers\\
 \file{test_deterministic_graph_lookup.cpp} & 43 & \code{Graph} membership\\
 \midrule
 \multicolumn{3}{@{}l}{\emph{Benchmarks (\code{benchmarks/})}}\\
@@ -5243,7 +5033,6 @@ Maximal cliques (5):
 \item[Oracle] An independent, simpler computation used to check answers in tests.
 \item[Path set] The biased tree of the dashed child paths of a node, ordered by weight.
 \item[PEO] Perfect elimination ordering: every vertex's later neighbours form a clique.
-\item[Split graph] A graph whose vertices split into a clique and an independent set.
 \item[Witness] For a vertex \(v\), a stored clique node containing \(v\) (used by A2).
 \item[Worst-case bound] A bound that holds for every single execution of an operation.
 \end{description}
